@@ -21,7 +21,7 @@ final class AppFailure implements Exception {
       jsonString(error['code']),
       jsonString(error['messageKey']),
       retryable: retryable,
-      requestId: jsonString(map['requestId']),
+      requestId: OpaqueId.fromJson(map['requestId']).value,
     );
   }
 

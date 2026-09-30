@@ -45,7 +45,7 @@ export function createApp(options: { authenticate?: Authenticator; logger?: Requ
         });
         response = await route.handler(request, requestId);
       } catch (error) {
-        const safe = error instanceof HttpError ? error : new HttpError(500, 'INTERNAL_ERROR', 'api.internalError', true);
+        const safe = error instanceof HttpError ? error : new HttpError(500, 'SERVER_ERROR', 'api.internalError', true);
         errorCode = safe.code;
         response = errorResponse(safe, requestId);
       }

@@ -8,11 +8,13 @@ final class Account {
     required this.role,
     required this.displayName,
     required this.createdAtMs,
+    this.email,
   });
   final OpaqueId id;
   final AccountRole role;
   final String displayName;
   final int createdAtMs;
+  final String? email;
 
   factory Account.fromJson(Object? value) {
     final map = jsonObject(value);
@@ -26,6 +28,7 @@ final class Account {
       role: role,
       displayName: jsonString(map['displayName']),
       createdAtMs: timestampMs(map['createdAtMs']),
+      email: map['email'] == null ? null : jsonString(map['email']),
     );
   }
 }

@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Requirements source:** [BRD.md](BRD.md)  
-**Status:** Design specification; no implementation or deployment yet
+**Status:** Design specification; D02 shells and request pipeline implemented locally; ledger/identity features and deployment remain planned
 
 ## 1. System overview
 

@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** Contract design; endpoints are not implemented  
+**Status:** D02 request-edge scaffold implemented locally; identity and domain endpoints remain planned  
 **Baseline:** [SRS](SRS.md) · [SES](SES.md) · [LLD](LLD.md) · [Database Design / ERD](DATABASE-DESIGN-ERD.md)
 
 ## 1. Contract and conventions
@@ -66,6 +66,12 @@ Error:
 Owner list and ledger responses must remain scoped even if a caller edits a path ID. Customer identity is always derived from the session. A QR public ID is a lookup key only and never grants ledger access or write permission.
 
 ## 2. Authentication and account routes
+
+### D02 scaffold status
+
+`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. Until D04, a valid `POST /v1/auth/google` body returns `503 FEATURE_UNAVAILABLE` without issuing credentials, and `GET /v1/me` rejects all unverified sessions. This is implemented locally and covered by [Worker tests](services/api/test/http.test.ts).
+
+The D02 edge caps JSON bodies at **65,536 bytes**, measured while reading streams as well as against declared size; the auth token field is capped at **16,384 characters**. Shared ID syntax is alphanumeric/underscore/hyphen, at most 128 characters, beginning alphanumeric; cursors are bounded base64url strings of at most 2,048 characters. Cursor signing and route scope enforcement arrive with D10. Money and UTC timestamps use safe integers; timestamps are nonnegative. These wire bounds are shared in [fixtures](contracts/d02-fixtures.json); financial entry caps and other product limits are still due in their planned phases.
 
 | Method and path | Auth | Request | Success | Main failures |
 |---|---|---|---|---|
@@ -226,13 +232,15 @@ Statement generation includes opening balance, dated signed entries, correction 
 
 | HTTP | Stable code | Meaning | Mobile handling |
 |---:|---|---|---|
-| 400/422 | `VALIDATION_ERROR`, `QR_INVALID` | Malformed/unsupported input | Preserve draft; show field/QR guidance. |
+| 400/422 | `INVALID_JSON`, `VALIDATION_ERROR`, `QR_INVALID` | Malformed/unsupported input | Preserve draft; show field/QR guidance. |
+| 405 | `METHOD_NOT_ALLOWED` | Known path with unsupported method; response includes `Allow` | Correct the client request. |
+| 415 | `UNSUPPORTED_MEDIA_TYPE` | JSON media type required; encoded request bodies unsupported | Correct the client request. |
 | 401 | `AUTH_REQUIRED`, `IDENTITY_INVALID` | Missing, expired or invalid credentials | Reauthenticate online; preserve outbox. |
 | 403/404 | `FORBIDDEN`, `NOT_FOUND` | Caller lacks permission or resource unavailable | Do not reveal cross-tenant details; Needs attention for queued write. |
 | 409 | `BALANCE_CONFLICT`, `REVISION_CONFLICT`, `IDEMPOTENCY_CONFLICT`, `CURSOR_INVALID`, `ROLE_CONFLICT`, `SHOP_ALREADY_EXISTS`, `QR_REVOKED` | State conflict | Read current authorized state; require user action where financial command changes. |
 | 413 | `PAYLOAD_TOO_LARGE` | Body/export request exceeds limit | Stop automatic retry. |
 | 429 | `RATE_LIMITED` | Abuse/capacity throttle | Honor `Retry-After`; keep Pending. |
-| 500/503 | `SERVER_ERROR`, `CAPACITY_UNAVAILABLE` | Temporary Worker/D1 failure or quota | Retry same operation ID with backoff; never claim synced. |
+| 500/503 | `SERVER_ERROR`, `CAPACITY_UNAVAILABLE`, `FEATURE_UNAVAILABLE` | Temporary failure/quota, or a feature awaiting implementation | Retry transient failures with the same operation ID; do not claim a planned feature is available. |
 
 For transport timeout, lost acknowledgment, 5xx, 429 or quota errors, the owner outbox keeps the **same** `clientOperationId` and original payload. For authorization/validation/business conflicts it marks the local item **Needs attention** and retains it. A customer never sees Pending owner entries via API. `Retry-After` is seconds when supplied; otherwise the client uses bounded exponential backoff with jitter. Server errors and traces never include financial fields. The Worker may intentionally map unauthorized and nonexistent resources to the same 404 response.
 

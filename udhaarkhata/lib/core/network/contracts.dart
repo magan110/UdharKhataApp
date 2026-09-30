@@ -89,7 +89,7 @@ final class ApiSuccess<T> {
     if (!map.containsKey('data')) throw const FormatException('Missing data');
     return ApiSuccess(
       decode(map['data']),
-      jsonString(map['requestId']),
+      OpaqueId.fromJson(map['requestId']).value,
       map['page'] == null ? null : ApiPage.fromJson(map['page']),
     );
   }

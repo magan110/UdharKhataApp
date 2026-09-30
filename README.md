@@ -4,7 +4,7 @@
 > **Document map:** [Document map](DOCUMENT-MAP.md). **Read with:** [Repository instructions](AGENTS.md) · [Daily implementation plan](docs/implementation/README.md) · [Implementation progress](docs/implementation/PROGRESS.md) · [Flutter app README](udhaarkhata/README.md).
 <!-- DOC_NAV_END -->
 
-Android-first Flutter credit ledger with a planned Cloudflare Worker and D1 backend. **Current implementation:** D01 tooling foundation only. The app still displays its starter screen; there is no sign-in, ledger or deployed API yet.
+Android-first Flutter credit ledger with a Cloudflare Worker scaffold and planned D1 backend. **Current implementation:** D01 and D02 complete. The app opens a welcome screen with guarded owner/customer shells, loading/retry states, and repository boundaries. The local Worker implements request IDs, validation, safe errors, and health. Google sign-in and the ledger are scheduled for later phases; the API is not deployed.
 
 Start with [the document map](DOCUMENT-MAP.md), [the implementation plan](docs/implementation/README.md), and [progress](docs/implementation/PROGRESS.md). Product and engineering requirements are cataloged in [AGENTS.md](AGENTS.md). Run `python scripts/check_docs.py` after changing Markdown links.
 
@@ -21,7 +21,8 @@ Set-Location udhaarkhata
 flutter pub get
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
-flutter test
+flutter test --coverage
+python ../scripts/check_coverage.py coverage/lcov.info
 flutter build apk --debug
 
 Set-Location ../services/api
@@ -29,10 +30,14 @@ npm ci
 npm run typecheck
 npm run lint
 npm test
+npm run test:coverage
+npm run build
 npm audit --audit-level=high
 ```
 
 `npm run dev` starts a local Worker only. Production Android signing is intentionally not configured, so a release artifact must not be distributed from this baseline. `flutter doctor -v` currently reports unaccepted Android licenses on this workstation; the unrelated Windows Visual Studio warning does not affect the Android-only target. Accept Android licenses through the SDK tool before relying on a clean Android build in CI or release.
+
+For D02, `GET /health` returns a minimal success envelope; valid `POST /v1/auth/google` input returns `503 FEATURE_UNAVAILABLE`; `GET /v1/me` fails closed with `401 AUTH_REQUIRED`. Shared [contract fixtures](contracts/d02-fixtures.json) are checked by Dart and TypeScript tests. Body size is bounded to 64 KiB, including streamed bytes; responses and telemetry do not reveal credentials or user data.
 
 ## Configuration safety
 

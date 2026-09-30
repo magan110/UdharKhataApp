@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** Implementation guide; application source and CI are not yet present  
+**Status:** Implementation guide; D02 source and CI checks are present  
 **Baseline:** [SRS](SRS.md) · [LLD](LLD.md) · [Database Design / ERD](DATABASE-DESIGN-ERD.md) · [API Specification](API-SPECIFICATION.md) · [Security Requirements](SECURITY-REQUIREMENTS.md)
 
 ## 1. Purpose and precedence
@@ -21,7 +21,7 @@ The v1 nonnegotiable invariants are: integer paise only; one ledger effect per `
 Use the [LLD module layout](LLD.md#2-package-and-module-layout) as the starting point:
 
 ```text
-apps/mobile/                  Flutter Android app
+udhaarkhata/                  Flutter Android app
   lib/app/                    app bootstrap, routing, localization
   lib/core/                   auth, SQLite, HTTP, sync infrastructure
   lib/features/               QR, shop, ledger, disputes, sharing, settings

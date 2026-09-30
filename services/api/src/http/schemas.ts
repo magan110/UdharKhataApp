@@ -9,10 +9,23 @@ export const accountSchema = z.object({
   id: idSchema,
   role: z.enum(['owner', 'customer']),
   displayName: z.string().min(1),
-  email: z.string().optional(),
+  email: z.string().min(1).optional(),
   createdAtMs: timestampMsSchema,
 }).strict();
 export type Account = z.infer<typeof accountSchema>;
+
+export const pageSchema = z.object({
+  nextCursor: cursorSchema.nullable(), hasMore: z.boolean(),
+}).refine((page) => !page.hasMore || page.nextCursor !== null);
+export const successEnvelopeSchema = z.object({
+  data: z.unknown(), requestId: idSchema, page: pageSchema.optional(),
+}).refine((response) => Object.prototype.hasOwnProperty.call(response, 'data'));
+export const errorEnvelopeSchema = z.object({
+  error: z.object({
+    code: z.string().min(1), messageKey: z.string().min(1), retryable: z.boolean(),
+    details: z.record(z.string(), z.unknown()).optional(),
+  }), requestId: idSchema,
+});
 
 export const googleExchangeSchema = z.object({
   idToken: z.string().min(1).max(16384),
@@ -29,7 +42,7 @@ export async function readJson(request: Request, schema: z.ZodType): Promise<unk
   }
   const declaredLength = request.headers.get('Content-Length');
   if (declaredLength !== null && (!/^\d+$/.test(declaredLength) || Number(declaredLength) > MAX_JSON_BODY_BYTES)) {
-    throw new HttpError(413, 'BODY_TOO_LARGE', 'api.bodyTooLarge');
+    throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'api.payloadTooLarge');
   }
   if (!request.body) throw new HttpError(400, 'INVALID_JSON', 'api.invalidJson');
 
@@ -43,7 +56,7 @@ export async function readJson(request: Request, schema: z.ZodType): Promise<unk
       bytes += value.byteLength;
       if (bytes > MAX_JSON_BODY_BYTES) {
         await reader.cancel();
-        throw new HttpError(413, 'BODY_TOO_LARGE', 'api.bodyTooLarge');
+        throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'api.payloadTooLarge');
       }
       chunks.push(value);
     }

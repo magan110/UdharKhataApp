@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** Implementation design; no application code has been written  
+**Status:** D02 module and request-edge skeleton implemented; domain/database implementation remains planned  
 **Baseline:** [HLD](HLD.md) · [SES](SES.md) · [SRS](SRS.md) · [PRD](PRD.md)
 
 ## 1. Design contract
@@ -30,7 +30,7 @@ The key invariants are:
 This layout is a proposed separation of responsibilities, not a commitment to a particular state-management or routing library.
 
 ```text
-apps/mobile/
+udhaarkhata/
   lib/app/                 # bootstrap, routes, role shell, localization
   lib/core/auth/           # Google sign-in and app-session adapter
   lib/core/db/             # account-scoped SQLite setup and migrations
