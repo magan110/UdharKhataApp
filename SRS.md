@@ -202,6 +202,8 @@ No exact retention duration is specified yet. It must be decided and published b
 
 The [BRD](BRD.md) contains the business rules and the [PRD](PRD.md) contains the detailed screen behavior. Requirement IDs in this document are the baseline for test cases and change control.
 
+D03 implements local D1/SQLite schema guards with safe integer money and versioned storage text ceilings (120-character labels, 500-character notes/reasons). These storage ceilings do not close the smaller product transaction-limit decision. Account-isolated databases and atomic entry/outbox and page/cursor writes are tested at the persistence boundary; complete user journeys remain in their assigned phases. See [progress](docs/implementation/PROGRESS.md).
+
 ## 11. Open decisions and change control
 
 The following must be resolved before their affected phase exits:

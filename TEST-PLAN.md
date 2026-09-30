@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** Planned verification; no application or test suite has been executed  
+**Status:** Release verification plan; local D01?D03 checks are evidenced in implementation progress  
 **Baseline:** [SRS](SRS.md) · [PRD](PRD.md) · [Project Plan](PROJECT-PLAN-ROADMAP.md) · [API Specification](API-SPECIFICATION.md) · [Security Requirements](SECURITY-REQUIREMENTS.md)
 
 ## 1. Purpose and test objective
@@ -16,7 +16,7 @@ This plan explains **how, when and with what evidence** the first public release
 
 The most important release claims are exact balance, no duplicate posting on retry, cross-shop/customer privacy, no silent loss of local Pending records, and honest recovery language. A green build alone is insufficient. Each SRS requirement needs a mapped test or inspection record, and every high-risk failure mode needs evidence from the relevant boundary—especially D1 concurrency and a real Android device.
 
-This plan is separate from the next **Test Cases / QA Checklist** document, which will list executable case IDs and step-by-step checks. Until the app exists, all tests here are planned, not passed.
+This plan is separate from the next **Test Cases / QA Checklist** document, which will list executable case IDs and step-by-step checks. Release cases remain planned until their individual phase evidence is recorded; local D01?D03 results are in [implementation progress](docs/implementation/PROGRESS.md).
 
 ## 2. Scope and exclusions
 

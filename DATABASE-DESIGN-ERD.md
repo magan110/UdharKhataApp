@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** Design specification; migration SQL and application code are not yet implemented  
+**Status:** D03 local D1 and device schemas implemented and tested; production deployment remains pending  
 **Baseline:** [SRS](SRS.md) · [SES](SES.md) · [HLD](HLD.md) · [LLD](LLD.md)
 
 ## 1. Purpose and storage boundaries
@@ -37,6 +37,16 @@ erDiagram
 ```
 
 `ledger_accounts` and `entry_effective` are rebuildable projections. `ledger_entries` is the financial source of truth. `sync_operations` preserves exact response identity for retried mutations. FKs prevent dangling references; application authorization remains mandatory because foreign keys do not enforce who may read or write a row.
+
+### D03 executable schema and storage ceilings
+
+The executable definition is [0001_initial.sql](services/api/migrations/0001_initial.sql); the DDL below is the logical blueprint. The migration adds explicit integer/type guards, canonical UUID v4 checks, real calendar-date checks, immutable ledger/receipt triggers, role checks, and atomic balance/revision projections. A link insert creates its zero balance through a trigger in the same transaction. Receipt writes use [commitEntry](services/api/src/db/transaction.ts), which replays the original balance/version even after later entries. Services must authenticate and authorize before using these internal adapters; public domain routes are later phases.
+
+Version 1 storage ceilings for financial rows are safe integer paise, timestamps, sequence and revisions (9,007,199,254,740,991); labels/names/nicknames 120 characters; notes/reasons/resolution notes 500; Google subject 255; email 320; device ID 128. SQL rejects real money and required-null variants. These are technical storage ceilings, not an approved per-transaction product limit; D08 will select and enforce a smaller business amount cap and mirror it on the API and device.
+
+Opaque access credentials selected by the implementation index use an additional `access_sessions` table: SHA-256 `token_hash`, `refresh_session_id` FK, creation and expiry times, with an index by refresh session and expiry. Refresh rows hold only credential hashes. Token issuance, rotation, revocation and lifetime policy arrive in D04. Additional access-session hash-hex and timestamp upper-bound SQL guards are recorded for a new D04 migration; D03 currently checks hash length and ordered integer times for that unused session table.
+
+The [device schema](udhaarkhata/lib/core/db/migrations.dart) starts at version 1 because D02 had no persisted database. A SHA-256 namespace and a checked `local_account.user_id` isolate account files, including case-distinct IDs and maximum-length IDs. Acknowledged restore rows may omit operation IDs and are deduplicated by server ID; Pending/Needs attention rows still require their original UUID. Complete immutable command fields and established server identity are checked before acknowledging an outbox item. Unknown upgrades/downgrades fail closed; future releases add migration steps without dropping an outbox. [LocalLedgerStore](udhaarkhata/lib/core/db/repositories.dart) stores entry/outbox atomically, applies acknowledged cache pages and cursors atomically, and keeps synced and provisional balances separate through a SQLite view. That view is computed from stored entries, so rollback also rolls back the displayed balance without a second mutable projection. App-private sqflite is the Android adapter; host tests use sqflite_common_ffi against real SQLite. Device process-death and encryption review remain later phase gates.
 
 ## 3. Keys, types and core tables
 

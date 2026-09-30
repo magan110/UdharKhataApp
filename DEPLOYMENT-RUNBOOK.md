@@ -52,10 +52,10 @@ As of this document, Cloudflare lists Workers Free D1 Time Travel recovery for *
 
 ## 4. Build and staging procedure
 
-The repository currently contains documentation only. After application scaffolding, replace the illustrative commands with checked repository scripts and record their actual outputs. Run from the appropriate project directory; commands below show intent and are **not** evidence of execution.
+D01?D03 local scaffolding and database checks exist. Run `npm run db:migrate:local` and `npm run db:check:local` in `services/api/` for the local-only D1 binding. Repeat migration is a no-op; future changes require a new numbered file. Before the first migration there is no prior financial schema. D03 tests rehearse an additive upgrade and failed-upgrade rollback using synthetic migrations; every future real migration must also be tested with its actual prior version. Remote environments and release signing remain unconfigured. Replace the remaining illustrative release commands with approved checked scripts before use. Run from the appropriate project directory; commands below show intent and are **not** evidence of execution.
 
 ```text
-apps/mobile/:  flutter pub get
+udhaarkhata/:  flutter pub get
                dart format --output=none --set-exit-if-changed .
                flutter analyze
                flutter test

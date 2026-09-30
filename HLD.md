@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** D02 architecture scaffold implemented; data/identity features and deployment remain planned  
+**Status:** D02 scaffold and D03 local persistence implemented; identity, user-facing domain features and deployment remain planned  
 **Requirements:** [Scope](SCOPE.md) · [PRD](PRD.md) · [SRS](SRS.md)  
 **Companion engineering document:** [SES](SES.md)
 

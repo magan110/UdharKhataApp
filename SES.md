@@ -85,11 +85,13 @@ Names and columns below are the planned logical schema. SQL migration files will
 | `disputes` | `id`, `entry_id`, `customer_user_id`, `reason`, `status`, `owner_note`, timestamps | Unique or rate limited active dispute per entry; no implicit balance change. |
 | `sync_operations` | `shop_id`, `client_operation_id`, `entry_id`, `outcome`, `created_at` | Idempotency/response replay for retries, subject to retention design. |
 | `refresh_sessions` | `id`, `user_id`, `device_id`, `token_hash`, `expires_at`, `revoked_at` | Store only hashed refresh credentials; revoke on sign-out/deletion. |
-| `deletion_requests` | `id`, `requester_user_id`, `scope`, `status`, timestamps | Track export/deletion workflow and resolution. |
+| `data_requests` | `id`, `requester_user_id`, `scope`, `status`, timestamps | Track export/deletion workflow and resolution. |
 
 `ledger_entries` uses positive `amount_paise` for the entered magnitude. A credit sale has a positive balance effect; a payment has a negative effect; a correction has an explicit signed effect and references the entry it fixes. To prevent accidental double correction, the correction workflow validates the original and records a reason. Balances are calculated from committed entries or from a server-maintained projection whose value is reconciled against entries. The immutable ledger is the source of truth.
 
 Use database constraints for positive entered amounts, valid kinds, references, uniqueness, and valid state transitions. Design indexes for `(shop_id, customer_user_id, created_at, id)`, owner shop lookup, customer linked shops, QR lookup, and operation IDs. Verify D1 row-read/write effects with realistic query plans; unnecessary indexes increase write counts and storage.
+
+D03 adds hashed opaque `access_sessions` linked to refresh sessions, immutable ledger/receipt SQL triggers, and account-isolated sqflite with atomic entry/outbox and page/cursor adapters. The exact executable schema and storage ceilings are in [Database Design / ERD](DATABASE-DESIGN-ERD.md); identity issuance and public domain routes are later phases.
 
 ### Data lifecycle
 

@@ -3,5 +3,29 @@
   "name": "udhaarkhata-api-local",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-29",
-  "workers_dev": false
+  "workers_dev": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "udhaarkhata-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+      "remote": false
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "udhaarkhata-api-staging",
+      "workers_dev": false,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "udhaarkhata-staging",
+          "database_id": "a9e24716-d05a-46f7-8189-1bf2d8b05c46",
+          "remote": false,
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
 }

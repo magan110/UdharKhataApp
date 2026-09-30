@@ -143,7 +143,7 @@ Use explicit labels: **Customer owes you ₹X** for the owner and **You owe [sho
 
 ## 9. Product rules and edge cases
 
-- **Money:** INR only. Store exact integer paise; do not use floating-point balance arithmetic. Reject zero, negative, malformed and out-of-range amounts with useful messages. A maximum per transaction will be fixed before pilot.
+- **Money:** INR only. Store exact integer paise; do not use floating-point balance arithmetic. Reject zero, negative, malformed and out-of-range amounts with useful messages. D03 enforces the safe integer storage ceiling and 120-character label/500-character note and reason ceilings; the smaller business maximum per transaction will be fixed in D08 and validated before pilot.
 - **Balance:** Credit adds to amount owed; payment subtracts; correction has a signed effect. Owner and customer views must agree after both are synced. Never trust a client-supplied balance as the source of truth.
 - **Due dates:** A payment may cover multiple credit entries. The first-release product must define a deterministic allocation rule before displaying overdue amounts; proposed rule is oldest unpaid credit first, then by entry ID for ties. Until implemented and tested, show due dates on entries without an aggregate overdue claim.
 - **Duplicate action:** Same shop/customer link or transaction operation may be retried; the result is the existing link/entry, not another one. Show a clear saved result after uncertain network responses.

@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** D02 module and request-edge skeleton implemented; domain/database implementation remains planned  
+**Status:** D02 skeleton and D03 local database adapters implemented; identity and domain feature routes remain planned  
 **Baseline:** [HLD](HLD.md) · [SES](SES.md) · [SRS](SRS.md) · [PRD](PRD.md)
 
 ## 1. Design contract

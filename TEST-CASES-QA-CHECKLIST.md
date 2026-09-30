@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** Planned cases; no app build, test run or pass result exists yet  
+**Status:** Planned release cases; local D01?D03 evidence is in implementation progress, and the release checkboxes remain unverified  
 **Baseline:** [Test Plan](TEST-PLAN.md) · [SRS](SRS.md) · [API Specification](API-SPECIFICATION.md) · [Security Requirements](SECURITY-REQUIREMENTS.md)
 
 ## 1. How to run and record results
