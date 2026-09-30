@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:udhaarkhata/main.dart';
 
 void main() {
-  testWidgets('signed-out user starts in the safe welcome shell', (tester) async {
+  testWidgets('signed-out user starts in the safe welcome shell', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: MainApp()));
     await tester.pumpAndSettle();
     expect(find.byType(MaterialApp), findsOneWidget);
