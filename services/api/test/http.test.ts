@@ -1,9 +1,9 @@
-import { exports } from 'cloudflare:workers';
+import worker from '../src/index';
 import { describe, expect, it } from 'vitest';
 
 describe('D02 Worker edge contract', () => {
   it('reports health with a request ID and no sensitive environment details', async () => {
-    const response = await exports.default.fetch(new Request('https://api.test/health'));
+    const response = await worker.fetch(new Request('https://api.test/health'));
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body).toMatchObject({ data: { status: 'ok' } });
@@ -13,7 +13,7 @@ describe('D02 Worker edge contract', () => {
   });
 
   it('returns a stable error for an unknown path', async () => {
-    const response = await exports.default.fetch(new Request('https://api.test/unknown'));
+    const response = await worker.fetch(new Request('https://api.test/unknown'));
     expect(response.status).toBe(404);
     expect(await response.json()).toMatchObject({
       error: { code: 'NOT_FOUND', messageKey: 'api.notFound', retryable: false },
@@ -21,7 +21,7 @@ describe('D02 Worker edge contract', () => {
   });
 
   it('rejects malformed JSON before auth exchange', async () => {
-    const response = await exports.default.fetch(new Request('https://api.test/v1/auth/google', {
+    const response = await worker.fetch(new Request('https://api.test/v1/auth/google', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{',
     }));
     expect(response.status).toBe(400);

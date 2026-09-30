@@ -1,0 +1,28 @@
+{
+  "valid": {
+    "id": "usr_synthetic_owner",
+    "moneyPaise": 50000,
+    "timestampMs": 1790726400000,
+    "cursor": "c3ludGhldGljLWN1cnNvcg"
+  },
+  "invalidMoney": [0.1, 9007199254740992, "50000", null],
+  "invalidIds": ["", "has spaces", "<script>"],
+  "invalidTimestamps": [-1, 0.5, "1790726400000"],
+  "invalidCursors": ["", "bad cursor", "not/a/cursor"],
+  "account": {
+    "id": "usr_synthetic_owner",
+    "role": "owner",
+    "displayName": "Synthetic owner",
+    "createdAtMs": 1790726400000
+  },
+  "success": {"data": {"status": "ok"}, "requestId": "req_synthetic"},
+  "page": {
+    "data": [],
+    "page": {"nextCursor": null, "hasMore": false},
+    "requestId": "req_synthetic"
+  },
+  "error": {
+    "error": {"code": "AUTH_REQUIRED", "messageKey": "auth.required", "retryable": false},
+    "requestId": "req_synthetic"
+  }
+}
