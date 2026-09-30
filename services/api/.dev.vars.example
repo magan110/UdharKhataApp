@@ -1,0 +1,2 @@
+# No credentials are needed for the D01 local-only Worker.
+# Future local secrets belong in .dev.vars (ignored by Git), never here.
