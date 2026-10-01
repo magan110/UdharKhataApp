@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import 'customer_list.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/sign_out_button.dart';
@@ -37,23 +41,29 @@ class OwnerShell extends ConsumerWidget {
         ),
         data: (value) => value == null
             ? const ShopSetup()
-            : Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        value.name,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Your shop is ready. Customer linking and ledger entries will be available in the next phases.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      value.name,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: () =>
+                          context.push('/owner/scan/${value.id.value}'),
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Scan customer QR'),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Customers',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    CustomerList(shopId: value.id),
+                  ],
                 ),
               ),
       ),

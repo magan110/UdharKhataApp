@@ -1,5 +1,22 @@
 // Stable message keys are shared with the API. Hindi resources arrive in D18.
 String errorMessage(String key) => switch (key) {
+  'link.internetNeeded' => 'Internet is needed to identify and add this customer. Connect and try again.',
+  'qr.invalid' => 'This is not a valid Udhaar Khata customer QR.',
+  'qr.unsupported' =>
+    'This QR version is not supported. Ask for a current customer QR.',
+  'qr.revoked' =>
+    'This QR is no longer active. Ask the customer for their current QR.',
+  'api.notFound' =>
+    'This shop or customer is no longer available to your account.',
+  'api.idempotencyConflict' => 'This request conflicts with an earlier confirmation. Refresh the customer list before trying again.',
+  'api.invalidResponse' =>
+    'The response could not be verified. Check the same request again.',
+  'link.pending' =>
+    'Check your previous customer confirmation before scanning another QR.',
+  'link.savedRequestInvalid' => 'Your saved confirmation could not be read. Contact support before trying to add another customer.',
+  'link.nicknameInvalid' => 'Use a shop nickname of at most 120 characters.',
+  'link.failed' =>
+    'Could not confirm the customer. Check your connection and try again.',
   'auth.required' => 'Please sign in to continue.',
   'auth.forbidden' => 'You do not have access to this page.',
   'auth.cancelled' => 'Sign-in was cancelled. You can try again.',

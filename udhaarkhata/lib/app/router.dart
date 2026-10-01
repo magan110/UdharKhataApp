@@ -8,6 +8,9 @@ import '../features/auth/session_controller.dart';
 import '../features/auth/welcome_page.dart';
 import '../features/ledger/customer_shell.dart';
 import '../features/shop/owner_shell.dart';
+import '../features/shop/customer_list.dart';
+import '../features/qr/scanner_page.dart';
+import '../core/network/contracts.dart';
 import 'app_strings.dart';
 import 'status_page.dart';
 
@@ -61,7 +64,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      GoRoute(path: '/owner', builder: (_, _) => const OwnerShell()),
+      GoRoute(
+        path: '/owner',
+        builder: (_, _) => const OwnerShell(),
+        routes: [
+          GoRoute(
+            path: 'scan/:shopId',
+            builder: (_, state) => ScannerPage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
+            ),
+          ),
+          GoRoute(
+            path: 'customer/:shopId/:linkId',
+            builder: (_, state) => OwnerCustomerPage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
+              linkId: OpaqueId.fromJson(state.pathParameters['linkId']),
+            ),
+          ),
+        ],
+      ),
       GoRoute(path: '/customer', builder: (_, _) => const CustomerShell()),
     ],
     errorBuilder: (_, _) => const StatusPage(

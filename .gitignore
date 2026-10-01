@@ -28,3 +28,5 @@
 **/Generated.xcconfig
 
 .superpowers/
+
+**/android/.kotlin/

@@ -6,9 +6,9 @@ import { resolveCustomer } from '../qr/resolve';
 import { linkCustomer, readLink, listLinks } from '../ledger/link';
 import { HttpError, jsonResponse } from './errors';
 import { idSchema, readJson } from './schemas';
-export const publicQrSchema=z.string().regex(/^[0-9a-f]{64}$/);
+export const publicQrSchema=z.string().length(64).regex(/^[0-9a-f]{64}$/);
 export const linkSchema=z.object({
- clientOperationId:z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/),
+ clientOperationId:z.string().length(36).regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/),
  publicQrId:publicQrSchema,
  shopNickname:z.string().transform(s=>s.normalize('NFC').trim().replace(/\s+/gu,' ')).pipe(z.string().max(120)).nullable().optional().transform(s=>s||null),
 }).strict();

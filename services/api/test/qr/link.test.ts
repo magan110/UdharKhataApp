@@ -128,3 +128,10 @@ it('D07 commit predicates reject QR revoked after lookup, removed link and close
   await env.DB.prepare("UPDATE shops SET status='closed',closed_at_ms=2 WHERE id='shop'").run();
   expect((await s.link(command)).status).toBe(404);
 });
+it('D07 operation UUID and QR syntax reject trailing newlines at the HTTP boundary',async()=>{
+ const s=await setup();
+ for(const body of [{clientOperationId:crypto.randomUUID()+'\n',publicQrId:s.qr},{clientOperationId:crypto.randomUUID(),publicQrId:s.qr+'\n'}]) {
+  expect((await s.link(body)).status).toBe(400);
+ }
+ expect(await env.DB.prepare('SELECT COUNT(*) FROM shop_customers').first('COUNT(*)')).toBe(0);
+});
