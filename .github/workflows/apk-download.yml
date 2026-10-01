@@ -19,9 +19,9 @@ on:
         default: 1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com
         type: string
       expected_signing_sha1:
-        description: Optional registered Android OAuth certificate SHA-1
-        required: false
-        default: ''
+        description: Registered Android OAuth certificate SHA-1
+        required: true
+        default: 3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6
         type: string
 
 permissions:
@@ -117,7 +117,7 @@ jobs:
               if not value or value.encode() not in kernel:
                   raise SystemExit(f'{name} was not verified in the exact APK')
           expected = os.environ.get('EXPECTED_SIGNING_SHA1', '').replace(':', '').strip().lower()
-          if expected and expected != match[1].lower():
+          if not expected or expected != match[1].lower():
               raise SystemExit('APK certificate does not match the expected Android OAuth SHA-1')
           info = {
               'application_id': package[1],
