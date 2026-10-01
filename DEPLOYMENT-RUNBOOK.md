@@ -161,3 +161,10 @@ Before the release record is approved, fill and verify:
 | Latest test packet, unresolved defects, rollback Worker version and schema compatibility | `[RUN LINKS / VERSION IDS]` |
 
 After handoff, operations owns monitoring and backup checks, engineering owns compatibility and migrations, support owns user requests, and product owns rollout expansion. The next **Release Notes** document should describe the actual release behavior and known limitations from the approved build; until a build exists it remains a clearly marked draft template.
+
+
+### Approved staging deployments through GitHub Actions
+
+The manual `Deploy staging API` workflow accepts an approved source ref and targets only `udhaarkhata-api-staging`, the existing `udhaarkhata-staging` D1 binding and the staging Google audience. It installs locked dependencies, verifies the exact public target, runs Worker typecheck/lint/tests and a dry-run, then deploys `--env staging`. It applies no remote D1 migration. Supply the repository Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; use a token scoped to the intended account with Workers Scripts Edit and D1 Read for deployment/binding discovery. The credentials are injected only into the deployment step, never committed, echoed or attached as artifacts. Missing credentials fail before deployment. Do not paste tokens into chat.
+
+After upload, the workflow checks live HTTPS health and unauthenticated profile, QR resolution and customer linking denial. The public notice/summary records source commit, Worker version where reported and status codes. It creates no synthetic link or financial record: protected smoke requests are unauthenticated and must return AUTH_REQUIRED before mutation. Authenticated owner/customer and camera tests remain phone gates. Every manual run still needs the approval required by AGENTS.md; the workflow is an execution mechanism, not authorization for later deployments.
