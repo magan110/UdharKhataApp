@@ -67,8 +67,8 @@ void main() {
           .go(role == AccountRole.owner ? '/customer' : '/owner');
       await tester.pumpAndSettle();
       expect(
-        find.text(role == AccountRole.owner ? 'Your shop' : 'Your shops'),
-        findsOneWidget,
+        find.text(role == AccountRole.owner ? 'Your shop' : 'My QR'),
+        role == AccountRole.owner ? findsOneWidget : findsNWidgets(2),
       );
       expect(find.text('Continue with Google'), findsNothing);
     });

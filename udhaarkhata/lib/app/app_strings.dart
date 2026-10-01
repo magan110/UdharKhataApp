@@ -9,5 +9,9 @@ String errorMessage(String key) => switch (key) {
   'api.rateLimited' => 'Too many attempts. Please wait and try again.',
   'api.networkError' =>
     'Could not connect. Check your connection and try again.',
+  'qr.recoveryRequired' => 'Connect to the internet and refresh your QR. Its replacement could not be confirmed, so the saved QR is hidden.',
+  'api.featureUnavailable' =>
+    'This feature is not available yet. Please try again later.',
+  'qr.rotationRecovered' => 'The replacement response could not be confirmed. The latest QR from the server is shown.',
   _ => 'Could not open your account. Please try again.',
 };

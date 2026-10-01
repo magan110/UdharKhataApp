@@ -2,6 +2,7 @@ import type { GoogleIdentity } from './google';
 import type { Principal } from './authenticator';
 import type { Account } from '../http/schemas';
 import { HttpError } from '../http/errors';
+import { ownQr } from '../qr/service';
 
 const ACCESS_MS=15*60*1000;
 const REFRESH_MS=30*24*60*60*1000;
@@ -23,6 +24,7 @@ export class SessionService {
     const row=await this.db.prepare('SELECT * FROM users WHERE google_sub=?').bind(identity.sub).first<UserRow>();
     if(!row || row.deleted_at_ms!==null) throw authRequired();
     if(row.account_role!==role) throw new HttpError(409,'ROLE_CONFLICT','auth.roleConflict');
+    if(row.account_role==='customer') await ownQr(this.db,row.id,now);
     const refreshToken=credential(),accessToken=credential(),id=crypto.randomUUID();
     await this.db.batch([
       this.db.prepare('INSERT INTO refresh_sessions(id,user_id,device_id,token_hash,created_at_ms,expires_at_ms) VALUES (?,?,?,?,?,?)').bind(id,row.id,deviceId,await hashToken(refreshToken),now,now+REFRESH_MS),
@@ -69,7 +71,7 @@ export class SessionService {
     if(result.results.length!==1) throw authRequired();
   }
   async rateLimit(network:string,route:string) {
-    const now=this.clock(),period=route==='google'?600000:60000,limit=route==='google'?10:30;
+    const now=this.clock(),period=route==='google'||route==='qr-rotate'?600000:60000,limit=route==='qr-rotate'?3:route==='google'?10:30;
     const key=await hashToken(`${route}:${network}`);
     // Keep one rolling-window row per network/route; expire inactive rows on auth traffic.
     await this.db.prepare('DELETE FROM auth_rate_limits WHERE window_start_ms<?').bind(now-600000).run();

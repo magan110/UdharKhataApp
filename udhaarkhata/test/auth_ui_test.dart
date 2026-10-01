@@ -51,7 +51,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Continue with Google'));
       await tester.pumpAndSettle();
-      expect(find.text('Your shops'), findsOneWidget);
+      expect(find.text('My QR'), findsNWidgets(2));
       await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
       expect(find.textContaining('2 pending entries'), findsOneWidget);

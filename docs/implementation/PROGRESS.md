@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D06 - next; D05 complete: local checks, approved staging deployment and user-reported device shop smoke passed. **Last updated:** 1 October 2026. D04 local checks and user-reported live owner/customer sign-in and sign-out smoke checks are complete.
+**Current phase:** D06 - local engineering complete, staging/device checks pending approval; D05 complete: local checks, approved staging deployment and user-reported device shop smoke passed. **Last updated:** 1 October 2026. D04 local checks and user-reported live owner/customer sign-in and sign-out smoke checks are complete.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -13,7 +13,8 @@
 | D03 | Done | 2026-09-30 | Local D1 migration, SQL ledger/projection/receipt guards, account-scoped SQLite and atomic persistence adapters. See D03 evidence below. |
 | D04 | Done | 2026-10-01 | Local verification plus user-reported live owner/customer sign-in and sign-out on configured staging build. Hardware security and release gates remain explicit below. |
 | D05 | Done | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging deployment and user-reported device shop creation/reopen smoke passed. |
-| D06-D24 | Not started | - | Follow the order in [README](README.md). |
+| D06 | Done (local) | 2026-10-01 | QR issuance/read/rotation/cache/UI; 56 backend and 44 Flutter checks, rendered QR decode, Android build. Staging/device checks pending. |
+| D07-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
 
@@ -146,3 +147,13 @@ User explicitly approved deployment after reviewing the completed D05 checkpoint
 ### D05 user-reported device smoke (2026-10-01)
 
 User confirmed ?working perfect? after the requested updated-APK owner shop creation and sign-out/sign-in reopening check. This closes the remaining D05 device smoke gate. Evidence is the user's device report, not an independently captured trace. Local authorization tests and staging deployment evidence remain recorded above; no production readiness or full hardware security result is inferred. D05 is complete. Next: D06 customer QR issuance, display and rotation.
+
+### D06 evidence (2026-10-01)
+
+Branch `codex/d06-qr`, base `e0ddb69`. Customer registration ensures a 256-bit random QR mapping; existing customers backfill on own read. Own read/rotate enforce customer role and live user. D1 batch rotation revokes/creates atomically; failure rollback, concurrent rotations, uniqueness, rate limits, old-ID lookup rejection, link preservation and sensitive telemetry checks pass. No new D1 migration or owner resolve/link route. Planned qr_flutter 4.1.0 added (locked with qr 3.0.2) after verifying publisher documentation. Mobile caches QR/check timestamp in per-account secure storage, explicitly labels cached/stale codes, requires rotation confirmation, preserves safe QR after a failed ordinary refresh and durably hides it after uncertain rotation. Recover with GET rather than repeat mutation. Customer role opens My QR with My shops empty shell retained.
+
+Worker 55 runtime + one configuration test passed; typecheck/lint pass, coverage 229/230 lines (99.56%) and 154/185 branches (83.24%). Flutter final suite: 44 tests passed, analyze clean; coverage recorded below. Actual CustomerQrPage QR image captured and independently decoded using ZXing: exact `udhaar://customer/v1/` plus the synthetic 64-hex ID. Android final staging-configured debug APK build passed (Gradle nonincremental/in-process Kotlin flags). One fresh read-only reviewer found no Critical/minor issues and three Important recovery defects. All three reproduced with failing regressions and were fixed in one pass: cache platform errors now leave a recoverable error; rejected rotation retains a visible failure notice alongside recovered QR; actual expired access plus offline refresh preserves public QR with Sign in again while uncertain credentials are cleared and account database locked. No protected access is restored by QR caching. Full offline cold-start restoration stays D12; actual owner old/new-ID linking checks stay D07; physical scanning/deployment and final retention policy remain their assigned gates. No device connected or D06 staging deployment performed.
+
+Decision: reuse account-specific Android secure storage for the small public QR cache instead of adding a local database migration/table; no credential is copied into SQLite. Offline QR presentation is within a verified open account session; full cold-start offline sign-in remains the pre-existing D12 gate. Rotation uses a per-customer 3/10-minute pilot throttle; adjust only with evidence of legitimate demand/abuse. Retain revoked QR IDs to distinguish revocation; final cleanup/retention policy remains D19. Next after D06: D07 scan, resolve and link.
+
+D06 review/verification checkpoint: full Flutter suite 44/44 after fixes, formatter/analyzer clean; final Flutter line coverage 687/757 (90.75%, minimum 80%). Worker dry-run and dependency audit passed (zero vulnerabilities). Android debug APK updated at `udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk`, using existing staging configuration. D06 Worker has not been deployed; D05 remains live until explicit approval. Actual end-to-end revoked-ID link rejection is a D07 gate, not inferred from D06 internal lookup tests. No GitHub push, migration or real customer-data operation was performed.

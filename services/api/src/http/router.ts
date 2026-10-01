@@ -2,6 +2,7 @@ import type { Authenticator } from '../auth/authenticator';
 import { unavailableAuthenticator } from '../auth/authenticator';
 import { requirePrincipal, requireRole, requireOwnedShop } from '../policy/access';
 import { createShop, shopJson, shopSummary } from '../shop/service';
+import { ownQr, rotateQr } from '../qr/service';
 import { logRequest, type RequestLogger } from '../telemetry/request-event';
 import { errorResponse, HttpError, jsonResponse } from './errors';
 import { googleExchangeSchema, refreshSchema, logoutSchema, readJson, idSchema } from './schemas';
@@ -63,6 +64,18 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
       if(!parsed.success) throw new HttpError(400,'VALIDATION_ERROR','api.validationError');
       if(!options.db) return unavailable();
       return jsonResponse(shopJson(await requireOwnedShop(options.db,principal,parsed.data)),requestId);
+    }},
+    {path:'/v1/me/qr',method:'GET',handler:async(request,requestId)=>{
+      const principal=requireRole(await authenticate(request),'customer');
+      if(!options.db) return unavailable();
+      return jsonResponse(await ownQr(options.db,principal.userId),requestId);
+    }},
+    {path:'/v1/me/qr/rotate',method:'POST',handler:async(request,requestId)=>{
+      const principal=requireRole(await authenticate(request),'customer');
+      await readJson(request,z.object({}).strict());
+      if(!options.db || !options.sessions) return unavailable();
+      await options.sessions.rateLimit(principal.userId,'qr-rotate');
+      return jsonResponse(await rotateQr(options.db,principal.userId),requestId);
     }},
   ];
 
