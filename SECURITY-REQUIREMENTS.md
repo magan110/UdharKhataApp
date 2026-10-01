@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** Requirements and release gates; no application security controls are implemented yet  
+**Status:** Requirements and release gates; D01-D04 local controls and tests exist, live OAuth and release gates remain pending  
 **Baseline:** [SRS](SRS.md) · [HLD](HLD.md) · [LLD](LLD.md) · [Database Design / ERD](DATABASE-DESIGN-ERD.md) · [API Specification](API-SPECIFICATION.md)
 
 ## 1. Security objective and scope
@@ -50,10 +50,10 @@ The app is never a trusted source of role, shop ownership, customer identity, ba
 |---|---|
 | **SEC-01** | The Worker shall verify each Google ID token's signature against trusted Google keys, permitted issuer, configured audience, expiration and nonempty subject before creating an app session. Reject altered, expired, wrong-audience and wrong-issuer tokens. The Google `tokeninfo` endpoint is a debugging aid, not production validation. | Automated token negative cases; inspect verifier and key-cache configuration. |
 | **SEC-02** | `google_sub` shall be the immutable account key. Email/display name are editable profile attributes, never authorization keys. A first-registration role is fixed to owner or customer in v1; a later `requestedRole` cannot promote or switch it. | Change email/name and retain same ledger; attempt role switch. |
-| **SEC-03** | App access tokens shall be short lived; proposed v1 target **15 minutes**. Refresh tokens shall be at least 256 bits of CSPRNG entropy, stored only as a keyed or cryptographic hash in D1, rotated on use, bound to one server session ID, and expire within **30 days maximum** from initial issue. Logout/account deletion shall revoke session state. These are proposed implementation values to confirm during phase-0 review. | Inspect token claims/entropy, DB rows and expiry; replay old refresh token; revoke then call protected route. |
+| **SEC-03** | App access tokens shall be short lived; v1 lifetime **15 minutes**. Refresh tokens shall be at least 256 bits of CSPRNG entropy, stored only as a keyed or cryptographic hash in D1, rotated on use, bound to one server session ID, and expire within **30 days maximum** from initial issue. Logout/account deletion shall revoke session state. D04 fixes these lifetimes; refresh rotation never extends initial expiry. | Inspect token claims/entropy, DB rows and expiry; replay old refresh token; revoke then call protected route. |
 | **SEC-04** | App tokens are bearer credentials. The Worker shall verify the opaque access credential against its stored hash, expiry and referenced session revocation on protected financial routes; it shall not trust a client `deviceId` as hardware proof. On lost refresh response or revoked session, require Google reauthentication without deleting the offline outbox. | Replay/logout/revocation tests; network-loss test during refresh. |
 
-The implementation plan selects short-lived opaque access credentials backed by hashed `access_sessions` rows linked to rotating hashed `refresh_sessions`. D03 creates those tables; D04 implements verification, expiry, rotation and referenced-session revocation checks. Credentials must have cryptographic entropy and never appear in SQLite or logs. Exact lifetimes remain a D04 decision. A session's `deviceId` is an app-generated identifier for user-facing session management; it is not an authentication factor.
+The implementation plan selects short-lived opaque access credentials backed by hashed `access_sessions` rows linked to rotating hashed `refresh_sessions`. D03 creates those tables; D04 implements verification, expiry, rotation and referenced-session revocation checks. Credentials must have cryptographic entropy and never appear in SQLite or logs. D04 fixes access at 15 minutes and refresh at 30 days from initial issue; spent-token replay revokes the whole session. Trusted Google JWKS are cached for at most one hour with a five-second fetch timeout. A session's `deviceId` is an app-generated identifier for user-facing session management; it is not an authentication factor.
 
 Google recommends server validation of tokens and use of `sub` rather than email as the durable identifier. [Google OpenID Connect guidance](https://developers.google.com/identity/openid-connect/openid-connect)
 
@@ -145,3 +145,7 @@ No automated test can prove all security properties. A manual pre-release review
 | Pending-entry inclusion in any owner export and secure delivery of full shop data | Product/privacy review before phase-3 export release. |
 
 If a decision changes an API payload, database invariant or user-visible guarantee, update the [API Specification](API-SPECIFICATION.md), [Database Design / ERD](DATABASE-DESIGN-ERD.md), [SRS](SRS.md) and [PRD](PRD.md) together. The next document, **Coding Standards / Development Guidelines**, translates these requirements into implementation and review rules.
+
+### D04 local protection decision
+
+Credentials use flutter_secure_storage 11.2.0 with Android platform defaults and reset-on-error disabled. Existing backup exclusions remain. SQLite stays app-private rather than SQLCipher-encrypted; host tests prove account isolation and Pending preservation, while physical extraction/compromised-device review and any encryption rollout remain D12 release gates. No protection against a compromised unlocked device is claimed. The auth adapter locks the cache before switching/restoring and opens it after server profile verification. Uncertain refresh removes credentials and requires reauthentication while preserving the database.

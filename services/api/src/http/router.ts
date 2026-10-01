@@ -3,7 +3,10 @@ import { unavailableAuthenticator } from '../auth/authenticator';
 import { requirePrincipal } from '../policy/access';
 import { logRequest, type RequestLogger } from '../telemetry/request-event';
 import { errorResponse, HttpError, jsonResponse } from './errors';
-import { googleExchangeSchema, readJson } from './schemas';
+import { googleExchangeSchema, refreshSchema, logoutSchema, readJson } from './schemas';
+import type { GoogleIdentity } from '../auth/google';
+import type { SessionService } from '../auth/sessions';
+import { z } from 'zod';
 
 interface Route {
   path: string;
@@ -11,17 +14,33 @@ interface Route {
   handler: (request: Request, requestId: string) => Promise<Response>;
 }
 
-export function createApp(options: { authenticate?: Authenticator; logger?: RequestLogger } = {}) {
+export function createApp(options: { authenticate?: Authenticator; logger?: RequestLogger; sessions?:SessionService; verifyGoogle?:(token:string)=>Promise<GoogleIdentity> } = {}) {
   const authenticate = options.authenticate ?? unavailableAuthenticator;
   const logger = options.logger ?? logRequest;
   const unavailable = () => { throw new HttpError(503, 'FEATURE_UNAVAILABLE', 'api.featureUnavailable', true); };
   const routes: Route[] = [
     { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok' }, requestId) },
-    { path: '/v1/auth/google', method: 'POST', handler: async (request) => {
-      await readJson(request, googleExchangeSchema);
-      return unavailable();
+    { path: '/v1/auth/google', method: 'POST', handler: async (request,requestId) => {
+      const body=await readJson(request, googleExchangeSchema) as z.infer<typeof googleExchangeSchema>;
+      if(!options.sessions || !options.verifyGoogle) return unavailable();
+      await options.sessions.rateLimit(request.headers.get('CF-Connecting-IP')??'unknown','google');
+      if(!body.deviceId) throw new HttpError(400,'VALIDATION_ERROR','api.validationError');
+      return jsonResponse(await options.sessions.exchange(await options.verifyGoogle(body.idToken),body.requestedRole,body.deviceId),requestId);
     } },
-    { path: '/v1/me', method: 'GET', handler: async (request) => {
+    { path: '/v1/auth/refresh', method: 'POST', handler: async(request,requestId)=> {
+      const body=await readJson(request,refreshSchema) as z.infer<typeof refreshSchema>;
+      if(!options.sessions) return unavailable();
+      await options.sessions.rateLimit(request.headers.get('CF-Connecting-IP')??'unknown','refresh');
+      return jsonResponse(await options.sessions.refresh(body.refreshToken,body.deviceId),requestId);
+    } },
+    { path: '/v1/auth/logout', method: 'POST', handler: async(request,requestId)=> {
+      const body=await readJson(request,logoutSchema) as z.infer<typeof logoutSchema>;
+      if(!options.sessions) return unavailable();
+      await options.sessions.logout(request.headers.get('Authorization')?.match(/^Bearer ([0-9a-f]{64})$/)?.[1]??'',body.deviceId);
+      return new Response(null,{status:204,headers:{'X-Request-Id':requestId,'Cache-Control':'no-store'}});
+    } },
+    { path: '/v1/me', method: 'GET', handler: async (request,requestId) => {
+      if(options.sessions) return jsonResponse(await options.sessions.profile(request.headers.get('Authorization')?.match(/^Bearer ([0-9a-f]{64})$/)?.[1]??''),requestId);
       requirePrincipal(await authenticate(request));
       return unavailable();
     } },

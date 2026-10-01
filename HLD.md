@@ -211,3 +211,7 @@ The next **LLD**, **Database Design / ERD** and **API Specification** should mak
 - [Google OpenID Connect token validation](https://developers.google.com/identity/openid-connect/openid-connect)
 
 Provider terms and API behavior should be checked again before implementation and launch.
+
+### D04 implementation checkpoint
+
+Local auth verifies Google identity using trusted JWKS, maps immutable subject and role, issues hashed 15-minute opaque access credentials and rotating refresh credentials capped at 30 days from initial issue, and revokes the session on spent-token replay/logout. Android secure storage and role selection/sign-out are wired; Pending records stay account-isolated and locked on sign-out. See the API session policy, security requirements and implementation progress for checks and limits. Live Google configuration, device evidence and deployment remain pending; this is not a public-release claim.

@@ -216,3 +216,7 @@ The following must be resolved before their affected phase exits:
 6. **Customer onboarding friction:** If field research shows that mandatory customer app installation prevents adoption, revisit QR-first scope in the BRD/PRD before implementing a fallback.
 
 Changes to a requirement shall update its ID/versioned text, acceptance tests, and affected PRD/SES sections together. No unverified market claim or provider free-tier limit is a software guarantee.
+
+### D04 implementation checkpoint
+
+Local auth verifies Google identity using trusted JWKS, maps immutable subject and role, issues hashed 15-minute opaque access credentials and rotating refresh credentials capped at 30 days from initial issue, and revokes the session on spent-token replay/logout. Android secure storage and role selection/sign-out are wired; Pending records stay account-isolated and locked on sign-out. See the API session policy, security requirements and implementation progress for checks and limits. Live Google configuration, device evidence and deployment remain pending; this is not a public-release claim.

@@ -209,3 +209,7 @@ Automated tests should focus on money arithmetic, idempotency, authorization, ac
 - [Flutter Android documentation](https://docs.flutter.dev/platform-integration/android)
 
 This document specifies the intended behavior. Provider limits and API details should be verified again when each phase starts.
+
+### D04 implementation checkpoint
+
+Local auth verifies Google identity using trusted JWKS, maps immutable subject and role, issues hashed 15-minute opaque access credentials and rotating refresh credentials capped at 30 days from initial issue, and revokes the session on spent-token replay/logout. Android secure storage and role selection/sign-out are wired; Pending records stay account-isolated and locked on sign-out. See the API session policy, security requirements and implementation progress for checks and limits. Live Google configuration, device evidence and deployment remain pending; this is not a public-release claim.

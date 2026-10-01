@@ -16,7 +16,7 @@ The Flutter app calls a versioned Cloudflare Worker over HTTPS. The Worker is th
 
 Protected routes require `Authorization: Bearer <accessToken>`. JSON requests require `Content-Type: application/json`; responses use `application/json; charset=utf-8` except exports. Every response includes `X-Request-Id`, which support may ask for. Financial responses should use `Cache-Control: no-store`; credentials must never appear in URLs, QR payloads, logs or analytics. The app must display server-acknowledged balance separately from local Pending entries.
 
-The schemas below are the intended v1 wire contract. D03 storage ceilings are recorded in the database design: safe integer paise, 120-character labels, 500-character notes/reasons, 128-character device IDs, canonical UUID v4 operation IDs and valid calendar dates. The smaller business amount cap, page-size ceiling, export period and session lifetime remain unresolved [SRS decisions](SRS.md#11-open-decisions-and-change-control). They must become versioned constants before pilot; the Worker must reject values over them. Until then, the examples show format rather than permission to submit arbitrary large values. Unknown JSON properties are rejected on mutation routes so misspelled financial fields cannot be silently ignored. Missing optional fields and explicit `null` are normalized consistently before request hashing.
+The schemas below are the intended v1 wire contract. D03 storage ceilings are recorded in the database design: safe integer paise, 120-character labels, 500-character notes/reasons, 128-character device IDs, canonical UUID v4 operation IDs and valid calendar dates. The smaller business amount cap, page-size ceiling, export period remain unresolved [SRS decisions](SRS.md#11-open-decisions-and-change-control). They must become versioned constants before pilot; the Worker must reject values over them. Until then, the examples show format rather than permission to submit arbitrary large values. Unknown JSON properties are rejected on mutation routes so misspelled financial fields cannot be silently ignored. Missing optional fields and explicit `null` are normalized consistently before request hashing.
 
 ### 1.1 Success and error envelopes
 
@@ -67,15 +67,15 @@ Owner list and ledger responses must remain scoped even if a caller edits a path
 
 ## 2. Authentication and account routes
 
-### D02 scaffold status
+### D04 implementation status
 
-`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. Until D04, a valid `POST /v1/auth/google` body returns `503 FEATURE_UNAVAILABLE` without issuing credentials, and `GET /v1/me` rejects all unverified sessions. This is implemented locally and covered by [Worker tests](services/api/test/http.test.ts).
+`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. D04 implements Google exchange, refresh, logout and profile routes with a D1 binding and approved Google audience. An unconfigured audience fails closed with `503 FEATURE_UNAVAILABLE`. Live OAuth and Worker deployment remain pending; synthetic identity/session tests run locally.
 
 The D02 edge caps JSON bodies at **65,536 bytes**, measured while reading streams as well as against declared size; the auth token field is capped at **16,384 characters**. Shared ID syntax is alphanumeric/underscore/hyphen, at most 128 characters, beginning alphanumeric; cursors are bounded base64url strings of at most 2,048 characters. Cursor signing and route scope enforcement arrive with D10. Money and UTC timestamps use safe integers; timestamps are nonnegative. These wire bounds are shared in [fixtures](contracts/d02-fixtures.json); financial entry caps and other product limits are still due in their planned phases.
 
 | Method and path | Auth | Request | Success | Main failures |
 |---|---|---|---|---|
-| `POST /v1/auth/google` | None; valid Google ID token required | `{ "idToken": "...", "requestedRole": "owner" }` | `200` existing account or `201` new account: `account`, `accessToken`, `refreshToken`, `accessExpiresAtMs` | `IDENTITY_INVALID`, `ROLE_CONFLICT`, rate limit |
+| `POST /v1/auth/google` | None; valid Google ID token required | `{ "idToken": "...", "requestedRole": "owner", "deviceId": "..." }` | `200` new or existing account: `account`, `accessToken`, `refreshToken`, `accessExpiresAtMs` | `IDENTITY_INVALID`, `ROLE_CONFLICT`, rate limit |
 | `POST /v1/auth/refresh` | Refresh credential in body; TLS | `{ "refreshToken": "...", "deviceId": "..." }` | `200` rotated access and refresh tokens; old refresh revoked | `AUTH_REQUIRED`, rate limit |
 | `POST /v1/auth/logout` | Bearer access token | `{ "deviceId": "..." }` | `204` current session revoked | `AUTH_REQUIRED` |
 | `GET /v1/me` | Either role | None | `200` account, role, app/schema capability versions, shop or own link summary | `AUTH_REQUIRED` |
@@ -264,3 +264,9 @@ Backward-compatible v1 changes may add optional response fields; clients must ig
 | D1 quota failure | Retryable error if Worker can respond; local item remains Pending. |
 
 The API is a design contract, not evidence of a running service. Implementation needs schema validation, authorization and integration tests against the pinned D1 runtime. Cloudflare documents the D1 Worker binding and transactional batch behavior used by this design: [D1 Worker API](https://developers.cloudflare.com/d1/worker-api/d1-database/). The next document, **Security Requirements**, will fix credential lifetimes, rate-limit thresholds, device storage and operational controls.
+
+### D04 session policy
+
+Access credentials contain 256 random bits and expire after 15 minutes. Refresh credentials contain 256 random bits, rotate atomically and expire 30 days from initial session creation; rotation never extends the deadline. D1 stores SHA-256 hashes only. Spent-token replay revokes the session and every associated access credential; lost refresh response requires Google reauthentication. Other device sessions remain valid. Required deviceId is an app identifier, not hardware proof. Profile returns account and capabilities (apiVersion=1, localSchemaVersion=1); shop/link summaries follow later.
+
+Controls start at 10 Google exchanges per 10 minutes per network and 30 refresh attempts per minute per network, returning 429 and Retry-After. IP keys are hashed; inactive rate rows expire on auth traffic. Pilot capacity remains untested. Offline sign-out locks local data and clears local credentials; the UI reports unconfirmed cloud revocation. Server credentials still expire by the above deadlines.

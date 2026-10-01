@@ -1,2 +1,3 @@
-# No credentials are needed for the D01 local-only Worker.
-# Future local secrets belong in .dev.vars (ignored by Git), never here.
+# Copy to ignored .dev.vars after approved Google configuration.
+# This is the public web OAuth audience, not a client secret.
+GOOGLE_CLIENT_ID=""

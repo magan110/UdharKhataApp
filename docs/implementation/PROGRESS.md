@@ -4,20 +4,46 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D04 - next. **Last updated:** 30 September 2026. D01 through D03 are complete locally; Google identity and app sessions follow.
+**Current phase:** D04 local engineering complete; live OAuth gate pending. **Last updated:** 1 October 2026. D05 is next after the chosen live setup checkpoint.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
 | D01 | Done | 2026-09-29 | Local Git repository, root ignore/README, Android ID/API 24/label/unsigned release config, Flutter smoke test, Worker scaffold and lockfile, CI workflow. See evidence below. |
 | D02 | Done | 2026-09-30 | Flutter architecture and guarded shells, Worker edge pipeline, shared fixtures, and tests. See D02 evidence below. |
 | D03 | Done | 2026-09-30 | Local D1 migration, SQL ledger/projection/receipt guards, account-scoped SQLite and atomic persistence adapters. See D03 evidence below. |
-| D04-D24 | Not started | - | Follow the order in [README](README.md). |
+| D04 | Done locally; live gate pending | 2026-10-01 | Google verifier, rotating sessions, secure Android storage, role/sign-out UI and synthetic tests. See D04 evidence. |
+| D05-D24 | Not started | - | Follow the order in [README](README.md). |
+
+### D04 evidence (2026-10-01)
+
+Branch `codex/d04-auth`, based on D03 commit `3906488`. Local implementation only: trusted Google RS256 JWKS verification with issuer/audience/subject/expiry/issued-time checks; immutable role/subject account mapping; 256-bit opaque credentials hashed with SHA-256; 15-minute access and rotating refresh capped at 30 days from initial creation; spent-token replay revokes the whole session, logout only its device session; atomic network auth throttling. HTTP Google exchange/refresh/logout/profile are wired with safe envelopes. Profile publishes capability versions; shop/link summaries are later work.
+
+Android uses google_sign_in 7.2.0 and flutter_secure_storage 11.2.0, requires public API_BASE_URL and GOOGLE_SERVER_CLIENT_ID build configuration, and disables sign-in until configured. Role selection routes by server-confirmed account. Sign-out counts and preserves Pending rows, locks the old database and clears credentials. Offline sign-out explicitly reports unconfirmed cloud revocation. An uncertain refresh requires reauthentication without erasing the database.
+
+| Check | Evidence |
+|---|---|
+| Worker tests | PASS: 51 runtime tests plus one Node configuration test; identity negative cases, subject/role, hashes, rotation/replay/race, expiry/logout, rate window, HTTP lifecycle and session SQL guards. |
+| Worker coverage | PASS: 169/170 lines (99.41%), 107/131 branches (81.67%), all 80% gates. |
+| Worker static/build/audit | PASS: typecheck, lint, dry-run Worker bundle, zero audit vulnerabilities. No deployment. Credential-pattern scan of tracked/new source and APK secret-file scan passed; this is a bounded scan, not exhaustive proof. |
+| Local D1 migration | PASS: new immutable 0002 applies six commands over existing 0001; foreign_key_check empty. 0001 unchanged. 0002 not applied remotely. |
+| Flutter tests | PASS: 34 tests, including Google action/cancellation/sign-out UI, actual SQLite Pending preservation and account B isolation, uncertain refresh and stalled profile regression. |
+| Flutter coverage/static | PASS: 436/489 lines (89.16%), minimum 80%; formatting and analyze clean. |
+| Android build | PASS: debug APK assembled with Gradle nonincremental/in-process Kotlin flags, avoiding Windows C:/D: Pub-cache root issue. Standard Flutter command initially failed on Kotlin caches; no release-signed build claimed. |
+| Review | One fresh read-only reviewer, no Critical. Important stalled profile request fixed: regression failed first, shared GET timeout added, full 34-test suite passed. |
+
+**Live gate / limitations:** Google registration, real Android account-picker/secure-storage/backup checks, release signing and Worker deployment need approved external setup. Full offline startup access/general financial refresh remain D12/later integration; storage encryption/physical extraction review stays D12. Session-history cleanup/retention stays D19. Real customer data was not used. D03 staging contains only its dedicated synthetic records.
+
+**Resolved decisions:** new and existing Google exchange returns HTTP200 with the same session shape; API contract aligned (clients assuming201 must adjust). Retain app-private SQLite rather than introduce SQLCipher before the planned device review; compromised-device exposure remains a known release risk. Reviewer did not judge live/provider/hardware behavior: these remain explicit unverified gates, so local tests cannot establish a complete native Google A-to-B journey.
+
+**Deferred minor:** native Google credential state is not explicitly cleared on sign-out; installed Android authenticate uses the explicit account-picker flow, so no switching blocker was demonstrated. Confirm this during live device testing and add native clearing if that flow requires it.
 
 ### D03 Cloudflare staging follow-up (2026-09-30)
 
 User authorized staging migration. Database `udhaarkhata-staging` (`a9e24716-d05a-46f7-8189-1bf2d8b05c46`) is configured under the explicit Wrangler `staging` environment; default local binding remains unchanged. Remote `0001_initial.sql` applied successfully (44 commands); repeat application reported no migrations to apply. Remote inspection confirmed migration tracking plus 14 tables (including platform/migration tables), 12 named indexes and 19 triggers. No Worker deployment or real customer data was used.
 
-Remote foreign-key verification remains pending: one request timed out and a retry was interrupted. Optional `PRAGMA integrity_check` was rejected by D1 with `SQLITE_AUTH`; no integrity-check success is claimed. Network requests remain intermittent; preferring IPv4 and disabling Node network family autoselection allowed migration and schema inspection to succeed. Remote synthetic ledger checks remain pending. Local D03 invariant tests retain their previously recorded passing evidence.
+Follow-up 2026-10-01: remote `PRAGMA foreign_key_check` passed on both empty and populated staging data. Dedicated synthetic owner/customer/shop/link records (`d03_test_*`) remain in staging: 50000 paise credit and 20000 paise cash payment produced balance 30000, version 2, two entries and reconciled ledger sum 30000. Attempted posted-entry update was rejected with `ENTRY_IMMUTABLE`; subsequent reconciliation stayed unchanged. This completes the added remote schema smoke gate; full synthetic invariant coverage remains in the existing local D1 runtime suite. No mobile/API end-to-end flow or Worker deployment is claimed.
+
+Optional `PRAGMA integrity_check` was rejected by D1 with `SQLITE_AUTH`; no integrity-check success is claimed. Network requests remain intermittent; preferring IPv4 and disabling Node network family autoselection allowed successful checks. After a timed-out synthetic insert request, state was inspected before retrying; no duplicate entries were created.
 
 ### D03 evidence and implementation boundaries
 

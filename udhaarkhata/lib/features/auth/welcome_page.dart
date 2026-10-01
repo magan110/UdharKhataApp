@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class WelcomePage extends StatelessWidget {
+import '../../core/auth/account.dart';
+import 'session_controller.dart';
+
+class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
+  @override
+  ConsumerState<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends ConsumerState<WelcomePage> {
+  AccountRole role = AccountRole.owner;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -30,13 +40,33 @@ class WelcomePage extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                const FilledButton(
-                  onPressed: null,
-                  child: Text('Continue with Google'),
+                SegmentedButton<AccountRole>(
+                  segments: const [
+                    ButtonSegment(
+                      value: AccountRole.owner,
+                      label: Text('Shop owner'),
+                    ),
+                    ButtonSegment(
+                      value: AccountRole.customer,
+                      label: Text('Customer'),
+                    ),
+                  ],
+                  selected: {role},
+                  onSelectionChanged: (value) =>
+                      setState(() => role = value.single),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: ref.watch(authRepositoryProvider).canSignIn
+                      ? () => ref.read(sessionProvider.notifier).signIn(role)
+                      : null,
+                  child: const Text('Continue with Google'),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Sign-in is not available yet.',
+                Text(
+                  ref.watch(authRepositoryProvider).canSignIn
+                      ? 'Your account role is fixed when you first register.'
+                      : 'Sign-in needs the approved Google configuration.',
                   textAlign: TextAlign.center,
                 ),
               ],

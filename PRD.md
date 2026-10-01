@@ -205,3 +205,7 @@ Engineering details and test evidence live in [SES.md](SES.md). Public deploymen
 ## 14. Traceability
 
 The [Product Vision](PRODUCT-VISION.md) states why the product exists. The [BRD](BRD.md) records business rules and the agreed feature scope. This PRD defines user-visible behavior and release acceptance. The [SES](SES.md) defines implementation, API, data and test design. The [Market Research](MARKET-COMPETITOR-RESEARCH.md) records competitor evidence and the QR-flow hypothesis to validate.
+
+### D04 implementation checkpoint
+
+Local auth verifies Google identity using trusted JWKS, maps immutable subject and role, issues hashed 15-minute opaque access credentials and rotating refresh credentials capped at 30 days from initial issue, and revokes the session on spent-token replay/logout. Android secure storage and role selection/sign-out are wired; Pending records stay account-isolated and locked on sign-out. See the API session policy, security requirements and implementation progress for checks and limits. Live Google configuration, device evidence and deployment remain pending; this is not a public-release claim.

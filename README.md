@@ -4,7 +4,7 @@
 > **Document map:** [Document map](DOCUMENT-MAP.md). **Read with:** [Repository instructions](AGENTS.md) · [Daily implementation plan](docs/implementation/README.md) · [Implementation progress](docs/implementation/PROGRESS.md) · [Flutter app README](udhaarkhata/README.md).
 <!-- DOC_NAV_END -->
 
-Android-first Flutter credit ledger with a Cloudflare Worker scaffold and locally tested D1 backend. **Current implementation:** D01 through D03 complete. The app opens a welcome screen with guarded owner/customer shells, loading/retry states, and repository boundaries. The local Worker implements request IDs, validation, safe errors, and health. Google sign-in and the ledger are scheduled for later phases; the API is not deployed.
+Android-first Flutter credit ledger with a Cloudflare Worker and D1 backend. D03 schemas are tested locally and in approved staging. D04 local Google verification, rotating sessions, secure credential storage and role/sign-out UI are implemented with synthetic tests; live Google OAuth and Worker deployment remain pending. User-facing ledger features follow in later phases. See implementation progress for evidence.
 
 Start with [the document map](DOCUMENT-MAP.md), [the implementation plan](docs/implementation/README.md), and [progress](docs/implementation/PROGRESS.md). Product and engineering requirements are cataloged in [AGENTS.md](AGENTS.md). Run `python scripts/check_docs.py` after changing Markdown links.
 
