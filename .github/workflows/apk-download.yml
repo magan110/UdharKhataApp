@@ -31,8 +31,6 @@ jobs:
   android-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    env:
-      ANDROID_USER_HOME: ${{ runner.temp }}/android-signing
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +40,7 @@ jobs:
         shell: bash
         env:
           ANDROID_DEBUG_KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+          ANDROID_USER_HOME: ${{ runner.temp }}/android-signing
         run: |
           python - <<'PY'
           import base64, binascii, os, pathlib, tempfile
@@ -61,6 +60,9 @@ jobs:
               temporary = pathlib.Path(stream.name)
           temporary.chmod(0o600)
           temporary.replace(directory / 'debug.keystore')
+          if os.environ.get('GITHUB_ENV'):
+              with open(os.environ['GITHUB_ENV'], 'a') as settings:
+                  settings.write(f'ANDROID_USER_HOME={directory}\n')
           print('Restored the stable debug signing key without exposing its contents.')
           PY
       - uses: actions/setup-java@v4
@@ -141,5 +143,6 @@ jobs:
         run: |
           python - <<'PY'
           import os, pathlib
-          (pathlib.Path(os.environ['ANDROID_USER_HOME']) / 'debug.keystore').unlink(missing_ok=True)
+          if os.environ.get('ANDROID_USER_HOME'):
+              (pathlib.Path(os.environ['ANDROID_USER_HOME']) / 'debug.keystore').unlink(missing_ok=True)
           PY
