@@ -69,8 +69,9 @@ class _CustomerShopsPageState extends ConsumerState<CustomerShopsPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed)
+    if (state == AppLifecycleState.resumed) {
       ref.invalidate(customerShopsProvider);
+    }
   }
 
   @override

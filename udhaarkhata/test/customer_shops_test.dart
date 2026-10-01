@@ -23,8 +23,9 @@ class ProfileAuth extends AuthRepository {
     Map<String, Object?>? body,
   }) async {
     if (offline) throw const AppFailure('NETWORK_ERROR', 'api.networkError');
-    if (path != '/v1/me')
+    if (path != '/v1/me') {
       throw const AppFailure('FEATURE_UNAVAILABLE', 'api.featureUnavailable');
+    }
     return profile;
   }
 }
