@@ -13,7 +13,10 @@ jobs:
           base = 'https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev'
           checks = [('/health', None, 200), ('/v1/me', None, 401),
                     ('/v1/customer-qr/resolve', {'shopId': 'synthetic-denied', 'publicQrId': '0' * 64}, 401),
-                    ('/v1/shops/synthetic-denied/customers', {'clientOperationId': '00000000-0000-4000-8000-000000000000', 'publicQrId': '0' * 64}, 401)]
+                    ('/v1/shops/synthetic-denied/customers', {'clientOperationId': '00000000-0000-4000-8000-000000000000', 'publicQrId': '0' * 64}, 401),
+                    ('/v1/shops/synthetic-denied/entries', {'clientOperationId': '00000000-0000-4000-8000-000000000000', 'linkId': 'synthetic-denied', 'kind': 'credit', 'amountPaise': 1, 'occurredAtMs': 1}, 401),
+                    ('/v1/shops/synthetic-denied/customers/synthetic-denied/balance', None, 401),
+                    ('/v1/me/ledgers/synthetic-denied/balance', None, 401)]
           failed = False
           for path, body, expected in checks:
               args = ['curl', '--silent', '--show-error', '--max-time', '30', '--write-out', '\n%{http_code}', '-H', 'Content-Type: application/json', base + path]
