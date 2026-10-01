@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import type {Authenticator} from '../auth/authenticator';
 import type {SessionService} from '../auth/sessions';
-import {postCredit,readBalance,type CreditCommand} from '../ledger/commands';
+import {postCredit,postPayment,readBalance,type CreditCommand,type PaymentCommand} from '../ledger/commands';
 import {CREDIT_LIMITS} from '../ledger/limits';
 import {requireRole} from '../policy/access';
 import {HttpError,jsonResponse} from './errors';
@@ -15,15 +15,20 @@ export const creditSchema=z.object({
  note:z.string().transform(s=>s.trim()).pipe(z.string().max(CREDIT_LIMITS.maxNoteCharacters)).nullable().optional().transform(s=>s||null),
  dueDate:dateSchema.nullable().optional().transform(s=>s??null),occurredAtMs:timestampMsSchema,
 }).strict();
+export const paymentSchema=z.object({
+ clientOperationId:creditSchema.shape.clientOperationId,linkId:idSchema,kind:z.literal('payment'),
+ amountPaise:creditSchema.shape.amountPaise,paymentMethod:z.enum(['cash','upi']),occurredAtMs:timestampMsSchema,
+}).strict();
+const entrySchema=z.union([creditSchema,paymentSchema]);
 function pathId(value:string){const parsed=idSchema.safeParse(value);if(!parsed.success)throw new HttpError(400,'VALIDATION_ERROR','api.validationError');return parsed.data;}
 export function ledgerRoutes(options:{db?:D1Database;authenticate:Authenticator;sessions?:SessionService}){
  return [{path:'/v1/shops/{shopId}/entries',method:'POST',handler:async(request:Request,requestId:string)=>{
   const principal=requireRole(await options.authenticate(request),'owner');
   if(!options.db)throw new HttpError(503,'FEATURE_UNAVAILABLE','api.featureUnavailable',true);
   const shopId=pathId(new URL(request.url).pathname.split('/')[3]);
-  const body=await readJson(request,creditSchema,CREDIT_LIMITS.maxBodyBytes) as CreditCommand;
+  const body=await readJson(request,entrySchema,CREDIT_LIMITS.maxBodyBytes) as CreditCommand|PaymentCommand;
   if(options.sessions)await options.sessions.rateLimit(principal.userId,'entry-owner');
-  const result=await postCredit(options.db,principal,shopId,body);
+  const result=await (body.kind==='credit'?postCredit(options.db,principal,shopId,body):postPayment(options.db,principal,shopId,body));
   return jsonResponse(result,requestId,result.replayed?200:201);
  }},{path:'/v1/shops/{shopId}/customers/{linkId}/balance',method:'GET',handler:async(request:Request,requestId:string)=>{
   const principal=requireRole(await options.authenticate(request),'owner');

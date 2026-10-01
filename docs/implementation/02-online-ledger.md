@@ -38,7 +38,7 @@
 
 ## D09 — payment and retry integrity
 
-**Dependencies:** D08. **Files:** `services/api/src/ledger/{payment,idempotency}.ts`, `test/ledger/payment*.test.ts`, `udhaarkhata/lib/features/ledger/{payment_form,post_controller}.dart`, API examples if response details change.
+**Dependencies:** D08. **Files:** `services/api/src/ledger/commands.ts`, `src/http/ledger-routes.ts`, `test/ledger/payment*.test.ts`, `udhaarkhata/lib/features/ledger/{payment_form,entry_model,ledger_repository}.dart`, API examples if response details change.
 
 1. Add manually recorded Cash/UPI payment, positive paise only; do not imply bank verification. At D1 commit, reject payment larger than current authoritative balance using an atomic guard; no negative balance/advance in v1.
 2. Use the same idempotency receipt contract as credit. Preserve operation identity across timeout/lost response and return original result on same-hash retry. A second tap after a successful command must not create another operation.

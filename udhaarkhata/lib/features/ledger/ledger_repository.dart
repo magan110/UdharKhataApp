@@ -26,6 +26,24 @@ abstract interface class LedgerRepository {
   Future<CreditReceipt> submit(OpaqueId shopId, CreditAttempt attempt);
 }
 
+abstract interface class PaymentRepository {
+  Future<PendingPayment?> pendingPayment(OpaqueId shopId, OpaqueId linkId);
+  Future<PaymentAttempt> beginPayment(
+    OpaqueId shopId,
+    OpaqueId linkId,
+    String displayName,
+    int amountPaise,
+    String paymentMethod,
+  );
+  Future<CreditReceipt> submitPayment(OpaqueId shopId, PaymentAttempt attempt);
+  Future<void> reviewRejectedPayment(OpaqueId shopId, OpaqueId linkId);
+}
+
+final paymentRepositoryProvider = Provider<PaymentRepository?>((ref) {
+  final repo = ref.watch(ledgerRepositoryProvider);
+  return repo is PaymentRepository ? repo as PaymentRepository : null;
+});
+
 final ledgerRepositoryProvider = Provider<LedgerRepository?>((ref) {
   final account = ref.watch(sessionProvider).value;
   return account == null || account.role != AccountRole.owner
@@ -39,7 +57,7 @@ final ledgerRepositoryProvider = Provider<LedgerRepository?>((ref) {
         );
 });
 
-class CloudLedgerRepository implements LedgerRepository {
+class CloudLedgerRepository implements LedgerRepository, PaymentRepository {
   CloudLedgerRepository(this.auth, this.accountId, this.storage);
   final AuthRepository auth;
   final OpaqueId accountId;
@@ -50,6 +68,131 @@ class CloudLedgerRepository implements LedgerRepository {
     _queue = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return result;
   }
+
+  String _paymentKey(OpaqueId shopId, OpaqueId linkId) =>
+      _key(shopId, linkId).replaceFirst('credit_', 'payment_');
+  @override
+  Future<PendingPayment?> pendingPayment(
+    OpaqueId shopId,
+    OpaqueId linkId,
+  ) async {
+    final text = await storage.read(key: _paymentKey(shopId, linkId));
+    if (text == null) return null;
+    try {
+      final row = jsonObject(jsonDecode(text)),
+          attempt = PaymentAttempt.fromJson(row['attempt']);
+      if (row['rejected'] is! bool || attempt.linkId.value != linkId.value) {
+        throw const FormatException('Invalid saved payment');
+      }
+      return PendingPayment(attempt, row['rejected'] as bool);
+    } on FormatException {
+      throw const AppFailure('INVALID_RESPONSE', 'payment.savedInvalid');
+    }
+  }
+
+  Future<void> _savePayment(
+    OpaqueId shopId,
+    PaymentAttempt attempt,
+    bool rejected,
+  ) => storage.write(
+    key: _paymentKey(shopId, attempt.linkId),
+    value: jsonEncode({
+      'attempt': {...attempt.body, 'customerDisplayName': attempt.displayName},
+      'rejected': rejected,
+    }),
+  );
+  @override
+  Future<PaymentAttempt> beginPayment(
+    OpaqueId shopId,
+    OpaqueId linkId,
+    String displayName,
+    int amountPaise,
+    String paymentMethod,
+  ) => _serial(() async {
+    if (await pending(shopId, linkId) != null) {
+      throw const AppFailure('CREDIT_PENDING', 'payment.creditPending');
+    }
+    if (await pendingPayment(shopId, linkId) != null) {
+      throw const AppFailure('PAYMENT_PENDING', 'payment.pending');
+    }
+    if (amountPaise < 1 ||
+        amountPaise > maxCreditPaise ||
+        !['cash', 'upi'].contains(paymentMethod)) {
+      throw const AppFailure('VALIDATION_ERROR', 'payment.invalid');
+    }
+    final attempt = PaymentAttempt(
+      _uuid(),
+      linkId,
+      displayName,
+      amountPaise,
+      paymentMethod,
+      DateTime.now().millisecondsSinceEpoch,
+    );
+    await _savePayment(shopId, attempt, false);
+    return attempt;
+  });
+  @override
+  Future<CreditReceipt> submitPayment(
+    OpaqueId shopId,
+    PaymentAttempt attempt,
+  ) => _serial(() async {
+    final saved = await pendingPayment(shopId, attempt.linkId);
+    if (saved == null ||
+        saved.rejected ||
+        jsonEncode(saved.attempt.body) != jsonEncode(attempt.body)) {
+      throw const AppFailure('PAYMENT_PENDING', 'payment.pending');
+    }
+    CreditReceipt receipt;
+    try {
+      receipt = CreditReceipt.payment(
+        await auth.cloudRequest(
+          accountId,
+          '/v1/shops/${shopId.value}/entries',
+          body: saved.attempt.body,
+        ),
+        shopId,
+        saved.attempt,
+      );
+    } on AppFailure catch (error) {
+      // Only an explicit atomic balance rejection unlocks the correction path.
+      // Network/auth/5xx/invalid receipts retain an uncertain immutable command.
+      if (error.code == 'BALANCE_CONFLICT') {
+        await _savePayment(shopId, saved.attempt, true);
+      }
+      rethrow;
+    } on FormatException {
+      throw const AppFailure(
+        'INVALID_RESPONSE',
+        'api.invalidResponse',
+        retryable: true,
+      );
+    }
+    await storage.delete(key: _paymentKey(shopId, attempt.linkId));
+    return receipt;
+  });
+  @override
+  Future<void> reviewRejectedPayment(
+    OpaqueId shopId,
+    OpaqueId linkId,
+  ) => _serial(() async {
+    final saved = await pendingPayment(shopId, linkId);
+    if (saved == null || !saved.rejected) {
+      throw const AppFailure('PAYMENT_PENDING', 'payment.pending');
+    }
+    // Retain the rejected original before opening a new draft. Failures keep it blocked.
+    await storage.write(
+      key:
+          '${_paymentKey(shopId, linkId)}_rejected_${saved.attempt.operationId}',
+      value: jsonEncode({
+        'attempt': {
+          ...saved.attempt.body,
+          'customerDisplayName': saved.attempt.displayName,
+        },
+        'rejected': true,
+      }),
+    );
+    await storage.delete(key: _paymentKey(shopId, linkId));
+  });
 
   String _key(OpaqueId shopId, OpaqueId linkId) =>
       'credit_${sha256.convert(utf8.encode(jsonEncode([accountId.value, shopId.value, linkId.value])))}';
@@ -88,6 +231,9 @@ class CloudLedgerRepository implements LedgerRepository {
   ) => _serial(() async {
     if (await pending(shopId, linkId) != null) {
       throw const AppFailure('CREDIT_PENDING', 'credit.pending');
+    }
+    if (await pendingPayment(shopId, linkId) != null) {
+      throw const AppFailure('PAYMENT_PENDING', 'payment.pending');
     }
     final normalized = note?.trim();
     if (amountPaise < 1 ||

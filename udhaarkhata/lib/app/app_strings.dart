@@ -1,5 +1,13 @@
 // Stable message keys are shared with the API. Hindi resources arrive in D18.
 String errorMessage(String key) => switch (key) {
+  'payment.pending' => 'Check the saved payment before entering another credit or payment for this customer.',
+  'payment.creditPending' =>
+    'Check the saved credit before recording a payment for this customer.',
+  'payment.savedInvalid' => 'The saved payment cannot be read. Keep this app data and contact support before entering it again.',
+  'payment.invalid' =>
+    'Use a positive amount up to ₹1,00,000 and select Cash or UPI.',
+  'payment.balanceConflict' => 'This payment was rejected because it exceeds the current balance or ledger limit. Refresh the balance and review the amount.',
+  'payment.failed' => 'Could not verify this payment. Check the same saved request; do not enter it again.',
   'credit.pending' =>
     'Check the saved credit before entering another credit for this customer.',
   'credit.savedInvalid' => 'The saved credit cannot be read. Keep this app data and contact support before entering this credit again.',

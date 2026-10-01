@@ -182,12 +182,21 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   },
                   child: const Text('Record credit'),
                 ),
+                FilledButton(
+                  onPressed: () async {
+                    await context.push(
+                      '/owner/payment/${widget.shopId.value}/${widget.linkId.value}',
+                    );
+                    if (mounted) await _load();
+                  },
+                  child: const Text('Record payment received'),
+                ),
                 TextButton(
                   onPressed: _load,
                   child: const Text('Refresh balance'),
                 ),
                 const Text(
-                  'Payment and full ledger history will be available in the next phases.',
+                  'Full transaction history will be available in D10.',
                 ),
               ],
             ],

@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D08 — credit implementation and staging deployment verified; stable cloud APK verified; phone signout/calendar fix checks pending; owner/customer balance evidence received. D01–D07 checkpoints are complete, including user-reported D06 QR and D07 linking/shop visibility checks. **Last updated:** 1 October 2026. Detailed hardware, camera and release matrices remain explicit below.
+**Current phase:** D09 — approved design, local Cash/UPI payment implementation and verification in progress. D01–D08 checkpoints are complete based on local/cloud evidence and user-reported phone checks, including D08 signout/calendar confirmation (“Yes workered”). Detailed device/release matrices remain explicit below. **Last updated:** 1 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -15,8 +15,9 @@
 | D05 | Done | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging deployment and user-reported device shop creation/reopen smoke passed. |
 | D06 | Done | 2026-10-01 | QR issuance/read/rotation/cache checks, stable signed cloud APK, staging and user-reported phone QR/sign-in smoke. |
 | D07 | Done | 2026-10-01 | Scoped scan/confirm/link, staging and stable APK verified; user confirmed owner addition and repaired customer My shops visibility. Detailed camera/invalid QR release regression remains explicit below. |
-| D08 | Deployed; phone gate pending | 2026-10-01 | Atomic credit/recovery, 72 API and 75 Flutter tests, independent review and staging smoke passed. Stable cloud APK verified; phone ₹500/balance/retry gate pending. |
-| D09-D24 | Not started | - | Follow the order in [README](README.md). |
+| D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
+| D09 | Local implementation; verification in progress | 2026-10-01 | Approved Cash/UPI design. Automated partial/full/race/retry/rejection tests pass; build/review and remote/device gates pending. |
+| D10-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
 
@@ -244,3 +245,15 @@ User screenshots show a server-acknowledged second credit and matching cumulativ
 Due date is now a read-only calendar selection with DD-MM-YYYY form/review display and an optional clear action. Original saved credit bodies and API YYYY-MM-DD dates are preserved; the regression asserts display and outgoing date separately. Signout and calendar regressions failed before the repair and passed afterward. Full verification/build evidence follows; no financial backend/Google/Cloudflare change is required. D10 owner/customer transaction history remains deferred as explicitly allowed by the user.
 
 D08 feedback repair final evidence: source `67dcb49bc444b4f058b9b51b87d836f276f2eb53`. Flutter75 tests passed, line coverage1466/1647 (89.01%), analyze/formatter/docs clean. Fresh read-only reviewer found no confirmed Critical/Important/Minor issues; independently reran nine auth/credit UI tests, including exact signout error and displayed/outgoing date regression. CI run `36877129218` passed. Existing D08 publication/build authorization covers this phase repair; source pushed and stable APK run `36877129682` succeeded. Artifact `11169618130` contains APK/public audit; exact runner apksigner verification confirmed package `com.udhaarkhata.app`, unchanged SHA-1 `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6`, APK SHA-256 `176db082db723045bcfb839c07b89a7bdcb1975110fa550365363884e6b8b9f4`, and both original staging Dart defines. Temporary signing-key cleanup passed. No API/Cloudflare/Google/D1 changes or new signing secrets. User must verify signout from My shops and calendar DD-MM-YYYY selection/clearing on phone. Full dated owner/customer transaction history remains D10.
+
+### D08 phone feedback checkpoint (2026-10-01)
+
+User confirmed the latest signout/calendar APK works (“Yes workered”). Together with the prior owner credit/customer My shops screenshots and working report, this closes the D08 phone smoke gate. This is user-reported evidence; it does not claim independently observed transport-loss, extraction, complete device matrix or release-signing tests. The requested dated transaction history on both roles is scheduled in D10. User subsequently requested D09 and explicitly approved its short design.
+
+### D09 local implementation checkpoint (2026-10-01)
+
+Branch `codex/d09-payment`, based on D08 evidence commit `eeab415`. Bounded extension of the existing online credit flow: strict Cash/UPI command, shared atomic entry/receipt path and original-result replay, current authorized balance on overpayment rejection, owner payment review/confirmation and durable account/shop/link recovery. D08 credit canonical hash and secure-storage key remain compatible. No new schema, dependency or external resource change.
+
+The shared repository serializes credit/payment confirmation and blocks replacement by either kind. Unknown outcomes remain frozen across restart. Explicit server balance rejection is durably marked and shown; Edit amount and method archives the original before clearing its active slot. The corrected amount is user-entered and receives a new operation ID only on another confirmation. Archived rejected requests remain in secure storage for support; a general archive browser/offline outbox is later work.
+
+TDD: all five new HTTP/D1 tests first failed because payment bodies returned 400; payment repository tests failed with missing-behavior stubs; all six widget tests failed against an empty payment screen before implementation. New tests then passed with the existing credit regression. Full local suites currently pass: 77 Worker runtime tests plus one configuration test, and 84 Flutter tests. Coverage: Worker 355/356 lines (99.71%), 239/286 branches (83.56%); Flutter 1738/1953 lines (88.99%), above required 80%. Static checks passed: Worker typecheck/lint, Flutter analyze with no issues and clean format, document navigation/link checks. Worker dry-run bundle and zero-vulnerability npm audit passed. Existing local migrations were current; foreign-key audit returned no violations. Android debug APK built with both public staging dart defines; exact APK package and embedded defines verified, and apksigner verification passed. It uses the environment-local debug key and is not a distributable stable-key artifact. Independent feature review remains pending. No remote deployment or distributable stable cloud APK is claimed for D09 yet.

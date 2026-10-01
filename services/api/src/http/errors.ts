@@ -5,6 +5,7 @@ export class HttpError extends Error {
     readonly messageKey: string,
     readonly retryable = false,
     readonly headers: Record<string, string> = {},
+    readonly details?: {balance:{balancePaise:number;ledgerVersion:number;asOfServerSeq:number;asOfAtMs:number}},
   ) {
     super(code);
   }
@@ -16,7 +17,7 @@ export function jsonResponse(data: unknown, requestId: string, status = 200): Re
 
 export function errorResponse(error: HttpError, requestId: string): Response {
   return Response.json({
-    error: { code: error.code, messageKey: error.messageKey, retryable: error.retryable },
+    error: { code: error.code, messageKey: error.messageKey, retryable: error.retryable, ...(error.details?{details:error.details}:{}) },
     requestId,
   }, { status: error.status, headers: { ...responseHeaders(requestId), ...error.headers } });
 }
