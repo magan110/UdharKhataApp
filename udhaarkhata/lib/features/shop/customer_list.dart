@@ -8,6 +8,7 @@ import '../../core/network/contracts.dart';
 import '../auth/session_controller.dart';
 import '../qr/owner_link_repository.dart';
 import '../qr/owner_qr_model.dart';
+import '../ledger/money.dart';
 
 class CustomerList extends ConsumerWidget {
   const CustomerList({super.key, required this.shopId});
@@ -52,8 +53,8 @@ class CustomerList extends ConsumerWidget {
               title: Text(customer.nickname ?? customer.displayName),
               subtitle: Text(
                 customer.nickname == null
-                    ? 'Linked customer'
-                    : customer.displayName,
+                    ? 'Customer owes you ${formatPaise(customer.balance.value)}'
+                    : '${customer.displayName} — Customer owes you ${formatPaise(customer.balance.value)}',
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(
@@ -167,8 +168,26 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   'Customer linked to your shop. Scanning and adding a customer records no credit or payment.',
                 ),
                 const SizedBox(height: 16),
+                Text(
+                  'Customer owes you ${formatPaise(link.balance.value)} (last server read).',
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    await context.push(
+                      '/owner/credit/${widget.shopId.value}/${widget.linkId.value}',
+                    );
+                    if (mounted) {
+                      await _load();
+                    }
+                  },
+                  child: const Text('Record credit'),
+                ),
+                TextButton(
+                  onPressed: _load,
+                  child: const Text('Refresh balance'),
+                ),
                 const Text(
-                  'Credit and payment entries will be available in the next phases.',
+                  'Payment and full ledger history will be available in the next phases.',
                 ),
               ],
             ],

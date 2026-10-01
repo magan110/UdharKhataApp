@@ -6,6 +6,7 @@ import '../../core/auth/account.dart';
 import '../../core/network/app_failure.dart';
 import '../../core/network/contracts.dart';
 import '../auth/session_controller.dart';
+import 'money.dart';
 
 final customerShopsProvider = FutureProvider.autoDispose<CustomerShops>((
   ref,
@@ -28,15 +29,27 @@ final customerShopsProvider = FutureProvider.autoDispose<CustomerShops>((
 }, retry: (_, _) => null);
 
 class CustomerShop {
-  const CustomerShop(this.linkId, this.shopId, this.name);
+  const CustomerShop(this.linkId, this.shopId, this.name, this.balancePaise);
   final OpaqueId linkId, shopId;
   final String name;
+  final int? balancePaise;
+  static int? _balance(Map<String, Object?> row) {
+    if (!row.containsKey('balancePaise') && !row.containsKey('ledgerVersion')) {
+      return null;
+    }
+    final value = MoneyPaise.fromJson(row['balancePaise']).value;
+    timestampMs(row['ledgerVersion']);
+    if (value < 0) throw const FormatException('Invalid balance');
+    return value;
+  }
+
   factory CustomerShop.fromJson(Object? value) {
     final row = jsonObject(value);
     return CustomerShop(
       OpaqueId.fromJson(row['id']),
       OpaqueId.fromJson(row['shopId']),
       jsonString(row['shopName']),
+      _balance(row),
     );
   }
 }
@@ -126,7 +139,11 @@ class _CustomerShopsPageState extends ConsumerState<CustomerShopsPage>
                   ListTile(
                     leading: const Icon(Icons.storefront),
                     title: Text(shop.name),
-                    subtitle: const Text('Linked shop'),
+                    subtitle: Text(
+                      shop.balancePaise == null
+                          ? 'Linked shop'
+                          : 'You owe ${shop.name} ${formatPaise(shop.balancePaise!)} (last server read).',
+                    ),
                   ),
                 if (data.hasMore)
                   const Padding(

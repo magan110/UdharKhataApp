@@ -71,7 +71,7 @@ export class SessionService {
     if(result.results.length!==1) throw authRequired();
   }
   async rateLimit(network:string,route:string) {
-    const now=this.clock(),period=route==='google'||route==='qr-rotate'?600000:60000,limit=route==='qr-rotate'?3:route==='google'?10:30;
+    const now=this.clock(),period=route==='google'||route==='qr-rotate'?600000:60000,limit=route==='entry-owner'?60:route==='qr-rotate'?3:route==='google'?10:30;
     const key=await hashToken(`${route}:${network}`);
     // Keep one rolling-window row per network/route; expire inactive rows on auth traffic.
     await this.db.prepare('DELETE FROM auth_rate_limits WHERE window_start_ms<?').bind(now-600000).run();

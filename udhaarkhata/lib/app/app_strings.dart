@@ -1,5 +1,13 @@
 // Stable message keys are shared with the API. Hindi resources arrive in D18.
 String errorMessage(String key) => switch (key) {
+  'credit.pending' =>
+    'Check the saved credit before entering another credit for this customer.',
+  'credit.savedInvalid' => 'The saved credit cannot be read. Keep this app data and contact support before entering this credit again.',
+  'credit.invalid' => 'Use a positive amount up to ₹1,00,000, a note up to 500 characters, and a valid due date.',
+  'credit.clockInvalid' =>
+    'Check your phone date and time. The saved request is retained for review.',
+  'credit.balanceLimit' => 'This credit exceeds the supported ledger balance. The saved request needs attention.',
+  'credit.failed' => 'Could not verify this credit. Check the same saved request; do not enter it again.',
   'link.internetNeeded' => 'Internet is needed to identify and add this customer. Connect and try again.',
   'qr.invalid' => 'This is not a valid Udhaar Khata customer QR.',
   'qr.unsupported' =>

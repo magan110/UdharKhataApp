@@ -18,6 +18,6 @@ export async function shopSummary(db:D1Database,principal:Principal) {
     return {shop:row?shopJson(row):null};
   }
   // ponytail: first 100 profile links; D10 ledger listing supplies the full browsing contract.
-  const rows=await db.prepare("SELECT l.id,l.shop_id,s.name FROM shop_customers l JOIN shops s ON s.id=l.shop_id JOIN users o ON o.id=s.owner_user_id WHERE l.customer_user_id=? AND l.status='active' AND s.status='active' AND o.deleted_at_ms IS NULL ORDER BY l.id LIMIT 101").bind(principal.userId).all<{id:string;shop_id:string;name:string}>();
-  return {links:rows.results.slice(0,100).map(row=>({id:row.id,shopId:row.shop_id,shopName:row.name})),linksHasMore:rows.results.length>100};
+  const rows=await db.prepare("SELECT l.id,l.shop_id,s.name,a.balance_paise,a.version FROM shop_customers l JOIN ledger_accounts a ON a.shop_customer_id=l.id JOIN shops s ON s.id=l.shop_id JOIN users o ON o.id=s.owner_user_id WHERE l.customer_user_id=? AND l.status='active' AND s.status='active' AND o.deleted_at_ms IS NULL ORDER BY l.id LIMIT 101").bind(principal.userId).all<{id:string;shop_id:string;name:string;balance_paise:number;version:number}>();
+  return {links:rows.results.slice(0,100).map(row=>({id:row.id,shopId:row.shop_id,shopName:row.name,balancePaise:row.balance_paise,ledgerVersion:row.version})),linksHasMore:rows.results.length>100};
 }

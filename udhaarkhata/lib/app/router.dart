@@ -7,6 +7,7 @@ import '../core/network/app_failure.dart';
 import '../features/auth/session_controller.dart';
 import '../features/auth/welcome_page.dart';
 import '../features/ledger/customer_shell.dart';
+import '../features/ledger/credit_form.dart';
 import '../features/shop/owner_shell.dart';
 import '../features/shop/customer_list.dart';
 import '../features/qr/scanner_page.dart';
@@ -68,6 +69,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/owner',
         builder: (_, _) => const OwnerShell(),
         routes: [
+          GoRoute(
+            path: 'credit/:shopId/:linkId',
+            builder: (_, state) => CreditPage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
+              linkId: OpaqueId.fromJson(state.pathParameters['linkId']),
+            ),
+          ),
           GoRoute(
             path: 'scan/:shopId',
             builder: (_, state) => ScannerPage(

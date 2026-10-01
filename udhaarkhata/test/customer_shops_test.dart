@@ -98,4 +98,26 @@ void main() {
     expect(find.text('New Store'), findsOneWidget);
     expect(find.text('Showing the first 100 linked shops.'), findsOneWidget);
   });
+  testWidgets('customer sees the server balance with explicit owed direction', (
+    tester,
+  ) async {
+    final auth = ProfileAuth()
+      ..profile = {
+        'links': [
+          {
+            'id': 'link',
+            'shopId': 'shop',
+            'shopName': 'Kiran Store',
+            'balancePaise': 50000,
+            'ledgerVersion': 1,
+          },
+        ],
+        'linksHasMore': false,
+      };
+    await openShops(tester, auth);
+    expect(
+      find.text('You owe Kiran Store ₹500.00 (last server read).'),
+      findsOneWidget,
+    );
+  });
 }

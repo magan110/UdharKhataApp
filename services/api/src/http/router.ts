@@ -1,3 +1,4 @@
+import { ledgerRoutes } from './ledger-routes';
 import { qrRoutes } from './qr-routes';
 import type { Authenticator } from '../auth/authenticator';
 import { unavailableAuthenticator } from '../auth/authenticator';
@@ -23,6 +24,7 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
   const logger = options.logger ?? logRequest;
   const unavailable = () => { throw new HttpError(503, 'FEATURE_UNAVAILABLE', 'api.featureUnavailable', true); };
   const routes: Route[] = [
+    ...ledgerRoutes({db:options.db,authenticate,sessions:options.sessions}),
     ...qrRoutes({db:options.db,authenticate,sessions:options.sessions}),
     { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok' }, requestId) },
     { path: '/v1/auth/google', method: 'POST', handler: async (request,requestId) => {

@@ -35,14 +35,14 @@ export const googleExchangeSchema = z.object({
 
 export const MAX_JSON_BODY_BYTES = 65536;
 
-export async function readJson(request: Request, schema: z.ZodType): Promise<unknown> {
+export async function readJson(request: Request, schema: z.ZodType, maxBytes = MAX_JSON_BODY_BYTES): Promise<unknown> {
   const contentType = request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase();
   const encoding = request.headers.get('Content-Encoding');
   if (contentType !== 'application/json' || (encoding && encoding !== 'identity')) {
     throw new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'api.jsonRequired');
   }
   const declaredLength = request.headers.get('Content-Length');
-  if (declaredLength !== null && (!/^\d+$/.test(declaredLength) || Number(declaredLength) > MAX_JSON_BODY_BYTES)) {
+  if (declaredLength !== null && (!/^\d+$/.test(declaredLength) || Number(declaredLength) > maxBytes)) {
     throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'api.payloadTooLarge');
   }
   if (!request.body) throw new HttpError(400, 'INVALID_JSON', 'api.invalidJson');
@@ -55,7 +55,7 @@ export async function readJson(request: Request, schema: z.ZodType): Promise<unk
       const { value, done } = await reader.read();
       if (done) break;
       bytes += value.byteLength;
-      if (bytes > MAX_JSON_BODY_BYTES) {
+      if (bytes > maxBytes) {
         await reader.cancel();
         throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'api.payloadTooLarge');
       }
