@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D08 — credit implementation and staging deployment verified; stable cloud APK verified; phone credit/balance smoke pending. D01–D07 checkpoints are complete, including user-reported D06 QR and D07 linking/shop visibility checks. **Last updated:** 1 October 2026. Detailed hardware, camera and release matrices remain explicit below.
+**Current phase:** D08 — credit implementation and staging deployment verified; stable cloud APK verified; phone signout/calendar fix checks pending; owner/customer balance evidence received. D01–D07 checkpoints are complete, including user-reported D06 QR and D07 linking/shop visibility checks. **Last updated:** 1 October 2026. Detailed hardware, camera and release matrices remain explicit below.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -15,7 +15,7 @@
 | D05 | Done | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging deployment and user-reported device shop creation/reopen smoke passed. |
 | D06 | Done | 2026-10-01 | QR issuance/read/rotation/cache checks, stable signed cloud APK, staging and user-reported phone QR/sign-in smoke. |
 | D07 | Done | 2026-10-01 | Scoped scan/confirm/link, staging and stable APK verified; user confirmed owner addition and repaired customer My shops visibility. Detailed camera/invalid QR release regression remains explicit below. |
-| D08 | Deployed; phone gate pending | 2026-10-01 | Atomic credit/recovery, 72 API and 73 Flutter tests, independent review and staging smoke passed. Stable cloud APK verified; phone ₹500/balance/retry gate pending. |
+| D08 | Deployed; phone gate pending | 2026-10-01 | Atomic credit/recovery, 72 API and 75 Flutter tests, independent review and staging smoke passed. Stable cloud APK verified; phone ₹500/balance/retry gate pending. |
 | D09-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -242,3 +242,5 @@ D08 remains at the phone gate: review a synthetic ₹500 credit and cancel befor
 User screenshots show a server-acknowledged second credit and matching cumulative owner/customer balance; this is user-provided device evidence, not a trace of cancel/retry tests. The user reported intermittent signout failure and requested calendar-based DD-MM-YYYY dates; full transaction history for both roles can remain its planned D10 phase. Reproduced the exact Riverpod repeated SessionController rebuild error in a My shops → signout widget regression. Its AUTH_REQUIRED listener invalidated the session after it was already null. Central guarded/deferred auth recovery now coalesces observers and rejects signed-out, in-progress signout and stale action callbacks. Applied it consistently to auth-failure observers while keeping explicit sign-in/retry actions available.
 
 Due date is now a read-only calendar selection with DD-MM-YYYY form/review display and an optional clear action. Original saved credit bodies and API YYYY-MM-DD dates are preserved; the regression asserts display and outgoing date separately. Signout and calendar regressions failed before the repair and passed afterward. Full verification/build evidence follows; no financial backend/Google/Cloudflare change is required. D10 owner/customer transaction history remains deferred as explicitly allowed by the user.
+
+D08 feedback repair final evidence: source `67dcb49bc444b4f058b9b51b87d836f276f2eb53`. Flutter75 tests passed, line coverage1466/1647 (89.01%), analyze/formatter/docs clean. Fresh read-only reviewer found no confirmed Critical/Important/Minor issues; independently reran nine auth/credit UI tests, including exact signout error and displayed/outgoing date regression. CI run `36877129218` passed. Existing D08 publication/build authorization covers this phase repair; source pushed and stable APK run `36877129682` succeeded. Artifact `11169618130` contains APK/public audit; exact runner apksigner verification confirmed package `com.udhaarkhata.app`, unchanged SHA-1 `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6`, APK SHA-256 `176db082db723045bcfb839c07b89a7bdcb1975110fa550365363884e6b8b9f4`, and both original staging Dart defines. Temporary signing-key cleanup passed. No API/Cloudflare/Google/D1 changes or new signing secrets. User must verify signout from My shops and calendar DD-MM-YYYY selection/clearing on phone. Full dated owner/customer transaction history remains D10.
