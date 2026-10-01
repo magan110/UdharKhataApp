@@ -16,7 +16,7 @@
   "env": {
     "staging": {
       "name": "udhaarkhata-api-staging",
-      "workers_dev": false,
+      "workers_dev": true,
       "d1_databases": [
         {
           "binding": "DB",
@@ -25,7 +25,10 @@
           "remote": false,
           "migrations_dir": "migrations"
         }
-      ]
+      ],
+      "vars": {
+        "GOOGLE_CLIENT_ID": "1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com"
+      }
     }
   }
 }

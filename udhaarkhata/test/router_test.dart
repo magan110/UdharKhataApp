@@ -8,6 +8,7 @@ import 'package:udhaarkhata/app/router.dart';
 import 'package:udhaarkhata/core/auth/account.dart';
 import 'package:udhaarkhata/core/network/contracts.dart';
 import 'package:udhaarkhata/features/auth/session_controller.dart';
+import 'package:udhaarkhata/features/shop/shop_repository.dart';
 
 import 'helpers/fake_auth_repository.dart';
 
@@ -24,7 +25,12 @@ void main() {
     FakeAuthRepository repository,
   ) async {
     final container = ProviderContainer(
-      overrides: [authRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        authRepositoryProvider.overrideWithValue(repository),
+        shopRepositoryProvider.overrideWithValue(
+          const UnconfiguredShopRepository(),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(

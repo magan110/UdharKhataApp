@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** D02 request-edge scaffold implemented locally; identity and domain endpoints remain planned  
+**Status:** D04 identity/session routes and D05 shop/authorization routes implemented; later ledger routes remain planned  
 **Baseline:** [SRS](SRS.md) · [SES](SES.md) · [LLD](LLD.md) · [Database Design / ERD](DATABASE-DESIGN-ERD.md)
 
 ## 1. Contract and conventions
@@ -69,7 +69,7 @@ Owner list and ledger responses must remain scoped even if a caller edits a path
 
 ### D04 implementation status
 
-`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. D04 implements Google exchange, refresh, logout and profile routes with a D1 binding and approved Google audience. An unconfigured audience fails closed with `503 FEATURE_UNAVAILABLE`. Live OAuth and Worker deployment remain pending; synthetic identity/session tests run locally.
+`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. D04 implements Google exchange, refresh, logout and profile routes with a D1 binding and approved Google audience. An unconfigured audience fails closed with `503 FEATURE_UNAVAILABLE`. Approved staging OAuth and Worker smoke evidence is recorded in implementation progress; synthetic identity/session tests run locally.
 
 The D02 edge caps JSON bodies at **65,536 bytes**, measured while reading streams as well as against declared size; the auth token field is capped at **16,384 characters**. Shared ID syntax is alphanumeric/underscore/hyphen, at most 128 characters, beginning alphanumeric; cursors are bounded base64url strings of at most 2,048 characters. Cursor signing and route scope enforcement arrive with D10. Money and UTC timestamps use safe integers; timestamps are nonnegative. These wire bounds are shared in [fixtures](contracts/d02-fixtures.json); financial entry caps and other product limits are still due in their planned phases.
 
@@ -84,10 +84,14 @@ The Worker verifies Google token signature, issuer, audience, expiry and stable 
 
 ## 3. Owner shop and customer linking
 
+D05 normalizes shop names to Unicode NFC, trims and collapses whitespace, and requires 1-120 characters. Unknown body properties are rejected. The server derives ownership from the verified session; the existing unique owner constraint serializes concurrent creates. A retry with a different name opens the original shop and does not rename it. Closed shops cannot be replaced in v1. Reads of inaccessible or closed shops return the same generic 404 as missing shops. Shop creation needs internet and is not queued locally.
+
+`GET /v1/me` adds `shop: Shop|null` for owners. For customers it adds only their own active `links` (`id`, `shopId`, `shopName`), up to 100 ordered by link ID, and `linksHasMore` for overflow. It never returns another customer's identity or balance. Complete ledger browsing is D10. Policy helpers recheck active shop/link and live users; entry lookup must also match both shop and link. Existing SQL commit guards continue to protect ledger mutations, whose routes are not exposed in D05.
+
 | Method and path | Auth | Request | Success | Main failures |
 |---|---|---|---|---|
-| `POST /v1/shops` | Owner | `{ "name": "Kiran Store" }` | `201` `Shop`; repeat for same owner returns existing shop or `SHOP_ALREADY_EXISTS` with owned shop ID | `VALIDATION_ERROR`, `FORBIDDEN` |
-| `GET /v1/shops/{shopId}` | Owner of shop | None | `200` `Shop` plus acknowledged shop totals/version | `NOT_FOUND` |
+| `POST /v1/shops` | Owner | `{ "name": "Kiran Store" }` | `201` `Shop`; repeat returns `200` existing active shop unchanged; closed shop returns `409 SHOP_ALREADY_EXISTS` | `VALIDATION_ERROR`, `FORBIDDEN` |
+| `GET /v1/shops/{shopId}` | Owner of shop | None | `200` `Shop`; acknowledged totals/version are added with D10 ledger reads | `NOT_FOUND` |
 | `POST /v1/customer-qr/resolve` | Owner of shop | `{ "shopId": "shp_1", "publicQrId": "..." }` parsed from `udhaar://customer/v1/{publicId}` | `200` `{ "state": "new"\|"linked", "customerDisplayName": "...", "linkId": null-or-id }` | `QR_INVALID`, `QR_REVOKED`, `NOT_FOUND`, rate limit |
 | `POST /v1/shops/{shopId}/customers` | Owner of shop | `clientOperationId`, `publicQrId`, optional `shopNickname` | `201` new `Link`; `200` same existing link | `QR_REVOKED`, `IDEMPOTENCY_CONFLICT`, `NOT_FOUND` |
 | `GET /v1/shops/{shopId}/customers?cursor=&limit=` | Owner of shop | Bounded page parameters | `200` page of `Link` and balances | `NOT_FOUND`, `CURSOR_INVALID` |
@@ -267,6 +271,6 @@ The API is a design contract, not evidence of a running service. Implementation 
 
 ### D04 session policy
 
-Access credentials contain 256 random bits and expire after 15 minutes. Refresh credentials contain 256 random bits, rotate atomically and expire 30 days from initial session creation; rotation never extends the deadline. D1 stores SHA-256 hashes only. Spent-token replay revokes the session and every associated access credential; lost refresh response requires Google reauthentication. Other device sessions remain valid. Required deviceId is an app identifier, not hardware proof. Profile returns account and capabilities (apiVersion=1, localSchemaVersion=1); shop/link summaries follow later.
+Access credentials contain 256 random bits and expire after 15 minutes. Refresh credentials contain 256 random bits, rotate atomically and expire 30 days from initial session creation; rotation never extends the deadline. D1 stores SHA-256 hashes only. Spent-token replay revokes the session and every associated access credential; lost refresh response requires Google reauthentication. Other device sessions remain valid. Required deviceId is an app identifier, not hardware proof. Profile returns account and capabilities (apiVersion=1, localSchemaVersion=1); D05 adds scoped shop/link summaries as described above.
 
 Controls start at 10 Google exchanges per 10 minutes per network and 30 refresh attempts per minute per network, returning 429 and Retry-After. IP keys are hashed; inactive rate rows expire on auth traffic. Pilot capacity remains untested. Offline sign-out locks local data and clears local credentials; the UI reports unconfirmed cloud revocation. Server credentials still expire by the above deadlines.

@@ -4,15 +4,16 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D04 local engineering complete; live OAuth gate pending. **Last updated:** 1 October 2026. D05 is next after the chosen live setup checkpoint.
+**Current phase:** D06 - next; D05 local engineering complete, staging deployment/device shop smoke pending approval. **Last updated:** 1 October 2026. D04 local checks and user-reported live owner/customer sign-in and sign-out smoke checks are complete.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
 | D01 | Done | 2026-09-29 | Local Git repository, root ignore/README, Android ID/API 24/label/unsigned release config, Flutter smoke test, Worker scaffold and lockfile, CI workflow. See evidence below. |
 | D02 | Done | 2026-09-30 | Flutter architecture and guarded shells, Worker edge pipeline, shared fixtures, and tests. See D02 evidence below. |
 | D03 | Done | 2026-09-30 | Local D1 migration, SQL ledger/projection/receipt guards, account-scoped SQLite and atomic persistence adapters. See D03 evidence below. |
-| D04 | Done locally; live gate pending | 2026-10-01 | Google verifier, rotating sessions, secure Android storage, role/sign-out UI and synthetic tests. See D04 evidence. |
-| D05-D24 | Not started | - | Follow the order in [README](README.md). |
+| D04 | Done | 2026-10-01 | Local verification plus user-reported live owner/customer sign-in and sign-out on configured staging build. Hardware security and release gates remain explicit below. |
+| D05 | Done (local) | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging/device gate pending. |
+| D06-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
 
@@ -115,3 +116,25 @@ For each completed phase, replace the placeholder with a row containing phase ID
 | 2026-09-29 | Documentation | Added a full Markdown document map, top-of-file related links, and CI validation of file/anchor links and document connectivity. D02 implementation remains not started. | `DOCUMENT-MAP.md`, `AGENTS.md`, `scripts/update_doc_navigation.py`, `scripts/check_docs.py`, CI. |
 | 2026-09-30 | D02 | Selected Riverpod 3.4.3 and go_router 18.0.2; retained the real Flutter path. Added 64 KiB streamed JSON bound, shared wire constraints, fail-closed auth adapter, Workers Vitest integration (4.1.11/plugin 1.3.3), and coverage gates. | API/LLD/HLD/SES/coding standards, shared fixtures, README, tests and CI. |
 | 2026-09-30 | D03 | Local D1 triggers/batch receipts, account-isolated sqflite, hash filenames, computed local balance view, optional operation IDs on restored rows, complete acknowledgment matching and backup exclusions. Storage ceilings fixed now; business amount cap D08; access-session guard minor D04. | Database/API/SRS/PRD/security/HLD/LLD/SES, runbook, README, CI and persistence tests. |
+
+### D04 approved staging setup follow-up (2026-10-01)
+
+User approved Google setup and staging migration/deployment. Remote 0002_auth_guards.sql applied successfully (six commands). Worker udhaarkhata-api-staging deployed with staging DB binding; version ea771b11-09cf-4860-a4e6-697c54316a72, endpoint https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev. Only staging workers_dev enabled; local defaults unchanged. GOOGLE_CLIENT_ID remains unset, so Google exchange fails closed until the user creates the staging OAuth clients. Endpoint smoke requests failed at transport level immediately after first workers.dev registration; HTTP health/auth results remain pending. Browser automation initialization failed; Google Console setup is proceeding through user guidance. No Google project/client creation is yet evidenced.
+
+D04 staging configuration continuation: user provided project udhaar-khata-staging-510306 and public Web client ID 1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com. Configured staging GOOGLE_CLIENT_ID and redeployed version 21eab16b-9cb6-4cab-80ae-322450ab6f17. Live smoke passed: /health HTTP200, unauthenticated /v1/me HTTP401 AUTH_REQUIRED, invalid synthetic Google token HTTP401 IDENTITY_INVALID. Default workstation DNS timed out; explicit Cloudflare DNS resolution and curl --resolve verified the endpoint without changing system DNS.
+
+Configured Android debug APK built successfully with staging API and Google server client build defines. No Android device is attached. Android OAuth client registration/package/debug SHA-1 and test-user setup were requested through user guidance but not independently confirmed; valid Google sign-in, native account switching and device secure-storage evidence remain pending. APK: udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk. No credentials were requested or placed in source; the Web client ID is public configuration.
+
+### D04 user-reported live smoke evidence (2026-10-01)
+
+User confirmed that Google sign-in works for the shop-owner role, sign-out works, and customer sign-in also works on the configured app. This closes the pending live sign-in/sign-out smoke checkpoint. Evidence is the user's device report, not an independently captured trace. Shop creation is not implemented yet: the owner shell's shop message is an empty-state placeholder; D05 implements one-shop setup and ownership authorization. No full native A-to-B isolation, physical secure-storage/extraction, backup/restore, release-signed OAuth or production readiness result is inferred from this report. Those remain their documented device/release gates. Next: D05.
+
+### D05 evidence (2026-10-01)
+
+Branch `codex/d05-shop`, based on D04 `2fad7a9`; D04 staging/progress follow-up retained. Shop creation uses verified ownership and the existing D1 unique-owner constraint; repeated/concurrent creation returns the existing shop unchanged. NFC/whitespace normalization, strict body validation, private 404 reads, own profile summaries, active relationship and entry association policies are implemented. Owner setup validates, prevents duplicate taps, preserves input after failure and reopens the acknowledged shop; role routing/customer safe empty shell retained. Cloud requests serialize with session transitions, persist refresh rotation and reject stale account adapters. No ledger write or linking route is exposed yet.
+
+Checks so far: Worker 53 runtime tests plus one Node configuration test; typecheck/lint/build dry-run/audit passed (0 vulnerabilities), coverage 205/206 lines (99.51%) and 136/162 branches (83.95%). Flutter 38 tests passed, analyze clean; final coverage 541/601 lines (90.02%). Synthetic matrix covers two owners/two customers, customer shared across shops, wrong-shop/link/entry IDs, removed links/deleted owner, repeated creation/name tampering, Android form validation/retry and stale-account requests. Android staging-configured debug build passed using the documented Gradle Kotlin flags. One fresh reviewer found no Critical issues; Important expired-session recovery fixed with RED-to-GREEN widget and transport regressions: uncertain refresh and protected AUTH_REQUIRED lock the database, clear credentials and return to sign-in without deleting account data. Full 38-test Flutter suite passed. API documentation typo/stale D04 summary corrected to satisfy document alignment. Reviewer set aside full customer browsing/totals (D10), closed-shop UI (later closure workflow), and live OAuth/deployment (separate external evidence); no readiness for those is inferred.
+
+Decisions: reuse the existing single-owner lifetime constraint; closed shops cannot be recreated before the D19 retention workflow is specified. Profile links are bounded at 100 with explicit overflow; full browsing/acknowledged totals are D10. No new dependencies or migrations. D05 staging deployment and device shop-creation smoke are pending explicit approval/evidence; prior D04 deployment remains the live version. Next after the local gate: D06 customer QR.
+
+D05 final artifact: `udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk`, configured for the existing staging audience/endpoint. It requires deployment of the D05 Worker before live shop setup can be tested. No D05 remote deployment, migration, real-data operation or GitHub push was performed.

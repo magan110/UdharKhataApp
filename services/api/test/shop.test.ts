@@ -1,0 +1,58 @@
+import { beforeEach, expect, it } from 'vitest';
+import { applyD1Migrations } from 'cloudflare:test';
+import { env } from 'cloudflare:workers';
+import { SessionService } from '../src/auth/sessions';
+import { createApp } from '../src/http/router';
+import { requireOwnedShop, requireRelationship, requireEntry } from '../src/policy/access';
+
+beforeEach(async () => {
+  await env.DB.batch([env.DB.prepare('PRAGMA defer_foreign_keys=ON'), ...['spent_refresh_tokens','auth_rate_limits','access_sessions','disputes','sync_operations','entry_effective','ledger_entries','ledger_accounts','data_requests','refresh_sessions','shop_customers','customer_qr_ids','shops','users','d1_migrations'].map(t=>env.DB.prepare(`DROP TABLE IF EXISTS ${t}`))]);
+  await applyD1Migrations(env.DB, env.MIGRATIONS);
+});
+it('D05 relationship and entry matrix isolates two owners and two customers, including a shared customer',async()=>{
+ const sessions=new SessionService(env.DB);
+ const accounts=await Promise.all(['o1','o2','c1','c2'].map(sub=>sessions.exchange({sub},sub.startsWith('o')?'owner':'customer','device')));
+ const principals=accounts.map(a=>({userId:a.account.id,role:a.account.role}));
+ for(let i=0;i<2;i++)await env.DB.prepare("INSERT INTO shops VALUES (?,?,?,'active',1,NULL)").bind('s'+i,principals[i].userId,'Shop'+i).run();
+ for(const [id,shop,customer] of [['l1','s0',2],['l2','s1',2],['l3','s0',3]] as const) await env.DB.prepare("INSERT INTO shop_customers VALUES (?,?,?,NULL,'active',1,NULL)").bind(id,shop,principals[customer].userId).run();
+ await env.DB.prepare("INSERT INTO ledger_entries(id,shop_customer_id,shop_id,customer_user_id,kind,amount_paise,effect_paise,created_by_user_id,client_operation_id,occurred_at_ms,created_at_ms) VALUES ('e1','l1','s0',?,'credit',100,100,?,?,1,1)").bind(principals[2].userId,principals[0].userId,crypto.randomUUID()).run();
+ for(const [index,shop,link] of [[0,'s0','l1'],[1,'s1','l2'],[2,'s0','l1'],[2,'s1','l2'],[3,'s0','l3']] as const) expect(await requireRelationship(env.DB,principals[index],shop,link)).toBeTruthy();
+ for(const [index,shop,link] of [[1,'s0','l1'],[0,'s1','l2'],[3,'s0','l1'],[3,'s1','l2'],[2,'s0','l2']] as const) await expect(requireRelationship(env.DB,principals[index],shop,link)).rejects.toMatchObject({code:'NOT_FOUND'});
+ expect(await requireEntry(env.DB,principals[2],'s0','l1','e1')).toEqual({id:'e1'});
+ for(const [shop,link] of [['s1','l2'],['s0','l3']]) await expect(requireEntry(env.DB,principals[2],shop,link,'e1')).rejects.toMatchObject({code:'NOT_FOUND'});
+ const app=createApp({db:env.DB,sessions,logger:()=>{}});
+ const profile=await app.fetch(new Request('https://test/v1/me',{headers:{Authorization:'Bearer '+accounts[2].accessToken}}));
+ expect(await profile.json()).toMatchObject({data:{links:[{id:'l1',shopId:'s0'},{id:'l2',shopId:'s1'}]}});
+ await env.DB.prepare("UPDATE shop_customers SET status='access_removed',access_removed_at_ms=2 WHERE id='l1'").run();
+ await expect(requireEntry(env.DB,principals[2],'s0','l1','e1')).rejects.toMatchObject({code:'NOT_FOUND'});
+ await env.DB.prepare('UPDATE users SET deleted_at_ms=2 WHERE id=?').bind(principals[1].userId).run();
+ await expect(requireRelationship(env.DB,principals[2],'s1','l2')).rejects.toMatchObject({code:'NOT_FOUND'});
+ await expect(requireOwnedShop(env.DB,principals[1],'s1')).rejects.toMatchObject({code:'NOT_FOUND'});
+});
+it('D05 creates once, normalizes names, rejects role/body tampering and scopes shop reads', async () => {
+  const sessions=new SessionService(env.DB),app=createApp({sessions,db:env.DB,logger:()=>{}});
+  const owner=await sessions.exchange({sub:'owner'},'owner','device');
+  const other=await sessions.exchange({sub:'other'},'owner','device');
+  const customer=await sessions.exchange({sub:'customer'},'customer','device');
+  const call=(path:string,token?:string,body?:unknown)=>app.fetch(new Request('https://test'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})}));
+  expect((await call('/v1/shops',undefined,{name:'Shop'})).status).toBe(401);
+  expect((await call('/v1/shops',customer.accessToken,{name:'Shop'})).status).toBe(403);
+  for(const body of [{name:'   '},{name:'x'.repeat(121)},{name:'Shop',ownerUserId:other.account.id}]) expect((await call('/v1/shops',owner.accessToken,body)).status).toBe(400);
+  const responses=await Promise.all([call('/v1/shops',owner.accessToken,{name:'  Kiran\t Store  '}),call('/v1/shops',owner.accessToken,{name:'  Kiran\t Store  '})]);
+  expect(responses.map(r=>r.status).sort()).toEqual([200,201]);
+  const bodies=await Promise.all(responses.map(r=>r.json())) as {data:{id:string;name:string}}[];
+  expect(bodies[0].data).toEqual(bodies[1].data);
+  expect(bodies[0].data.name).toBe('Kiran Store');
+  const id=bodies[0].data.id;
+  expect((await call('/v1/shops/'+id,owner.accessToken)).status).toBe(200);
+  for(const token of [other.accessToken,customer.accessToken]) expect((await call('/v1/shops/'+id,token)).status).toBe(404);
+  expect((await call('/v1/shops/%27OR1',owner.accessToken)).status).toBe(400);
+  expect(await (await call('/v1/me',owner.accessToken)).json()).toMatchObject({data:{shop:{id}}});
+  expect(await (await call('/v1/me',other.accessToken)).json()).toMatchObject({data:{shop:null}});
+  expect(await (await call('/v1/me',customer.accessToken)).json()).toMatchObject({data:{links:[],linksHasMore:false}});
+  const repeat=await call('/v1/shops',owner.accessToken,{name:'Different'});
+  expect(await repeat.json()).toMatchObject({data:{id,name:'Kiran Store'}});
+  await env.DB.prepare("UPDATE shops SET status='closed',closed_at_ms=1 WHERE id=?").bind(id).run();
+  expect((await call('/v1/shops',owner.accessToken,{name:'New'})).status).toBe(409);
+  expect((await call('/v1/shops/'+id,owner.accessToken)).status).toBe(404);
+});

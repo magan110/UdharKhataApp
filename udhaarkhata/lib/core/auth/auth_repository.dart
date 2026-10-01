@@ -11,6 +11,11 @@ abstract class AuthRepository {
   Future<Account> signIn(AccountRole role) =>
       throw const AppFailure('FEATURE_UNAVAILABLE', 'api.featureUnavailable');
   Future<int> pendingCount() async => 0;
+  Future<Object?> cloudRequest(
+    OpaqueId accountId,
+    String path, {
+    Map<String, Object?>? body,
+  }) => throw const AppFailure('FEATURE_UNAVAILABLE', 'api.featureUnavailable');
   Future<({int pendingCount, bool remoteRevoked})> signOut() =>
       throw const AppFailure('FEATURE_UNAVAILABLE', 'api.featureUnavailable');
 }
@@ -44,6 +49,61 @@ final class GoogleAuthRepository extends AuthRepository {
 
   @override
   bool get canSignIn => true;
+  @override
+  Future<Object?> cloudRequest(
+    OpaqueId accountId,
+    String path, {
+    Map<String, Object?>? body,
+  }) => _serial(() async {
+    if (_account?.id.value != accountId.value) {
+      throw const AppFailure('AUTH_REQUIRED', 'auth.required');
+    }
+    var credentials = await store.read();
+    if (credentials == null) {
+      await _expireCredentials();
+      throw const AppFailure('AUTH_REQUIRED', 'auth.required');
+    }
+    if (timestampMs(credentials['accessExpiresAtMs']) <=
+        DateTime.now().millisecondsSinceEpoch) {
+      try {
+        credentials = _credentials(
+          jsonObject(
+            await api.post(_url('/v1/auth/refresh'), {
+              'refreshToken': _token(credentials['refreshToken']),
+              'deviceId': await store.deviceId(),
+            }),
+          ),
+        );
+        await store.save(credentials);
+      } catch (_) {
+        await _expireCredentials();
+        throw const AppFailure('AUTH_REQUIRED', 'auth.required');
+      }
+    }
+    try {
+      if (body != null) {
+        return await api.post(
+          _url(path),
+          body,
+          accessToken: _token(credentials['accessToken']),
+        );
+      }
+      return (await api.get(
+        _url(path),
+        (data) => data,
+        accessToken: _token(credentials['accessToken']),
+      )).data;
+    } on AppFailure catch (error) {
+      if (error.code == 'AUTH_REQUIRED') await _expireCredentials();
+      rethrow;
+    }
+  });
+  Future<void> _expireCredentials() async {
+    await database.lock();
+    _account = null;
+    await store.clear();
+  }
+
   Uri _url(String path) => baseUrl.resolve(path);
   String _token(Object? value) {
     final token = jsonString(value);
