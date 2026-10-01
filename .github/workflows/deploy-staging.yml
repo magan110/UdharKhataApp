@@ -1,0 +1,98 @@
+name: Deploy staging API
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Approved branch or commit to deploy
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: udhaarkhata-api-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/api
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: services/api/package-lock.json
+      - run: npm ci
+      - name: Verify approved staging target
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const staging = JSON.parse(readFileSync('wrangler.jsonc', 'utf8')).env.staging;
+          const db = staging.d1_databases;
+          if (staging.name !== 'udhaarkhata-api-staging' || staging.workers_dev !== true ||
+              db.length !== 1 || db[0].binding !== 'DB' ||
+              db[0].database_name !== 'udhaarkhata-staging' ||
+              db[0].database_id !== 'a9e24716-d05a-46f7-8189-1bf2d8b05c46' ||
+              staging.vars.GOOGLE_CLIENT_ID !== '1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com') {
+            throw new Error('Refusing deployment: staging configuration does not match the approved target.');
+          }
+          console.log('Approved staging Worker, D1 binding and Google audience verified.');
+          JS
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Deploy approved staging Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo 'CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository Actions secrets are required.'
+            exit 1
+          fi
+          npx wrangler deploy --env staging | tee "$RUNNER_TEMP/staging-deploy.log"
+      - name: Verify staging HTTPS and authorization
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, re, subprocess, urllib.error, urllib.request
+          target = 'https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev'
+          checks = [('/health', None, 200), ('/v1/me', None, 401),
+                    ('/v1/customer-qr/resolve', {'shopId': 'synthetic-denied', 'publicQrId': '0' * 64}, 401),
+                    ('/v1/shops/synthetic-denied/customers', {'clientOperationId': '00000000-0000-4000-8000-000000000000', 'publicQrId': '0' * 64}, 401)]
+          results = []
+          for path, body, expected in checks:
+              request = urllib.request.Request(target + path, data=None if body is None else json.dumps(body).encode(),
+                                               headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
+              try:
+                  with urllib.request.urlopen(request, timeout=20) as response:
+                      status, payload = response.status, json.load(response)
+              except urllib.error.HTTPError as error:
+                  status, payload = error.code, json.load(error)
+              if status != expected or (status == 401 and payload.get('error', {}).get('code') != 'AUTH_REQUIRED'):
+                  raise SystemExit(f'Staging check failed: {path} returned {status}, expected {expected}')
+              if path == '/health' and payload.get('data', {}).get('status') != 'ok':
+                  raise SystemExit('Staging health response was not verified')
+              results.append({'path': path, 'status': status})
+          log = pathlib.Path(os.environ['RUNNER_TEMP'], 'staging-deploy.log').read_text()
+          version = re.search(r'Current Version ID:\s*([0-9a-f-]{36})', log)
+          report = {'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+                    'worker': 'udhaarkhata-api-staging', 'version_id': version[1] if version else None,
+                    'target': target, 'checks': results, 'migration_applied': False}
+          print('::notice title=Staging deployment verified::' + json.dumps(report))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Staging deployment\n\n```json\n' + json.dumps(report, indent=2) + '\n```\n')
+          PY
