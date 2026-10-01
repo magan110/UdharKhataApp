@@ -10,11 +10,16 @@ on:
         type: string
       api_base_url:
         description: Public API base URL
-        required: false
-        default: ''
+        required: true
+        default: https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev
         type: string
       google_server_client_id:
         description: Public Google web client ID
+        required: true
+        default: 1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com
+        type: string
+      expected_signing_sha1:
+        description: Optional registered Android OAuth certificate SHA-1
         required: false
         default: ''
         type: string
@@ -26,11 +31,38 @@ jobs:
   android-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      ANDROID_USER_HOME: ${{ runner.temp }}/android-signing
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.source_ref }}
           persist-credentials: false
+      - name: Restore stable debug signing key
+        shell: bash
+        env:
+          ANDROID_DEBUG_KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+        run: |
+          python - <<'PY'
+          import base64, binascii, os, pathlib, tempfile
+          value = ''.join(os.environ.get('ANDROID_DEBUG_KEYSTORE_B64', '').split())
+          if not value:
+              raise SystemExit('ANDROID_DEBUG_KEYSTORE_B64 is required; refusing to generate a new signing key.')
+          try:
+              key = base64.b64decode(value, validate=True)
+          except (ValueError, binascii.Error):
+              raise SystemExit('ANDROID_DEBUG_KEYSTORE_B64 is not valid base64.')
+          if not key:
+              raise SystemExit('The signing keystore is empty.')
+          directory = pathlib.Path(os.environ['ANDROID_USER_HOME'])
+          directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+          with tempfile.NamedTemporaryFile(dir=directory, delete=False) as stream:
+              stream.write(key)
+              temporary = pathlib.Path(stream.name)
+          temporary.chmod(0o600)
+          temporary.replace(directory / 'debug.keystore')
+          print('Restored the stable debug signing key without exposing its contents.')
+          PY
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -52,9 +84,62 @@ jobs:
           flutter build apk --debug \
             --dart-define="API_BASE_URL=$API_BASE_URL" \
             --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID"
+      - name: Verify exact APK certificate and configuration
+        shell: bash
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          GOOGLE_SERVER_CLIENT_ID: ${{ inputs.google_server_client_id }}
+          EXPECTED_SIGNING_SHA1: ${{ inputs.expected_signing_sha1 }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess, zipfile
+          apk = pathlib.Path('udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk')
+          tools = pathlib.Path(os.environ['ANDROID_HOME']) / 'build-tools'
+          signer = sorted(tools.glob('*/apksigner'))[-1]
+          certs = subprocess.check_output(
+              [str(signer), 'verify', '--print-certs', str(apk)], text=True)
+          print(certs)
+          match = re.search(r'certificate SHA-1 digest:\s*([0-9a-fA-F]{40})', certs)
+          if not match:
+              raise SystemExit('APK signer SHA-1 was not reported')
+          sha1 = ':'.join(match[1][i:i+2].upper() for i in range(0, 40, 2))
+          badging = subprocess.check_output(
+              [str(signer.parent / 'aapt'), 'dump', 'badging', str(apk)], text=True)
+          package = re.search(r"^package: name='([^']+)'", badging)
+          if not package or package[1] != 'com.udhaarkhata.app':
+              raise SystemExit('Unexpected APK application ID')
+          with zipfile.ZipFile(apk) as archive:
+              kernel = archive.read('assets/flutter_assets/kernel_blob.bin')
+          for name in ('API_BASE_URL', 'GOOGLE_SERVER_CLIENT_ID'):
+              value = os.environ.get(name, '')
+              if not value or value.encode() not in kernel:
+                  raise SystemExit(f'{name} was not verified in the exact APK')
+          expected = os.environ.get('EXPECTED_SIGNING_SHA1', '').replace(':', '').strip().lower()
+          if expected and expected != match[1].lower():
+              raise SystemExit('APK certificate does not match the expected Android OAuth SHA-1')
+          info = {
+              'application_id': package[1],
+              'signing_sha1': sha1,
+              'apk_sha256': hashlib.file_digest(apk.open('rb'), 'sha256').hexdigest(),
+              'api_base_url': os.environ['API_BASE_URL'],
+              'google_server_client_id': os.environ['GOOGLE_SERVER_CLIENT_ID'],
+          }
+          print('::notice title=Exact APK signing audit::' + json.dumps(info))
+          apk.with_name('apk-audit.json').write_text(json.dumps(info, indent=2) + '\n')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: Udhaar-Khata-debug-APK
-          path: udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk
+          path: |
+            udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk
+            udhaarkhata/build/app/outputs/flutter-apk/apk-audit.json
           if-no-files-found: error
           retention-days: 14
+      - name: Remove temporary signing key
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, pathlib
+          (pathlib.Path(os.environ['ANDROID_USER_HOME']) / 'debug.keystore').unlink(missing_ok=True)
+          PY
