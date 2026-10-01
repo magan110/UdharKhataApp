@@ -188,6 +188,28 @@ void main() {
       await camera.captures.close();
     },
   );
+  testWidgets(
+    'rescan waits for the previous camera teardown across widget recreation',
+    (tester) async {
+      final camera = TestCamera(), auth = LinkAuth();
+      await open(tester, camera, auth);
+      await tester.tap(find.text('Scan customer QR'));
+      await tester.pumpAndSettle();
+      camera.disposeWait = Completer<void>();
+      camera.scan('https://invalid.test');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scan another QR'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 30));
+      expect(camera.starts, 1);
+      camera.disposeWait!.complete();
+      await tester.pumpAndSettle();
+      expect(camera.starts, 2);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      await camera.captures.close();
+    },
+  );
   testWidgets('owner can start customer scan only after opening their shop', (
     tester,
   ) async {

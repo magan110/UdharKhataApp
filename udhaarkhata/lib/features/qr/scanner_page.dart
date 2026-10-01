@@ -158,8 +158,30 @@ class _Camera extends StatefulWidget {
 }
 
 class _CameraState extends State<_Camera> with WidgetsBindingObserver {
+  // The plugin owns one native camera. Serialize operations across widget instances,
+  // including teardown after navigation and initialization of the next scanner.
+  static Future<void>? _nativeQueue;
+  static Future<void> _native(Future<void> Function() operation) {
+    final before = _nativeQueue;
+    final result = before == null
+        ? Future<void>.sync(operation)
+        : before.then((_) => operation());
+    late final Future<void> tail;
+    void finished() {
+      if (identical(_nativeQueue, tail)) _nativeQueue = null;
+    }
+
+    tail = result.then<void>(
+      (_) => finished(),
+      onError: (Object _, StackTrace _) => finished(),
+    );
+    _nativeQueue = tail;
+    return result;
+  }
+
   MobileScannerController _camera = MobileScannerController(
     formats: [BarcodeFormat.qrCode],
+    autoStart: false,
   );
   int _generation = 0;
   bool _detected = false;
@@ -168,23 +190,40 @@ class _CameraState extends State<_Camera> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _scheduleStart();
+  }
+
+  void _scheduleStart() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final camera = _camera;
+      unawaited(
+        _native(() async {
+          if (mounted && identical(camera, _camera) && !_restarting) {
+            await camera.start();
+          }
+        }).catchError((Object _) {}),
+      );
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!_camera.value.hasCameraPermission) return;
     if (state == AppLifecycleState.resumed) {
-      unawaited(_camera.start().catchError((Object _) {}));
+      _scheduleStart();
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
-      unawaited(_camera.stop().catchError((Object _) {}));
+      final camera = _camera;
+      unawaited(_native(camera.stop).catchError((Object _) {}));
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(_camera.dispose());
+    final camera = _camera;
+    unawaited(_native(camera.dispose).catchError((Object _) {}));
     super.dispose();
   }
 
@@ -192,14 +231,18 @@ class _CameraState extends State<_Camera> with WidgetsBindingObserver {
     if (_restarting) return;
     setState(() => _restarting = true);
     final old = _camera;
-    await old.dispose();
+    await _native(old.dispose);
     if (!mounted) return;
     setState(() {
-      _camera = MobileScannerController(formats: [BarcodeFormat.qrCode]);
+      _camera = MobileScannerController(
+        formats: [BarcodeFormat.qrCode],
+        autoStart: false,
+      );
       _generation++;
       _detected = false;
       _restarting = false;
     });
+    _scheduleStart();
   }
 
   Future<void> _settings() async {

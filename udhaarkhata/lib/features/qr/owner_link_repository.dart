@@ -180,34 +180,35 @@ class CloudOwnerLinkRepository implements OwnerLinkRepository {
     return attempt;
   });
   @override
-  Future<CustomerLink> submit(OpaqueId shopId, LinkAttempt attempt) =>
-      _serial(() async {
-        final saved = await pending(shopId);
-        if (saved == null || jsonEncode(saved.body) != jsonEncode(attempt.body)) {
-          throw const AppFailure('LINK_PENDING', 'link.pending');
-        }
-        try {
-          final link = await _decode(
-            auth.cloudRequest(
-              accountId,
-              '/v1/shops/${shopId.value}/customers',
-              body: saved.body,
-            ),
-            (value) => _link(shopId, value),
-          );
+  Future<CustomerLink> submit(OpaqueId shopId, LinkAttempt attempt) => _serial(
+    () async {
+      final saved = await pending(shopId);
+      if (saved == null || jsonEncode(saved.body) != jsonEncode(attempt.body)) {
+        throw const AppFailure('LINK_PENDING', 'link.pending');
+      }
+      try {
+        final link = await _decode(
+          auth.cloudRequest(
+            accountId,
+            '/v1/shops/${shopId.value}/customers',
+            body: saved.body,
+          ),
+          (value) => _link(shopId, value),
+        );
+        await storage.delete(key: _key(shopId));
+        return link;
+      } on AppFailure catch (error) {
+        if ({
+          'QR_INVALID',
+          'QR_REVOKED',
+          'NOT_FOUND',
+          'IDEMPOTENCY_CONFLICT',
+          'VALIDATION_ERROR',
+        }.contains(error.code)) {
           await storage.delete(key: _key(shopId));
-          return link;
-        } on AppFailure catch (error) {
-          if ({
-            'QR_INVALID',
-            'QR_REVOKED',
-            'NOT_FOUND',
-            'IDEMPOTENCY_CONFLICT',
-            'VALIDATION_ERROR',
-          }.contains(error.code)) {
-            await storage.delete(key: _key(shopId));
-          }
-          rethrow;
         }
-      });
+        rethrow;
+      }
+    },
+  );
 }
