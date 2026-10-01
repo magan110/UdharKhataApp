@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D09 — Cash/UPI implementation locally verified and reviewed; awaiting approval to push/deploy staging and build the stable cloud APK, then phone acceptance. D01–D08 checkpoints are complete based on local/cloud evidence and user-reported phone checks, including D08 signout/calendar confirmation (“Yes workered”). Detailed device/release matrices remain explicit below. **Last updated:** 1 October 2026.
+**Current phase:** D09 — staging deployed, cloud CI/smoke and stable signed APK verified; awaiting phone acceptance. D01–D08 checkpoints are complete based on local/cloud evidence and user-reported phone checks, including D08 signout/calendar confirmation (“Yes workered”). Detailed device/release matrices remain explicit below. **Last updated:** 1 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -16,7 +16,7 @@
 | D06 | Done | 2026-10-01 | QR issuance/read/rotation/cache checks, stable signed cloud APK, staging and user-reported phone QR/sign-in smoke. |
 | D07 | Done | 2026-10-01 | Scoped scan/confirm/link, staging and stable APK verified; user confirmed owner addition and repaired customer My shops visibility. Detailed camera/invalid QR release regression remains explicit below. |
 | D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
-| D09 | Local checks passed; remote/device gates pending | 2026-10-01 | 77 Worker runtime tests + 1 configuration test, 85 Flutter tests, Android build and independent review passed; remote push/deploy/stable APK await approval. |
+| D09 | Deployed; phone gate pending | 2026-10-01 | 77 Worker runtime tests + 1 configuration test, 85 Flutter tests, independent review, cloud CI/staging smoke and exact persistent-key APK audit passed. |
 | D10-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -265,3 +265,22 @@ A fresh read-only reviewer assessed immutable range `eeab415..046549a`: no Criti
 D09 local gate is ready. Worker suites/static/coverage/dry-run/audit and local D1 foreign-key audit passed; the final Android build uses both public staging defines. Installable delivery must use the persistent cloud signing key, not the local debug key. Per AGENTS.md, publishing/push, staging Worker deployment and stable cloud APK workflow need explicit approval for D09. No D09 remote resource was changed. No D1 migration or Google OAuth change is needed.
 
 Phone acceptance after approved deployment/build: open a linked customer's ₹500 balance, record ₹200 Cash and refresh both roles to ₹300; record a full payment and verify zero; exercise UPI, reject an overpayment, correct the amount explicitly; retry a saved uncertain payment after reconnect/restart and confirm one effect; keep signout/calendar regression working. These are user device checks, not claims from synthetic local tests. D10 remains blocked on the D09 deployment/device gate and will add dated owner/customer transaction history.
+
+### D09 approved staging publication (2026-10-01)
+
+User explicitly approved pushing D09, deploying staging and building the persistent-key cloud APK. Source `330d814ec8cb771bc888d74342255675bb43b72a` fast-forwarded remote main from `eeab415`; no force push or unrelated changes. Deployment workflow `36893533079` succeeded, reporting staging Worker version `ea8507f5-d6cf-4c65-995e-10109ddd0566` at the existing staging URL. No migration applied; existing D1 ID and Google audience were checked by the workflow. Prior D08 Worker version `a872fa11-6cc8-4cf5-bd30-e3f0c10d31c3` remains the code rollback candidate.
+
+Cloud CI `36893532534` passed Worker tests/types/lint/coverage/local migrations/foreign keys/dry-run/audit, Flutter locked dependencies/format/analyze/tests/coverage, and documentation checks. Deployment HTTPS health returned 200/ok; unauthenticated profile/resolve/link returned 401 AUTH_REQUIRED. Additional read-only staging verification run `36893668054` passed all seven checks, including denied financial POST and owner/customer balance reads. These checks use synthetic denied IDs and no authenticated customer data. Authenticated payment/balance behavior still requires the phone gate.
+
+### D09 stable cloud APK delivery (2026-10-01)
+
+APK workflow [36893536975](https://github.com/magan110/UdharKhataApp/actions/runs/36893536975) succeeded against frozen feature source `330d814ec8cb771bc888d74342255675bb43b72a`. The workflow restored the existing `ANDROID_DEBUG_KEYSTORE_B64` secret, built debug with both public `--dart-define` values, ran `apksigner verify --print-certs` on that exact resulting APK, verified application ID with aapt and both embedded defines, uploaded the APK/public audit, and removed the temporary signing key successfully. Public check annotation and artifact metadata were independently retrieved and checked; no signing secret was exposed or committed.
+
+- Application ID: `com.udhaarkhata.app`.
+- Exact signing SHA-1: `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6` — unchanged from the registered stable cloud key. No Google OAuth change is needed.
+- Exact APK SHA-256: `1894678bb5523af41687671f5cd4497152bb61e44114e7ae94e2a800cf330a8b`.
+- Artifact: [11178792045 download ZIP](https://github.com/magan110/UdharKhataApp/actions/runs/36893536975/artifacts/11178792045), `Udhaar-Khata-debug-APK`, 104,424,714 bytes; unexpired at verification, expires 15 October 2026 at 16:43:48 UTC. GitHub sign-in may be required. Extract `app-debug.apk` to install.
+- Artifact ZIP digest (different from the APK digest): `sha256:8c3f136914807a10b62d12c91dac5e5a5379e7d1821129aa2b06ac7b0868ed48`.
+- Public defines: `API_BASE_URL=https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev`; `GOOGLE_SERVER_CLIENT_ID=1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com`.
+
+The artifact could not be downloaded into this workspace through the restricted artifact redirect path used in earlier phases; exact-byte signing/configuration verification was executed in the cloud build, and its public audit/step result plus artifact metadata were checked through GitHub API. The download link is the standard GitHub artifact ZIP, not an anonymous raw APK URL. D09 remains deployed with phone acceptance pending: partial/full Cash/UPI, rejected overpayment/correction, matching owner/customer refresh, and uncertain retry/restart. D10 history work has not started.
