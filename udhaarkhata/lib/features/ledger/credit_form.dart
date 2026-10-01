@@ -76,6 +76,35 @@ class _CreditPageState extends ConsumerState<CreditPage> {
     }
   }
 
+  String? _apiDueDate() {
+    if (_date.text.isEmpty) return null;
+    final parts = _date.text.split('-');
+    return '${parts[2]}-${parts[1]}-${parts[0]}';
+  }
+
+  String _displayDueDate(String iso) {
+    final parts = iso.split('-');
+    return '${parts[2]}-${parts[1]}-${parts[0]}';
+  }
+
+  Future<void> _pickDueDate() async {
+    FocusScope.of(context).unfocus();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _date.text.isEmpty
+          ? DateTime.now()
+          : DateTime.parse(_apiDueDate()!),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(9999, 12, 31),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+    );
+    if (!mounted || date == null) return;
+    setState(
+      () => _date.text =
+          '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year.toString().padLeft(4, '0')}',
+    );
+  }
+
   void _preview() {
     if (!_form.currentState!.validate()) return;
     setState(() {
@@ -102,7 +131,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
             customer.displayName,
             _reviewAmount!,
             _note.text,
-            _date.text.trim().isEmpty ? null : _date.text.trim(),
+            _apiDueDate(),
           );
       if (!_current(repo)) return;
       setState(() => _attempt = attempt);
@@ -115,7 +144,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
       if (_current(repo)) {
         setState(() => _error = error);
         if (error is AppFailure && error.code == 'AUTH_REQUIRED') {
-          ref.invalidate(sessionProvider);
+          ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
         }
       }
     } finally {
@@ -132,9 +161,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
     final note = _attempt != null
         ? _attempt!.note
         : (_note.text.trim().isEmpty ? null : _note.text.trim());
-    final due = _attempt != null
-        ? _attempt!.dueDate
-        : (_date.text.trim().isEmpty ? null : _date.text.trim());
+    final due = _attempt != null ? _attempt!.dueDate : _apiDueDate();
     return Scaffold(
       appBar: AppBar(title: const Text('Record credit')),
       body: SafeArea(
@@ -189,7 +216,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                     'Customer owes you ${formatPaise(amount)} more after this credit is acknowledged.',
                   ),
                   if (note != null) Text('Note: $note'),
-                  if (due != null) Text('Due date: $due'),
+                  if (due != null) Text('Due date: ${_displayDueDate(due)}'),
                   if (_attempt != null)
                     const Text(
                       'This saved credit is not confirmed. It may already have reached the server. Check the same credit; do not enter it again.',
@@ -266,16 +293,26 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                         ),
                         TextFormField(
                           controller: _date,
-                          decoration: const InputDecoration(
+                          readOnly: true,
+                          onTap: _pickDueDate,
+                          decoration: InputDecoration(
                             labelText: 'Due date (optional)',
-                            hintText: 'YYYY-MM-DD',
+                            hintText: 'DD-MM-YYYY',
+                            suffixIcon: _date.text.isEmpty
+                                ? const Icon(Icons.calendar_month)
+                                : IconButton(
+                                    tooltip: 'Clear due date',
+                                    onPressed: () =>
+                                        setState(() => _date.clear()),
+                                    icon: const Icon(Icons.clear),
+                                  ),
                           ),
                           validator: (value) =>
                               value == null ||
                                   value.trim().isEmpty ||
-                                  validDueDate(value.trim())
+                                  validDueDate(_apiDueDate())
                               ? null
-                              : 'Use a valid YYYY-MM-DD date.',
+                              : 'Choose a valid date from the calendar.',
                         ),
                         const SizedBox(height: 16),
                         FilledButton(

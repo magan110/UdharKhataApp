@@ -19,7 +19,7 @@ class OwnerShell extends ConsumerWidget {
     ref.listen(currentShopProvider, (_, next) {
       final error = next.error;
       if (error is AppFailure && error.code == 'AUTH_REQUIRED') {
-        ref.invalidate(sessionProvider);
+        ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
       }
     });
     final shop = ref.watch(currentShopProvider);
@@ -102,7 +102,7 @@ class _ShopSetupState extends ConsumerState<ShopSetup> {
       }
     } catch (error) {
       if (mounted && error is AppFailure && error.code == 'AUTH_REQUIRED') {
-        ref.invalidate(sessionProvider);
+        ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
       }
       if (mounted) setState(() => _error = error);
     } finally {

@@ -35,6 +35,32 @@ class InteractiveAuth extends AuthRepository {
 }
 
 void main() {
+  testWidgets('signout from My shops does not repeatedly rebuild the session', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(InteractiveAuth()),
+        ],
+        child: const MainApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Customer'));
+    await tester.pump();
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My shops'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Continue with Google'), findsOneWidget);
+  });
+
   testWidgets(
     'Google action routes the confirmed role and signout warns about pending entries',
     (tester) async {

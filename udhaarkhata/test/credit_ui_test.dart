@@ -158,4 +158,35 @@ void main() {
     expect(auth.requests, isEmpty);
     expect(storage.values, isEmpty);
   });
+  testWidgets('due date opens a calendar and displays DD-MM-YYYY', (
+    tester,
+  ) async {
+    final auth = CreditAuth()..loseResponse = false;
+    await open(tester, auth, MemorySecureStorage());
+    await tester.tap(find.widgetWithText(TextFormField, 'Due date (optional)'));
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    final text = tester
+        .widget<TextFormField>(
+          find.widgetWithText(TextFormField, 'Due date (optional)'),
+        )
+        .controller!
+        .text;
+    expect(text, matches(RegExp(r'^\d{2}-\d{2}-\d{4}$')));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Amount (₹)'),
+      '500',
+    );
+    await tester.tap(find.text('Review credit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Due date: $text'), findsOneWidget);
+    await tester.tap(find.text('Confirm credit'));
+    await tester.pumpAndSettle();
+    expect(
+      auth.requests.single['dueDate'],
+      '${text.substring(6)}-${text.substring(3, 5)}-${text.substring(0, 2)}',
+    );
+  });
 }

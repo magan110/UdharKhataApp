@@ -14,7 +14,7 @@ class CustomerQrPage extends ConsumerWidget {
     ref.listen(qrProvider, (_, next) {
       final error = next.error;
       if (error is AppFailure && error.code == 'AUTH_REQUIRED') {
-        ref.invalidate(sessionProvider);
+        ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
       }
     });
     final state = ref.watch(qrProvider);

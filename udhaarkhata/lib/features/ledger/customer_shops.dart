@@ -92,7 +92,7 @@ class _CustomerShopsPageState extends ConsumerState<CustomerShopsPage>
     ref.listen(customerShopsProvider, (_, next) {
       if (next.error case final AppFailure error
           when error.code == 'AUTH_REQUIRED') {
-        ref.invalidate(sessionProvider);
+        ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
       }
     });
     return ref

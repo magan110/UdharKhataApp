@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/account.dart';
@@ -37,11 +39,35 @@ final sessionProvider = AsyncNotifierProvider<SessionController, Account?>(
 );
 
 final class SessionController extends AsyncNotifier<Account?> {
+  bool _refreshScheduled = false;
+  bool _signingOut = false;
+  int _revision = 0;
+
+  // Several screens can observe the same expired session. Never rebuild while
+  // delivering their provider updates or after signout/account replacement.
+  void refreshAfterAuthFailure() {
+    final account = state.asData?.value;
+    if (account == null || _signingOut || _refreshScheduled) return;
+    final revision = _revision;
+    _refreshScheduled = true;
+    scheduleMicrotask(() {
+      _refreshScheduled = false;
+      if (!ref.mounted ||
+          _signingOut ||
+          revision != _revision ||
+          state.asData?.value?.id.value != account.id.value) {
+        return;
+      }
+      ref.invalidateSelf();
+    });
+  }
+
   @override
   Future<Account?> build() =>
       ref.watch(authRepositoryProvider).restoreSession();
 
   Future<void> signIn(AccountRole role) async {
+    _revision++;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(authRepositoryProvider).signIn(role),
@@ -49,8 +75,14 @@ final class SessionController extends AsyncNotifier<Account?> {
   }
 
   Future<({int pendingCount, bool remoteRevoked})> signOut() async {
-    final result = await ref.read(authRepositoryProvider).signOut();
-    state = const AsyncData(null);
-    return result;
+    _revision++;
+    _signingOut = true;
+    try {
+      final result = await ref.read(authRepositoryProvider).signOut();
+      state = const AsyncData(null);
+      return result;
+    } finally {
+      _signingOut = false;
+    }
   }
 }

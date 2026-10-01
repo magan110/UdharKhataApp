@@ -19,7 +19,7 @@ class CustomerList extends ConsumerWidget {
     ref.listen(provider, (_, next) {
       if (next.error case final AppFailure error
           when error.code == 'AUTH_REQUIRED') {
-        ref.invalidate(sessionProvider);
+        ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
       }
     });
     final customers = ref.watch(provider);
@@ -117,7 +117,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
       if (mounted && identical(repo, ref.read(ownerLinkRepositoryProvider))) {
         setState(() => _error = error);
         if (error is AppFailure && error.code == 'AUTH_REQUIRED') {
-          ref.invalidate(sessionProvider);
+          ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
         }
       }
     } finally {

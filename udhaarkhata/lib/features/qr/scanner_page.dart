@@ -44,7 +44,7 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
     }
     if (state.error is AppFailure &&
         (state.error as AppFailure).code == 'AUTH_REQUIRED') {
-      ref.invalidate(sessionProvider);
+      ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
     }
     if (state.stage == ScanStage.linked && !_navigating) {
       _navigating = true;
