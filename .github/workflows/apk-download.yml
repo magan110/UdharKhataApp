@@ -1,0 +1,56 @@
+name: Build downloadable Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Branch or commit to build
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Install locked dependencies
+        working-directory: udhaarkhata
+        run: flutter pub get --enforce-lockfile
+      - name: Build debug APK
+        working-directory: udhaarkhata
+        run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Udhaar-Khata-debug-APK
+          path: udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish debug APK download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: debug-apk-${{ github.run_id }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk \
+            --target "$(git rev-parse HEAD)" \
+            --title 'Udhaar Khata Android debug APK' \
+            --notes 'Debug APK for testing on Android 7.0 or newer. Production signing is not configured.' \
+            --prerelease --latest=false
