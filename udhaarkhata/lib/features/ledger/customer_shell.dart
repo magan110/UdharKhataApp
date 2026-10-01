@@ -1,5 +1,5 @@
 import '../auth/sign_out_button.dart';
-import '../../app/status_page.dart';
+import 'customer_shops.dart';
 
 import 'package:flutter/material.dart';
 
@@ -19,12 +19,7 @@ class _CustomerShellState extends State<CustomerShell> {
       title: Text(_selected == 0 ? 'My QR' : 'My shops'),
       actions: const [SignOutButton()],
     ),
-    body: _selected == 0
-        ? const CustomerQrPage()
-        : const StatusPage(
-            title: 'Your shops',
-            message: 'No shops are linked to this account.',
-          ),
+    body: _selected == 0 ? const CustomerQrPage() : const CustomerShopsPage(),
     bottomNavigationBar: NavigationBar(
       selectedIndex: _selected,
       onDestinationSelected: (value) => setState(() => _selected = value),

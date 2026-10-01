@@ -32,3 +32,5 @@ The Android Google sign-in plugin documents that configuration errors can be rep
 
 
 D07 uses pinned `mobile_scanner` 7.4.2 with bundled Android ML Kit (available without a first-use model download). Camera permission is requested when opening Scan customer QR. Permission denial offers retry and Android app settings. Unknown customer lookup/linking needs internet; scans never open arbitrary URLs or post financial entries. Confirmed uncertain links are recovered from account/shop-specific Android secure storage using the original request ID and body. No credentials are copied into these records. Full owner offline cache and sync remain later phases.
+
+Customer My shops reads the signed-in customer’s active links from `/v1/me`, with loading, empty and retry states. Reopening the tab, app resume, pull-to-refresh and Refresh shops request a fresh profile. The existing first-100 limit is stated when there are more links. This list shows shop names only; balances and history remain D08–D10.
