@@ -1,0 +1,31 @@
+name: Verify staging API
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public HTTPS and authorization
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          base = 'https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev'
+          checks = [('/health', None, 200), ('/v1/me', None, 401),
+                    ('/v1/customer-qr/resolve', {'shopId': 'synthetic-denied', 'publicQrId': '0' * 64}, 401),
+                    ('/v1/shops/synthetic-denied/customers', {'clientOperationId': '00000000-0000-4000-8000-000000000000', 'publicQrId': '0' * 64}, 401)]
+          failed = False
+          for path, body, expected in checks:
+              args = ['curl', '--silent', '--show-error', '--max-time', '30', '--write-out', '\n%{http_code}', '-H', 'Content-Type: application/json', base + path]
+              if body is not None: args += ['--data', json.dumps(body)]
+              output = subprocess.check_output(args, text=True)
+              raw, status = output.rsplit('\n', 1)
+              try: payload = json.loads(raw)
+              except ValueError: payload = {}
+              good = int(status) == expected and (payload.get('data', {}).get('status') == 'ok' if expected == 200 else payload.get('error', {}).get('code') == 'AUTH_REQUIRED')
+              report = {'path': path, 'status': int(status), 'passed': good}
+              if not good: report['public_response_excerpt'] = raw[:300].replace('\n', ' ')
+              print('::notice title=Staging curl verification::' + json.dumps(report))
+              failed |= not good
+          if failed: raise SystemExit(1)
+          PY
