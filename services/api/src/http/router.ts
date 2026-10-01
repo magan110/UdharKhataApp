@@ -1,3 +1,4 @@
+import { qrRoutes } from './qr-routes';
 import type { Authenticator } from '../auth/authenticator';
 import { unavailableAuthenticator } from '../auth/authenticator';
 import { requirePrincipal, requireRole, requireOwnedShop } from '../policy/access';
@@ -22,6 +23,7 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
   const logger = options.logger ?? logRequest;
   const unavailable = () => { throw new HttpError(503, 'FEATURE_UNAVAILABLE', 'api.featureUnavailable', true); };
   const routes: Route[] = [
+    ...qrRoutes({db:options.db,authenticate,sessions:options.sessions}),
     { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok' }, requestId) },
     { path: '/v1/auth/google', method: 'POST', handler: async (request,requestId) => {
       const body=await readJson(request, googleExchangeSchema) as z.infer<typeof googleExchangeSchema>;
@@ -88,7 +90,7 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
       let errorCode: string | null = null;
       try {
         const path = new URL(request.url).pathname;
-        const matching = routes.filter((route) => route.path === path || (route.path==='/v1/shops/{shopId}' && /^\/v1\/shops\/[^/]+$/.test(path)));
+        const matching = routes.filter((route) => route.path.split('/').length === path.split('/').length && route.path.split('/').every((part,index)=>part.startsWith('{') ? path.split('/')[index].length>0 : part===path.split('/')[index]));
         if (matching.length === 0) throw new HttpError(404, 'NOT_FOUND', 'api.notFound');
         routeTemplate = matching[0].path;
         const route = matching.find((candidate) => candidate.method === request.method);
