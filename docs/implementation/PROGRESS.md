@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D06 - local engineering complete, staging/device checks pending approval; D05 complete: local checks, approved staging deployment and user-reported device shop smoke passed. **Last updated:** 1 October 2026. D04 local checks and user-reported live owner/customer sign-in and sign-out smoke checks are complete.
+**Current phase:** D08 — credit implementation and staging deployment verified; stable cloud APK verified; phone credit/balance smoke pending. D01–D07 checkpoints are complete, including user-reported D06 QR and D07 linking/shop visibility checks. **Last updated:** 1 October 2026. Detailed hardware, camera and release matrices remain explicit below.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -13,8 +13,10 @@
 | D03 | Done | 2026-09-30 | Local D1 migration, SQL ledger/projection/receipt guards, account-scoped SQLite and atomic persistence adapters. See D03 evidence below. |
 | D04 | Done | 2026-10-01 | Local verification plus user-reported live owner/customer sign-in and sign-out on configured staging build. Hardware security and release gates remain explicit below. |
 | D05 | Done | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging deployment and user-reported device shop creation/reopen smoke passed. |
-| D06 | Done (local) | 2026-10-01 | QR issuance/read/rotation/cache/UI; 56 backend and 44 Flutter checks, rendered QR decode, Android build. Staging/device checks pending. |
-| D07-D24 | Not started | - | Follow the order in [README](README.md). |
+| D06 | Done | 2026-10-01 | QR issuance/read/rotation/cache checks, stable signed cloud APK, staging and user-reported phone QR/sign-in smoke. |
+| D07 | Done | 2026-10-01 | Scoped scan/confirm/link, staging and stable APK verified; user confirmed owner addition and repaired customer My shops visibility. Detailed camera/invalid QR release regression remains explicit below. |
+| D08 | Deployed; phone gate pending | 2026-10-01 | Atomic credit/recovery, 72 API and 73 Flutter tests, independent review and staging smoke passed. Stable cloud APK verified; phone ₹500/balance/retry gate pending. |
+| D09-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
 
@@ -226,3 +228,11 @@ D08 final local checkpoint: source `927d6cf0f5c3973005caa26365a35a8cd173a44c` on
 One fresh read-only reviewer evaluated the immutable `835c662..927d6cf` diff and found no confirmed Critical/Important/Minor issues. Independent checks passed nine credit API tests plus config guard and 13 targeted Flutter credit/money/customer balance tests. Review covered commit/replay authorization, duplicate races, immutable atomic ledger/receipt, account-scoped recovery, response validation and acknowledgement wording. Physical Android and deployed D1 behavior remain unverified. No remote changes were made.
 
 Ready for user approval to push this new phase, deploy staging with the existing D1 schema, and run the stable-secret APK workflow. Current live D07 Worker rollback candidate is `44cce121-e708-4769-bd47-c03f0fb3ff78`. After approved deployment, verify health and credit/balance routes reject unauthenticated access; on phone review/cancel before confirmation, post a synthetic ₹500 credit once, refresh both parties to ₹500, test saved same-request recovery and reject invalid amounts. Do not advance to D09 until the D08 live gate passes. Rejected/corrupt saved financial requests remain retained and can block another credit for that link; the app gives recovery/support wording, without a discard or offline ledger workflow in this phase.
+
+### D08 approved staging deployment and stable cloud APK (2026-10-01)
+
+User explicitly approved D08 push, staging deployment and stable-secret cloud APK. Published source `927d6cf0f5c3973005caa26365a35a8cd173a44c`; CI run `36873153816` passed all Flutter/Worker/docs gates. Staging deploy run `36873154747` succeeded, Worker version `a872fa11-6cc8-4cf5-bd30-e3f0c10d31c3`. Health 200/ok and existing protected endpoints 401/AUTH_REQUIRED passed. Additional read-only smoke run `36873329695` passed all seven checks, including unauthenticated credit POST and owner/customer balance GET denial. No authenticated synthetic or real financial record was created through tools. No remote migration or Google change. Prior D07 version `44cce121-e708-4769-bd47-c03f0fb3ff78` is the schema-compatible rollback candidate.
+
+APK run `36873160824` succeeded with the persistent signing secret, both exact staging Dart defines and exact APK verification by `apksigner verify --print-certs`. Package `com.udhaarkhata.app`; stable SHA-1 `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6`; APK SHA-256 `38e6f9146bce01407b2d44833d55887b895aefc667e2ca59c71bf01f7ac64508`. Artifact `11168502837` contains only the APK and public audit JSON (14-day retention). Temporary signing key cleanup passed. No new Android OAuth registration is indicated because the certificate matches the user-verified prior APK.
+
+D08 remains at the phone gate: review a synthetic ₹500 credit and cancel before confirmation (no effect), confirm it once, refresh owner/customer balances to ₹500, and verify same-request recovery after response uncertainty. Amount input rejection and duplicate handling have local regression evidence; physical device behavior is not inferred. D09 payment recording has not started.
