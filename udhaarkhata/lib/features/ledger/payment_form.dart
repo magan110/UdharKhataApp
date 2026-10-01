@@ -25,6 +25,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   CustomerLink? _customer;
   PendingPayment? _pending;
   CreditReceipt? _receipt;
+  LedgerBalanceSnapshot? _rejectionBalance;
   Object? _error;
   String _method = 'cash';
   int? _reviewAmount;
@@ -57,6 +58,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       _loading = true;
       _error = null;
       _customer = null;
+      _rejectionBalance = null;
     });
     try {
       if (repo == null || links == null) {
@@ -124,13 +126,18 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       }
     } catch (error) {
       if (!_current(repo)) return;
-      setState(() => _error = error);
+      setState(() {
+        _error = error;
+        if (error is AppFailure && error.code == 'BALANCE_CONFLICT') {
+          _rejectionBalance = error.balance;
+        }
+      });
       _authFailure(error);
       // Reload durable rejection state; storage failure never unlocks editing.
       try {
         final pending = await repo.pendingPayment(widget.shopId, widget.linkId);
         if (_current(repo)) setState(() => _pending = pending);
-        if (pending?.rejected == true) {
+        if (pending?.rejected == true && _rejectionBalance == null) {
           final links = ref.read(ownerLinkRepositoryProvider);
           if (links != null) {
             final customer = await links.customer(widget.shopId, widget.linkId);
@@ -180,6 +187,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     }
   }
 
+  String _displayTime(int ms) {
+    final date = DateTime.fromMillisecondsSinceEpoch(ms);
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(date.day)}-${two(date.month)}-${date.year.toString().padLeft(4, '0')} ${two(date.hour)}:${two(date.minute)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final current = ref.watch(paymentRepositoryProvider),
@@ -188,6 +201,10 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         receipt = _receipt;
     final amount = attempt?.amountPaise ?? _reviewAmount,
         method = attempt?.paymentMethod ?? _method;
+    final snapshot = _rejectionBalance;
+    final balanceText = snapshot == null
+        ? 'Customer owes you ${formatPaise(customer?.balance.value ?? 0)} (last server read).'
+        : 'Customer owes you ${formatPaise(snapshot.balancePaise)} (server balance as of ${_displayTime(snapshot.asOfAtMs)}).';
     final message = errorMessage(
       _error is AppFailure
           ? (_error as AppFailure).messageKey
@@ -243,9 +260,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   Text(
                     '${method == 'cash' ? 'Cash' : 'UPI'} received: ${formatPaise(amount!)}',
                   ),
-                  Text(
-                    'Customer owes you ${formatPaise(customer.balance.value)} (last server read).',
-                  ),
+                  Text(balanceText),
                   if (_pending?.rejected == true) ...[
                     const Text('Payment rejected; no payment was recorded.'),
                     const Text(
@@ -306,9 +321,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          'Customer owes you ${formatPaise(customer.balance.value)} (last server read).',
-                        ),
+                        Text(balanceText),
                         const Text(
                           'Internet is needed. Review the customer, amount and method before confirming payment received. The server checks the latest balance.',
                         ),

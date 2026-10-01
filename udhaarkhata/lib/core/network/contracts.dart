@@ -94,3 +94,25 @@ final class ApiSuccess<T> {
     );
   }
 }
+
+// Authorized balance snapshot returned by reads or a rejected payment.
+final class LedgerBalanceSnapshot {
+  const LedgerBalanceSnapshot._(
+    this.balancePaise,
+    this.ledgerVersion,
+    this.asOfServerSeq,
+    this.asOfAtMs,
+  );
+  final int balancePaise, ledgerVersion, asOfServerSeq, asOfAtMs;
+  factory LedgerBalanceSnapshot.fromJson(Object? value) {
+    final row = jsonObject(value),
+        balance = MoneyPaise.fromJson(row['balancePaise']).value;
+    if (balance < 0) throw const FormatException('Invalid balance');
+    return LedgerBalanceSnapshot._(
+      balance,
+      timestampMs(row['ledgerVersion']),
+      timestampMs(row['asOfServerSeq']),
+      timestampMs(row['asOfAtMs']),
+    );
+  }
+}

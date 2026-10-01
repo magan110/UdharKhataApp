@@ -12,6 +12,7 @@ import 'auth_session_test.dart' show MemorySecureStorage;
 class PaymentAuth extends AuthRepository {
   bool loseResponse = true, wrongScope = false, reject = false;
   Future<void>? wait;
+  int? rejectionBalance;
   final requests = <Map<String, Object?>>[];
   @override
   Future<Account?> restoreSession() async => null;
@@ -23,6 +24,24 @@ class PaymentAuth extends AuthRepository {
   }) async {
     requests.add(Map.of(body!));
     await wait;
+    if (reject && rejectionBalance != null) {
+      throw AppFailure.fromJson({
+        'requestId': 'req_synthetic',
+        'error': {
+          'code': 'BALANCE_CONFLICT',
+          'messageKey': 'payment.balanceConflict',
+          'retryable': false,
+          'details': {
+            'balance': {
+              'balancePaise': rejectionBalance,
+              'ledgerVersion': 2,
+              'asOfServerSeq': 2,
+              'asOfAtMs': 1,
+            },
+          },
+        },
+      });
+    }
     if (reject) {
       throw const AppFailure('BALANCE_CONFLICT', 'payment.balanceConflict');
     }

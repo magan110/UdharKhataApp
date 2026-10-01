@@ -207,4 +207,31 @@ void main() {
     expect(auth.requests, isEmpty);
     expect(find.text('Confirm payment received'), findsNothing);
   });
+  testWidgets(
+    'overpayment rejection preserves server balance when connectivity fails before refresh',
+    (tester) async {
+      final auth = PaymentAuth()
+            ..reject = true
+            ..rejectionBalance = 10000,
+          storage = MemorySecureStorage(),
+          links = LinkAuth()
+            ..response = {
+              ...linkJson,
+              'balancePaise': 50000,
+              'ledgerVersion': 1,
+            };
+      await open(tester, auth, storage, links: links);
+      await review(tester, amount: '400');
+      links.loseResponse = true;
+      await tester.tap(find.text('Confirm payment received'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Payment rejected; no payment was recorded.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('₹100.00'), findsOneWidget);
+      expect(find.textContaining('₹500.00'), findsNothing);
+      expect(find.text('Edit amount and method'), findsOneWidget);
+    },
+  );
 }

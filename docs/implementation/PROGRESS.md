@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D09 — approved design, local Cash/UPI payment implementation and verification in progress. D01–D08 checkpoints are complete based on local/cloud evidence and user-reported phone checks, including D08 signout/calendar confirmation (“Yes workered”). Detailed device/release matrices remain explicit below. **Last updated:** 1 October 2026.
+**Current phase:** D09 — Cash/UPI implementation locally verified and reviewed; awaiting approval to push/deploy staging and build the stable cloud APK, then phone acceptance. D01–D08 checkpoints are complete based on local/cloud evidence and user-reported phone checks, including D08 signout/calendar confirmation (“Yes workered”). Detailed device/release matrices remain explicit below. **Last updated:** 1 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -16,7 +16,7 @@
 | D06 | Done | 2026-10-01 | QR issuance/read/rotation/cache checks, stable signed cloud APK, staging and user-reported phone QR/sign-in smoke. |
 | D07 | Done | 2026-10-01 | Scoped scan/confirm/link, staging and stable APK verified; user confirmed owner addition and repaired customer My shops visibility. Detailed camera/invalid QR release regression remains explicit below. |
 | D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
-| D09 | Local implementation; verification in progress | 2026-10-01 | Approved Cash/UPI design. Automated partial/full/race/retry/rejection tests pass; build/review and remote/device gates pending. |
+| D09 | Local checks passed; remote/device gates pending | 2026-10-01 | 77 Worker runtime tests + 1 configuration test, 85 Flutter tests, Android build and independent review passed; remote push/deploy/stable APK await approval. |
 | D10-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -257,3 +257,11 @@ Branch `codex/d09-payment`, based on D08 evidence commit `eeab415`. Bounded exte
 The shared repository serializes credit/payment confirmation and blocks replacement by either kind. Unknown outcomes remain frozen across restart. Explicit server balance rejection is durably marked and shown; Edit amount and method archives the original before clearing its active slot. The corrected amount is user-entered and receives a new operation ID only on another confirmation. Archived rejected requests remain in secure storage for support; a general archive browser/offline outbox is later work.
 
 TDD: all five new HTTP/D1 tests first failed because payment bodies returned 400; payment repository tests failed with missing-behavior stubs; all six widget tests failed against an empty payment screen before implementation. New tests then passed with the existing credit regression. Full local suites currently pass: 77 Worker runtime tests plus one configuration test, and 84 Flutter tests. Coverage: Worker 355/356 lines (99.71%), 239/286 branches (83.56%); Flutter 1738/1953 lines (88.99%), above required 80%. Static checks passed: Worker typecheck/lint, Flutter analyze with no issues and clean format, document navigation/link checks. Worker dry-run bundle and zero-vulnerability npm audit passed. Existing local migrations were current; foreign-key audit returned no violations. Android debug APK built with both public staging dart defines; exact APK package and embedded defines verified, and apksigner verification passed. It uses the environment-local debug key and is not a distributable stable-key artifact. Independent feature review remains pending. No remote deployment or distributable stable cloud APK is claimed for D09 yet.
+
+### D09 independent review and rejection snapshot fix (2026-10-01)
+
+A fresh read-only reviewer assessed immutable range `eeab415..046549a`: no Critical or Important issues. One Minor UX defect was reproduced: POST returns an authorized ₹100 balance on rejection but the following GET fails, leaving the old ₹500 balance on screen. A new regression failed first because ₹100 was absent. The mobile error parser now validates the optional balance snapshot, and PaymentPage displays that snapshot with its server as-of time without requiring another GET. Older responses retain the authorized-read fallback. The same regression passed after the fix, followed by all 85 Flutter tests; Flutter line coverage 1757/1972 (89.10%). Analyze/format are clean. No second independent review is claimed.
+
+D09 local gate is ready. Worker suites/static/coverage/dry-run/audit and local D1 foreign-key audit passed; the final Android build uses both public staging defines. Installable delivery must use the persistent cloud signing key, not the local debug key. Per AGENTS.md, publishing/push, staging Worker deployment and stable cloud APK workflow need explicit approval for D09. No D09 remote resource was changed. No D1 migration or Google OAuth change is needed.
+
+Phone acceptance after approved deployment/build: open a linked customer's ₹500 balance, record ₹200 Cash and refresh both roles to ₹300; record a full payment and verify zero; exercise UPI, reject an overpayment, correct the amount explicitly; retry a saved uncertain payment after reconnect/restart and confirm one effect; keep signout/calendar regression working. These are user device checks, not claims from synthetic local tests. D10 remains blocked on the D09 deployment/device gate and will add dated owner/customer transaction history.
