@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "wrangler dev --local",
+    "db:migrate:local": "wrangler d1 migrations apply udhaarkhata-local --local",
+    "db:check:local": "wrangler d1 execute udhaarkhata-local --local --command \"PRAGMA foreign_key_check\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p test/tsconfig.json",
     "lint": "eslint .",
     "test": "node --test test/*.test.mjs && vitest run",
@@ -27,6 +29,7 @@
     "wrangler": "^4.0.0"
   },
   "dependencies": {
+    "jose": "^6.2.12",
     "zod": "^4.6.5"
   }
 }

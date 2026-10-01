@@ -30,6 +30,7 @@ export const errorEnvelopeSchema = z.object({
 export const googleExchangeSchema = z.object({
   idToken: z.string().min(1).max(16384),
   requestedRole: z.enum(['owner', 'customer']),
+  deviceId: idSchema.optional(),
 }).strict();
 
 export const MAX_JSON_BODY_BYTES = 65536;
@@ -79,3 +80,6 @@ export async function readJson(request: Request, schema: z.ZodType): Promise<unk
   if (!result.success) throw new HttpError(400, 'VALIDATION_ERROR', 'api.validationError');
   return result.data;
 }
+
+export const refreshSchema=z.object({refreshToken:z.string().regex(/^[0-9a-f]{64}$/),deviceId:idSchema}).strict();
+export const logoutSchema=z.object({deviceId:idSchema}).strict();

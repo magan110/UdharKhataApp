@@ -5,5 +5,6 @@ import 'app/app.dart';
 export 'app/app.dart' show MainApp;
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: MainApp()));
 }

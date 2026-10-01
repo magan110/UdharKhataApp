@@ -27,3 +27,4 @@
 **/flutter_export_environment.sh
 **/Generated.xcconfig
 
+.superpowers/

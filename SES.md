@@ -85,11 +85,13 @@ Names and columns below are the planned logical schema. SQL migration files will
 | `disputes` | `id`, `entry_id`, `customer_user_id`, `reason`, `status`, `owner_note`, timestamps | Unique or rate limited active dispute per entry; no implicit balance change. |
 | `sync_operations` | `shop_id`, `client_operation_id`, `entry_id`, `outcome`, `created_at` | Idempotency/response replay for retries, subject to retention design. |
 | `refresh_sessions` | `id`, `user_id`, `device_id`, `token_hash`, `expires_at`, `revoked_at` | Store only hashed refresh credentials; revoke on sign-out/deletion. |
-| `deletion_requests` | `id`, `requester_user_id`, `scope`, `status`, timestamps | Track export/deletion workflow and resolution. |
+| `data_requests` | `id`, `requester_user_id`, `scope`, `status`, timestamps | Track export/deletion workflow and resolution. |
 
 `ledger_entries` uses positive `amount_paise` for the entered magnitude. A credit sale has a positive balance effect; a payment has a negative effect; a correction has an explicit signed effect and references the entry it fixes. To prevent accidental double correction, the correction workflow validates the original and records a reason. Balances are calculated from committed entries or from a server-maintained projection whose value is reconciled against entries. The immutable ledger is the source of truth.
 
 Use database constraints for positive entered amounts, valid kinds, references, uniqueness, and valid state transitions. Design indexes for `(shop_id, customer_user_id, created_at, id)`, owner shop lookup, customer linked shops, QR lookup, and operation IDs. Verify D1 row-read/write effects with realistic query plans; unnecessary indexes increase write counts and storage.
+
+D03 adds hashed opaque `access_sessions` linked to refresh sessions, immutable ledger/receipt SQL triggers, and account-isolated sqflite with atomic entry/outbox and page/cursor adapters. The exact executable schema and storage ceilings are in [Database Design / ERD](DATABASE-DESIGN-ERD.md); identity issuance and public domain routes are later phases.
 
 ### Data lifecycle
 
@@ -207,3 +209,11 @@ Automated tests should focus on money arithmetic, idempotency, authorization, ac
 - [Flutter Android documentation](https://docs.flutter.dev/platform-integration/android)
 
 This document specifies the intended behavior. Provider limits and API details should be verified again when each phase starts.
+
+### D04 implementation checkpoint
+
+Local auth verifies Google identity using trusted JWKS, maps immutable subject and role, issues hashed 15-minute opaque access credentials and rotating refresh credentials capped at 30 days from initial issue, and revokes the session on spent-token replay/logout. Android secure storage and role selection/sign-out are wired; Pending records stay account-isolated and locked on sign-out. See the API session policy, security requirements and implementation progress for checks and limits. Live Google configuration, device evidence and deployment remain pending; this is not a public-release claim.
+
+### D06 implementation checkpoint
+
+Customer QR uses exactly `udhaar://customer/v1/{publicId}` with a 256-bit random lowercase hex lookup ID and no personal, financial or credential fields. Own-QR read and online rotation enforce the customer session. Rotation revokes the old mapping atomically, preserves internal links and permits at most three attempts per customer per ten minutes. The customer screen renders a readable QR with account label and explains that it does not authorize payment. Account-specific secure-storage cache labels saved codes as unverified; uncertain rotation persists a recovery marker and hides the old code until online confirmation. Offline presentation works in an already verified open session, even if an attempted auth renewal fails: credentials are discarded and the account database is locked, while only the cached public QR remains with a Sign in again action. This confers no cloud or ledger authorization. Failed rotations retain an explicit failure notice after recovering the current QR. Full offline session restoration after cold startup remains D12. D07 owner resolution/linking and physical-device QR scanning remain separate gates. Synthetic authorization/rotation/cache/UI and independent rendered-image decoding evidence is recorded in implementation progress.

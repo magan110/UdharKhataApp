@@ -143,7 +143,7 @@ Use explicit labels: **Customer owes you ₹X** for the owner and **You owe [sho
 
 ## 9. Product rules and edge cases
 
-- **Money:** INR only. Store exact integer paise; do not use floating-point balance arithmetic. Reject zero, negative, malformed and out-of-range amounts with useful messages. A maximum per transaction will be fixed before pilot.
+- **Money:** INR only. Store exact integer paise; do not use floating-point balance arithmetic. Reject zero, negative, malformed and out-of-range amounts with useful messages. D03 enforces the safe integer storage ceiling and 120-character label/500-character note and reason ceilings; the smaller business maximum per transaction will be fixed in D08 and validated before pilot.
 - **Balance:** Credit adds to amount owed; payment subtracts; correction has a signed effect. Owner and customer views must agree after both are synced. Never trust a client-supplied balance as the source of truth.
 - **Due dates:** A payment may cover multiple credit entries. The first-release product must define a deterministic allocation rule before displaying overdue amounts; proposed rule is oldest unpaid credit first, then by entry ID for ties. Until implemented and tested, show due dates on entries without an aggregate overdue claim.
 - **Duplicate action:** Same shop/customer link or transaction operation may be retried; the result is the existing link/entry, not another one. Show a clear saved result after uncertain network responses.
@@ -205,3 +205,11 @@ Engineering details and test evidence live in [SES.md](SES.md). Public deploymen
 ## 14. Traceability
 
 The [Product Vision](PRODUCT-VISION.md) states why the product exists. The [BRD](BRD.md) records business rules and the agreed feature scope. This PRD defines user-visible behavior and release acceptance. The [SES](SES.md) defines implementation, API, data and test design. The [Market Research](MARKET-COMPETITOR-RESEARCH.md) records competitor evidence and the QR-flow hypothesis to validate.
+
+### D04 implementation checkpoint
+
+Local auth verifies Google identity using trusted JWKS, maps immutable subject and role, issues hashed 15-minute opaque access credentials and rotating refresh credentials capped at 30 days from initial issue, and revokes the session on spent-token replay/logout. Android secure storage and role selection/sign-out are wired; Pending records stay account-isolated and locked on sign-out. See the API session policy, security requirements and implementation progress for checks and limits. Live Google configuration, device evidence and deployment remain pending; this is not a public-release claim.
+
+### D06 implementation checkpoint
+
+Customer QR uses exactly `udhaar://customer/v1/{publicId}` with a 256-bit random lowercase hex lookup ID and no personal, financial or credential fields. Own-QR read and online rotation enforce the customer session. Rotation revokes the old mapping atomically, preserves internal links and permits at most three attempts per customer per ten minutes. The customer screen renders a readable QR with account label and explains that it does not authorize payment. Account-specific secure-storage cache labels saved codes as unverified; uncertain rotation persists a recovery marker and hides the old code until online confirmation. Offline presentation works in an already verified open session, even if an attempted auth renewal fails: credentials are discarded and the account database is locked, while only the cached public QR remains with a Sign in again action. This confers no cloud or ledger authorization. Failed rotations retain an explicit failure notice after recovering the current QR. Full offline session restoration after cold startup remains D12. D07 owner resolution/linking and physical-device QR scanning remain separate gates. Synthetic authorization/rotation/cache/UI and independent rendered-image decoding evidence is recorded in implementation progress.

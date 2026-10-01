@@ -4,13 +4,77 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D03 — next. **Last updated:** 30 September 2026. D01 and D02 are complete; database and product-feature implementation follows.
+**Current phase:** D06 - local engineering complete, staging/device checks pending approval; D05 complete: local checks, approved staging deployment and user-reported device shop smoke passed. **Last updated:** 1 October 2026. D04 local checks and user-reported live owner/customer sign-in and sign-out smoke checks are complete.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
 | D01 | Done | 2026-09-29 | Local Git repository, root ignore/README, Android ID/API 24/label/unsigned release config, Flutter smoke test, Worker scaffold and lockfile, CI workflow. See evidence below. |
 | D02 | Done | 2026-09-30 | Flutter architecture and guarded shells, Worker edge pipeline, shared fixtures, and tests. See D02 evidence below. |
-| D03–D24 | Not started | — | Follow the order in [README](README.md). |
+| D03 | Done | 2026-09-30 | Local D1 migration, SQL ledger/projection/receipt guards, account-scoped SQLite and atomic persistence adapters. See D03 evidence below. |
+| D04 | Done | 2026-10-01 | Local verification plus user-reported live owner/customer sign-in and sign-out on configured staging build. Hardware security and release gates remain explicit below. |
+| D05 | Done | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging deployment and user-reported device shop creation/reopen smoke passed. |
+| D06 | Done (local) | 2026-10-01 | QR issuance/read/rotation/cache/UI; 56 backend and 44 Flutter checks, rendered QR decode, Android build. Staging/device checks pending. |
+| D07-D24 | Not started | - | Follow the order in [README](README.md). |
+
+### D04 evidence (2026-10-01)
+
+Branch `codex/d04-auth`, based on D03 commit `3906488`. Local implementation only: trusted Google RS256 JWKS verification with issuer/audience/subject/expiry/issued-time checks; immutable role/subject account mapping; 256-bit opaque credentials hashed with SHA-256; 15-minute access and rotating refresh capped at 30 days from initial creation; spent-token replay revokes the whole session, logout only its device session; atomic network auth throttling. HTTP Google exchange/refresh/logout/profile are wired with safe envelopes. Profile publishes capability versions; shop/link summaries are later work.
+
+Android uses google_sign_in 7.2.0 and flutter_secure_storage 11.2.0, requires public API_BASE_URL and GOOGLE_SERVER_CLIENT_ID build configuration, and disables sign-in until configured. Role selection routes by server-confirmed account. Sign-out counts and preserves Pending rows, locks the old database and clears credentials. Offline sign-out explicitly reports unconfirmed cloud revocation. An uncertain refresh requires reauthentication without erasing the database.
+
+| Check | Evidence |
+|---|---|
+| Worker tests | PASS: 51 runtime tests plus one Node configuration test; identity negative cases, subject/role, hashes, rotation/replay/race, expiry/logout, rate window, HTTP lifecycle and session SQL guards. |
+| Worker coverage | PASS: 169/170 lines (99.41%), 107/131 branches (81.67%), all 80% gates. |
+| Worker static/build/audit | PASS: typecheck, lint, dry-run Worker bundle, zero audit vulnerabilities. No deployment. Credential-pattern scan of tracked/new source and APK secret-file scan passed; this is a bounded scan, not exhaustive proof. |
+| Local D1 migration | PASS: new immutable 0002 applies six commands over existing 0001; foreign_key_check empty. 0001 unchanged. 0002 not applied remotely. |
+| Flutter tests | PASS: 34 tests, including Google action/cancellation/sign-out UI, actual SQLite Pending preservation and account B isolation, uncertain refresh and stalled profile regression. |
+| Flutter coverage/static | PASS: 436/489 lines (89.16%), minimum 80%; formatting and analyze clean. |
+| Android build | PASS: debug APK assembled with Gradle nonincremental/in-process Kotlin flags, avoiding Windows C:/D: Pub-cache root issue. Standard Flutter command initially failed on Kotlin caches; no release-signed build claimed. |
+| Review | One fresh read-only reviewer, no Critical. Important stalled profile request fixed: regression failed first, shared GET timeout added, full 34-test suite passed. |
+
+**Live gate / limitations:** Google registration, real Android account-picker/secure-storage/backup checks, release signing and Worker deployment need approved external setup. Full offline startup access/general financial refresh remain D12/later integration; storage encryption/physical extraction review stays D12. Session-history cleanup/retention stays D19. Real customer data was not used. D03 staging contains only its dedicated synthetic records.
+
+**Resolved decisions:** new and existing Google exchange returns HTTP200 with the same session shape; API contract aligned (clients assuming201 must adjust). Retain app-private SQLite rather than introduce SQLCipher before the planned device review; compromised-device exposure remains a known release risk. Reviewer did not judge live/provider/hardware behavior: these remain explicit unverified gates, so local tests cannot establish a complete native Google A-to-B journey.
+
+**Deferred minor:** native Google credential state is not explicitly cleared on sign-out; installed Android authenticate uses the explicit account-picker flow, so no switching blocker was demonstrated. Confirm this during live device testing and add native clearing if that flow requires it.
+
+### D03 Cloudflare staging follow-up (2026-09-30)
+
+User authorized staging migration. Database `udhaarkhata-staging` (`a9e24716-d05a-46f7-8189-1bf2d8b05c46`) is configured under the explicit Wrangler `staging` environment; default local binding remains unchanged. Remote `0001_initial.sql` applied successfully (44 commands); repeat application reported no migrations to apply. Remote inspection confirmed migration tracking plus 14 tables (including platform/migration tables), 12 named indexes and 19 triggers. No Worker deployment or real customer data was used.
+
+Follow-up 2026-10-01: remote `PRAGMA foreign_key_check` passed on both empty and populated staging data. Dedicated synthetic owner/customer/shop/link records (`d03_test_*`) remain in staging: 50000 paise credit and 20000 paise cash payment produced balance 30000, version 2, two entries and reconciled ledger sum 30000. Attempted posted-entry update was rejected with `ENTRY_IMMUTABLE`; subsequent reconciliation stayed unchanged. This completes the added remote schema smoke gate; full synthetic invariant coverage remains in the existing local D1 runtime suite. No mobile/API end-to-end flow or Worker deployment is claimed.
+
+Optional `PRAGMA integrity_check` was rejected by D1 with `SQLITE_AUTH`; no integrity-check success is claimed. Network requests remain intermittent; preferring IPv4 and disabling Node network family autoselection allowed successful checks. After a timed-out synthetic insert request, state was inspected before retrying; no duplicate entries were created.
+
+### D03 evidence and implementation boundaries
+
+The [D03 plan](01-foundation.md#d03--cloud-and-device-schemas) is implemented in [D1 migration 0001](../../services/api/migrations/0001_initial.sql), [receipt queries](../../services/api/src/db/queries.ts), [atomic receipt commit](../../services/api/src/db/transaction.ts), [device database](../../udhaarkhata/lib/core/db/database.dart), [local schema](../../udhaarkhata/lib/core/db/migrations.dart), and [local persistence adapter](../../udhaarkhata/lib/core/db/repositories.dart). Both use synthetic data only. The current checkout is on local branch `phase/d03-schemas`; no push or deployment was performed.
+
+| Verification | Recorded result |
+|---|---|
+| `npm ci`, `npm run typecheck`, `npm run lint` | PASS; locked install and source/test static checks. |
+| `npm test` | PASS; 43 Workers-runtime tests (17 D03 database tests plus 26 prior tests) and one Node configuration test. |
+| `npm run test:coverage` | PASS; 102/102 Worker source lines, 45/46 instrumented branches; 80% gates passed. SQL is verified by runtime assertions, not included in TypeScript coverage. |
+| `npm run db:migrate:local` | PASS; 0001 applied (44 SQL commands); second and subsequent runs report no migrations to apply. Zero placeholder database ID, `remote:false`, explicit `--local`. |
+| `npm run db:check:local` | PASS; `PRAGMA foreign_key_check` returns no violations. Integration tests independently check FKs on populated synthetic rows. |
+| Migration rehearsal | PASS; fresh creation and repeat, test-only additive upgrade preserving posted history, failed migration rollback, and failed entry/receipt batch rollback. D02 had no prior financial schema; future real migrations require their actual previous-version fixture. |
+| `npm run build`, `npm audit --audit-level=high` | PASS; local binding dry-run bundle; zero reported vulnerabilities. |
+| `flutter pub get --enforce-lockfile`, Dart format check, `flutter analyze` | PASS; locked sqflite 2.4.4, test adapter sqflite_common_ffi 2.4.3, existing crypto 3.0.7 promoted to direct dependency; no analyzer issues. |
+| `flutter test --coverage` | PASS; 29 tests, no skips (13 D03 SQLite tests plus 16 prior tests). |
+| `python scripts/check_coverage.py udhaarkhata/coverage/lcov.info` | PASS; 282/299 executed-source lines (94.31%), minimum 80%. |
+| `flutter build apk --debug` | PASS; Android debug APK includes the SQLite plugin and extraction rules. Merged debug manifest inspection confirms backup disabled and extraction rules referenced. |
+| Markdown navigation and links | PASS; 38 Markdown documents, all mapped and reachable. |
+
+D1 tests prove exact positive/negative effects, payment and correction races, successive correction deltas, payment cancellation, balance overflow rejection, same-operation concurrent replay, changed-hash rejection, receipt immutability, entry update/delete/replace rejection, active ownership/link guards, QR uniqueness/rotation, dispute scope, and rollback of entries/projections on a failed later statement. They execute on the pinned Cloudflare Workers/D1 local runtime (Wrangler 4.144.0), rather than a substitute money model.
+
+Device tests use real SQLite through the host adapter: original entry/outbox survives close/reopen; failed outbox and cache/cursor transactions leave no partial state; account A/B isolation and locks preserve old Pending data; maximum-length and case-distinct account IDs have separate safe filenames; malformed rows and command updates fail; unknown schema downgrade fails closed; acknowledgments preserve local identity and remove the outbox atomically; incomplete/mismatched acknowledgments preserve Pending; established server identity cannot change; restore/replay works without device operation IDs. Customer/new-device acknowledged cache rows may omit an operation ID; locally queued commands must retain their original UUID.
+
+TDD evidence: the first 11 D1 tests failed with `no such table: users` before the migration; local tests first failed because the database adapter did not exist. Date/cursor edge tests then reproduced missing guards. A fresh whole-change reviewer found two Important local cache issues: mandatory operation IDs on restored rows and incomplete acknowledgment matching. Three regression tests reproduced those failures, then passed after the fixes; the full suites pass. No Critical findings were reported. This review is a code review, not completion of the later full security audit or device journeys.
+
+**Decisions:** safe integer is the technical storage ceiling, with 120-character labels and 500-character notes/reasons; the smaller business amount cap remains D08. Opaque access credentials use `access_sessions` linked to hashed refresh sessions, consistent with the implementation index. Local balance is a SQLite view of stored entries, so the transaction also atomically determines synced/provisional totals without a second mutable projection. Android app-private storage and backup exclusions are in place; encryption/device review remains D04/D12.
+
+**Unresolved / next phase:** D04 must implement Google verification, opaque access/rotating refresh credentials, lifetimes, secure storage and session revocation. One review minor is deferred to a new numbered D04 migration before credential issuance: align unused `access_sessions` hash-hex and timestamp upper-bound guards with the stricter refresh/financial tables. Live OAuth, physical Android backup/process-death tests, user-facing offline sync, and real-data backup/restore remain their assigned later gates. No real customer records or Google resources were used or changed; approved Cloudflare staging setup is recorded above. Workstation launch commands needed the bundled PowerShell and Node directories prepended to PATH; installed Flutter/Dart versions remained unchanged.
 
 ### D02 evidence and implementation boundaries
 
@@ -52,3 +116,48 @@ For each completed phase, replace the placeholder with a row containing phase ID
 | 2026-09-29 | D01 | Selected Android package `com.udhaarkhata.app`, minimum API 24, Node 24, and a local-only Worker config. Publisher ownership and pilot device compatibility are later gates, not claims of verification. | Root `README.md`, Android Gradle/manifest, Worker config, CI. |
 | 2026-09-29 | Documentation | Added a full Markdown document map, top-of-file related links, and CI validation of file/anchor links and document connectivity. D02 implementation remains not started. | `DOCUMENT-MAP.md`, `AGENTS.md`, `scripts/update_doc_navigation.py`, `scripts/check_docs.py`, CI. |
 | 2026-09-30 | D02 | Selected Riverpod 3.4.3 and go_router 18.0.2; retained the real Flutter path. Added 64 KiB streamed JSON bound, shared wire constraints, fail-closed auth adapter, Workers Vitest integration (4.1.11/plugin 1.3.3), and coverage gates. | API/LLD/HLD/SES/coding standards, shared fixtures, README, tests and CI. |
+| 2026-09-30 | D03 | Local D1 triggers/batch receipts, account-isolated sqflite, hash filenames, computed local balance view, optional operation IDs on restored rows, complete acknowledgment matching and backup exclusions. Storage ceilings fixed now; business amount cap D08; access-session guard minor D04. | Database/API/SRS/PRD/security/HLD/LLD/SES, runbook, README, CI and persistence tests. |
+
+### D04 approved staging setup follow-up (2026-10-01)
+
+User approved Google setup and staging migration/deployment. Remote 0002_auth_guards.sql applied successfully (six commands). Worker udhaarkhata-api-staging deployed with staging DB binding; version ea771b11-09cf-4860-a4e6-697c54316a72, endpoint https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev. Only staging workers_dev enabled; local defaults unchanged. GOOGLE_CLIENT_ID remains unset, so Google exchange fails closed until the user creates the staging OAuth clients. Endpoint smoke requests failed at transport level immediately after first workers.dev registration; HTTP health/auth results remain pending. Browser automation initialization failed; Google Console setup is proceeding through user guidance. No Google project/client creation is yet evidenced.
+
+D04 staging configuration continuation: user provided project udhaar-khata-staging-510306 and public Web client ID 1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com. Configured staging GOOGLE_CLIENT_ID and redeployed version 21eab16b-9cb6-4cab-80ae-322450ab6f17. Live smoke passed: /health HTTP200, unauthenticated /v1/me HTTP401 AUTH_REQUIRED, invalid synthetic Google token HTTP401 IDENTITY_INVALID. Default workstation DNS timed out; explicit Cloudflare DNS resolution and curl --resolve verified the endpoint without changing system DNS.
+
+Configured Android debug APK built successfully with staging API and Google server client build defines. No Android device is attached. Android OAuth client registration/package/debug SHA-1 and test-user setup were requested through user guidance but not independently confirmed; valid Google sign-in, native account switching and device secure-storage evidence remain pending. APK: udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk. No credentials were requested or placed in source; the Web client ID is public configuration.
+
+### D04 user-reported live smoke evidence (2026-10-01)
+
+User confirmed that Google sign-in works for the shop-owner role, sign-out works, and customer sign-in also works on the configured app. This closes the pending live sign-in/sign-out smoke checkpoint. Evidence is the user's device report, not an independently captured trace. Shop creation is not implemented yet: the owner shell's shop message is an empty-state placeholder; D05 implements one-shop setup and ownership authorization. No full native A-to-B isolation, physical secure-storage/extraction, backup/restore, release-signed OAuth or production readiness result is inferred from this report. Those remain their documented device/release gates. Next: D05.
+
+### D05 evidence (2026-10-01)
+
+Branch `codex/d05-shop`, based on D04 `2fad7a9`; D04 staging/progress follow-up retained. Shop creation uses verified ownership and the existing D1 unique-owner constraint; repeated/concurrent creation returns the existing shop unchanged. NFC/whitespace normalization, strict body validation, private 404 reads, own profile summaries, active relationship and entry association policies are implemented. Owner setup validates, prevents duplicate taps, preserves input after failure and reopens the acknowledged shop; role routing/customer safe empty shell retained. Cloud requests serialize with session transitions, persist refresh rotation and reject stale account adapters. No ledger write or linking route is exposed yet.
+
+Checks so far: Worker 53 runtime tests plus one Node configuration test; typecheck/lint/build dry-run/audit passed (0 vulnerabilities), coverage 205/206 lines (99.51%) and 136/162 branches (83.95%). Flutter 38 tests passed, analyze clean; final coverage 541/601 lines (90.02%). Synthetic matrix covers two owners/two customers, customer shared across shops, wrong-shop/link/entry IDs, removed links/deleted owner, repeated creation/name tampering, Android form validation/retry and stale-account requests. Android staging-configured debug build passed using the documented Gradle Kotlin flags. One fresh reviewer found no Critical issues; Important expired-session recovery fixed with RED-to-GREEN widget and transport regressions: uncertain refresh and protected AUTH_REQUIRED lock the database, clear credentials and return to sign-in without deleting account data. Full 38-test Flutter suite passed. API documentation typo/stale D04 summary corrected to satisfy document alignment. Reviewer set aside full customer browsing/totals (D10), closed-shop UI (later closure workflow), and live OAuth/deployment (separate external evidence); no readiness for those is inferred.
+
+Decisions: reuse the existing single-owner lifetime constraint; closed shops cannot be recreated before the D19 retention workflow is specified. Profile links are bounded at 100 with explicit overflow; full browsing/acknowledged totals are D10. No new dependencies or migrations. D05 staging deployment and device shop-creation smoke are pending explicit approval/evidence; prior D04 deployment remains the live version. Next after the local gate: D06 customer QR.
+
+D05 final artifact: `udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk`, configured for the existing staging audience/endpoint. It requires deployment of the D05 Worker before live shop setup can be tested. No D05 remote deployment, migration, real-data operation or GitHub push was performed.
+
+### D05 approved staging deployment (2026-10-01)
+
+User explicitly approved deployment after reviewing the completed D05 checkpoint. Deployed source `aa97c6f` to `udhaarkhata-api-staging`, version `1fcfd3a2-73f2-44bb-9c49-7228f6f9def2`, at https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev. Confirmed the existing staging D1 binding and Google audience; no migration or account/ledger data change. Prior version `21eab16b-9cb6-4cab-80ae-322450ab6f17` remains the code rollback candidate; no schema change is involved. Live HTTPS smoke passed: health 200; unauthenticated profile, shop read and shop creation all 401 AUTH_REQUIRED. Explicit Cloudflare DNS resolution with curl --resolve preserved normal certificate verification. No authenticated live shop creation is claimed; install the D05 debug APK, create a test shop, sign out/in and verify it reopens the same shop to close the remaining device smoke gate. GitHub push was not performed.
+
+### D05 user-reported device smoke (2026-10-01)
+
+User confirmed ?working perfect? after the requested updated-APK owner shop creation and sign-out/sign-in reopening check. This closes the remaining D05 device smoke gate. Evidence is the user's device report, not an independently captured trace. Local authorization tests and staging deployment evidence remain recorded above; no production readiness or full hardware security result is inferred. D05 is complete. Next: D06 customer QR issuance, display and rotation.
+
+### D06 evidence (2026-10-01)
+
+Branch `codex/d06-qr`, base `e0ddb69`. Customer registration ensures a 256-bit random QR mapping; existing customers backfill on own read. Own read/rotate enforce customer role and live user. D1 batch rotation revokes/creates atomically; failure rollback, concurrent rotations, uniqueness, rate limits, old-ID lookup rejection, link preservation and sensitive telemetry checks pass. No new D1 migration or owner resolve/link route. Planned qr_flutter 4.1.0 added (locked with qr 3.0.2) after verifying publisher documentation. Mobile caches QR/check timestamp in per-account secure storage, explicitly labels cached/stale codes, requires rotation confirmation, preserves safe QR after a failed ordinary refresh and durably hides it after uncertain rotation. Recover with GET rather than repeat mutation. Customer role opens My QR with My shops empty shell retained.
+
+Worker 55 runtime + one configuration test passed; typecheck/lint pass, coverage 229/230 lines (99.56%) and 154/185 branches (83.24%). Flutter final suite: 44 tests passed, analyze clean; coverage recorded below. Actual CustomerQrPage QR image captured and independently decoded using ZXing: exact `udhaar://customer/v1/` plus the synthetic 64-hex ID. Android final staging-configured debug APK build passed (Gradle nonincremental/in-process Kotlin flags). One fresh read-only reviewer found no Critical/minor issues and three Important recovery defects. All three reproduced with failing regressions and were fixed in one pass: cache platform errors now leave a recoverable error; rejected rotation retains a visible failure notice alongside recovered QR; actual expired access plus offline refresh preserves public QR with Sign in again while uncertain credentials are cleared and account database locked. No protected access is restored by QR caching. Full offline cold-start restoration stays D12; actual owner old/new-ID linking checks stay D07; physical scanning/deployment and final retention policy remain their assigned gates. No device connected or D06 staging deployment performed.
+
+Decision: reuse account-specific Android secure storage for the small public QR cache instead of adding a local database migration/table; no credential is copied into SQLite. Offline QR presentation is within a verified open account session; full cold-start offline sign-in remains the pre-existing D12 gate. Rotation uses a per-customer 3/10-minute pilot throttle; adjust only with evidence of legitimate demand/abuse. Retain revoked QR IDs to distinguish revocation; final cleanup/retention policy remains D19. Next after D06: D07 scan, resolve and link.
+
+D06 review/verification checkpoint: full Flutter suite 44/44 after fixes, formatter/analyzer clean; final Flutter line coverage 687/757 (90.75%, minimum 80%). Worker dry-run and dependency audit passed (zero vulnerabilities). Android debug APK updated at `udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk`, using existing staging configuration. D06 Worker has not been deployed; D05 remains live until explicit approval. Actual end-to-end revoked-ID link rejection is a D07 gate, not inferred from D06 internal lookup tests. No GitHub push, migration or real customer-data operation was performed.
+
+### D06 approved staging deployment (2026-10-01)
+
+User explicitly approved D06 staging deployment. Deployed source `692979a` to `udhaarkhata-api-staging`, version `c82fcba8-97bc-46f3-b329-753be8c14479`, at https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev. Existing staging D1 binding and Google audience confirmed; no new migration. Prior D05 version `1fcfd3a2-73f2-44bb-9c49-7228f6f9def2` is the code rollback candidate. Live HTTPS smoke passed: health 200, unauthenticated own QR GET and rotation POST both 401 AUTH_REQUIRED. Explicit Cloudflare address resolution preserved certificate verification. Authenticated customer QR display, open-app airplane-mode display and online confirmed replacement remain pending user device smoke with the updated debug APK. Full offline cold-start restoration remains D12; owner scan/link remains D07. No GitHub push or real customer-data operation was performed.

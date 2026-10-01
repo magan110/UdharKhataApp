@@ -202,6 +202,8 @@ No exact retention duration is specified yet. It must be decided and published b
 
 The [BRD](BRD.md) contains the business rules and the [PRD](PRD.md) contains the detailed screen behavior. Requirement IDs in this document are the baseline for test cases and change control.
 
+D03 implements local D1/SQLite schema guards with safe integer money and versioned storage text ceilings (120-character labels, 500-character notes/reasons). These storage ceilings do not close the smaller product transaction-limit decision. Account-isolated databases and atomic entry/outbox and page/cursor writes are tested at the persistence boundary; complete user journeys remain in their assigned phases. See [progress](docs/implementation/PROGRESS.md).
+
 ## 11. Open decisions and change control
 
 The following must be resolved before their affected phase exits:
@@ -214,3 +216,11 @@ The following must be resolved before their affected phase exits:
 6. **Customer onboarding friction:** If field research shows that mandatory customer app installation prevents adoption, revisit QR-first scope in the BRD/PRD before implementing a fallback.
 
 Changes to a requirement shall update its ID/versioned text, acceptance tests, and affected PRD/SES sections together. No unverified market claim or provider free-tier limit is a software guarantee.
+
+### D04 implementation checkpoint
+
+Local auth verifies Google identity using trusted JWKS, maps immutable subject and role, issues hashed 15-minute opaque access credentials and rotating refresh credentials capped at 30 days from initial issue, and revokes the session on spent-token replay/logout. Android secure storage and role selection/sign-out are wired; Pending records stay account-isolated and locked on sign-out. See the API session policy, security requirements and implementation progress for checks and limits. Live Google configuration, device evidence and deployment remain pending; this is not a public-release claim.
+
+### D06 implementation checkpoint
+
+Customer QR uses exactly `udhaar://customer/v1/{publicId}` with a 256-bit random lowercase hex lookup ID and no personal, financial or credential fields. Own-QR read and online rotation enforce the customer session. Rotation revokes the old mapping atomically, preserves internal links and permits at most three attempts per customer per ten minutes. The customer screen renders a readable QR with account label and explains that it does not authorize payment. Account-specific secure-storage cache labels saved codes as unverified; uncertain rotation persists a recovery marker and hides the old code until online confirmation. Offline presentation works in an already verified open session, even if an attempted auth renewal fails: credentials are discarded and the account database is locked, while only the cached public QR remains with a Sign in again action. This confers no cloud or ledger authorization. Failed rotations retain an explicit failure notice after recovering the current QR. Full offline session restoration after cold startup remains D12. D07 owner resolution/linking and physical-device QR scanning remain separate gates. Synthetic authorization/rotation/cache/UI and independent rendered-image decoding evidence is recorded in implementation progress.

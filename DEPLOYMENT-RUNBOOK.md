@@ -32,7 +32,7 @@ Fill this inventory in the approved release packet; do not put credentials here.
 | Telemetry/alert destination | `[DEV_MONITOR]` | `[STAGE_MONITOR]` | `[PROD_MONITOR]` |
 | On-call and product approver | `[NAMES]` | `[NAMES]` | `[NAMES]` |
 
-Staging and production have separate Worker routes, D1 bindings, Google OAuth clients, session-signing secrets, backups and telemetry. CI uses named least-privilege credentials; operators use MFA. The production D1 binding is never present in a staging Worker or mobile build. Store secrets as Cloudflare secret bindings, never plaintext Wrangler `vars` or committed `.env` files. A D1 binding provides the Worker its database capability; the app only knows the HTTPS API URL. [Workers secrets](https://developers.cloudflare.com/workers/configuration/secrets/), [Workers bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/).
+Staging and production have separate Worker routes, D1 bindings, Google OAuth clients, session stores and required integration secrets, backups and telemetry. CI uses named least-privilege credentials; operators use MFA. The production D1 binding is never present in a staging Worker or mobile build. Store secrets as Cloudflare secret bindings, never plaintext Wrangler `vars` or committed `.env` files. A D1 binding provides the Worker its database capability; the app only knows the HTTPS API URL. [Workers secrets](https://developers.cloudflare.com/workers/configuration/secrets/), [Workers bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/).
 
 ### 2.1 Required release record
 
@@ -42,7 +42,7 @@ Record change ID, owner/approver, desired deployment window/timezone, app versio
 
 1. Create development, staging and production Cloudflare environments with **distinct** D1 databases and bindings. Pin Wrangler version in the Worker lock file. Pin Flutter/Dart and Android toolchain versions and use a release build configuration separate from debug. Verify exact environment/DB name/ID before every D1 command; Cloudflare notes that binding names can change, so prefer the recorded database name for migrations.
 2. Configure Google sign-in with the correct Android app ID, signing certificate fingerprint and accepted audience for each environment. Worker verifies Google signature, issuer, audience, expiry and subject. Test the **release-signed** app against staging before production.
-3. Create secret bindings for session signing and any required integration keys. Define rotation owner and procedure. Never put the Google ID token, refresh token, QR public ID, financial amount or note in logs or deployment output.
+3. Opaque sessions need no signing secret. Configure the public GOOGLE_CLIENT_ID audience per approved environment; create secret bindings only for integrations requiring them. Define rotation owner and procedure. Never put the Google ID token, refresh token, QR public ID, financial amount or note in logs or deployment output.
 4. Create D1 migrations as immutable numbered SQL files. Implement constraints and triggers from [Database Design / ERD](DATABASE-DESIGN-ERD.md). Also version local SQLite migrations and test upgrade with Pending outbox records.
 5. Choose and document backup destination, encryption key custody, frequency, retention and restore-time objective. Establish a separately accessible encrypted export of D1 and rehearse import/restore to an **isolated** environment. A PDF/CSV statement is not a full backup. Do not assume Time Travel alone satisfies the chosen retention or offsite recovery policy.
 6. Set rate limits, body/page/export bounds and alarms for Worker errors, D1 reads/writes/storage, Pending queue age and reconciliation failures. Review current provider limits and the expected per-shop usage before onboarding real users.
@@ -52,10 +52,10 @@ As of this document, Cloudflare lists Workers Free D1 Time Travel recovery for *
 
 ## 4. Build and staging procedure
 
-The repository currently contains documentation only. After application scaffolding, replace the illustrative commands with checked repository scripts and record their actual outputs. Run from the appropriate project directory; commands below show intent and are **not** evidence of execution.
+D01?D03 local scaffolding and database checks exist. Run `npm run db:migrate:local` and `npm run db:check:local` in `services/api/` for the local-only D1 binding. Repeat migration is a no-op; future changes require a new numbered file. Before the first migration there is no prior financial schema. D03 tests rehearse an additive upgrade and failed-upgrade rollback using synthetic migrations; every future real migration must also be tested with its actual prior version. D03 staging D1 is configured and its initial schema smoke checked; D04 migration 0002 is local only until separately approved for staging. Live OAuth, Worker deployment and release signing remain pending. Replace the remaining illustrative release commands with approved checked scripts before use. Run from the appropriate project directory; commands below show intent and are **not** evidence of execution.
 
 ```text
-apps/mobile/:  flutter pub get
+udhaarkhata/:  flutter pub get
                dart format --output=none --set-exit-if-changed .
                flutter analyze
                flutter test

@@ -7,7 +7,7 @@
 **Version:** 1.0 draft  
 **Date:** 29 September 2026  
 **Release:** Android v1  
-**Status:** D02 request-edge scaffold implemented locally; identity and domain endpoints remain planned  
+**Status:** D04 identity/session routes and D05 shop/authorization routes implemented; later ledger routes remain planned  
 **Baseline:** [SRS](SRS.md) · [SES](SES.md) · [LLD](LLD.md) · [Database Design / ERD](DATABASE-DESIGN-ERD.md)
 
 ## 1. Contract and conventions
@@ -16,7 +16,7 @@ The Flutter app calls a versioned Cloudflare Worker over HTTPS. The Worker is th
 
 Protected routes require `Authorization: Bearer <accessToken>`. JSON requests require `Content-Type: application/json`; responses use `application/json; charset=utf-8` except exports. Every response includes `X-Request-Id`, which support may ask for. Financial responses should use `Cache-Control: no-store`; credentials must never appear in URLs, QR payloads, logs or analytics. The app must display server-acknowledged balance separately from local Pending entries.
 
-The schemas below are the intended v1 wire contract. The exact maximum amount, note/reason length, page-size ceiling, export period and session lifetime are unresolved [SRS decisions](SRS.md#11-open-decisions-and-change-control). They must become versioned constants before pilot; the Worker must reject values over them. Until then, the examples show format rather than permission to submit arbitrary large values. Unknown JSON properties are rejected on mutation routes so misspelled financial fields cannot be silently ignored. Missing optional fields and explicit `null` are normalized consistently before request hashing.
+The schemas below are the intended v1 wire contract. D03 storage ceilings are recorded in the database design: safe integer paise, 120-character labels, 500-character notes/reasons, 128-character device IDs, canonical UUID v4 operation IDs and valid calendar dates. The smaller business amount cap, page-size ceiling, export period remain unresolved [SRS decisions](SRS.md#11-open-decisions-and-change-control). They must become versioned constants before pilot; the Worker must reject values over them. Until then, the examples show format rather than permission to submit arbitrary large values. Unknown JSON properties are rejected on mutation routes so misspelled financial fields cannot be silently ignored. Missing optional fields and explicit `null` are normalized consistently before request hashing.
 
 ### 1.1 Success and error envelopes
 
@@ -67,15 +67,15 @@ Owner list and ledger responses must remain scoped even if a caller edits a path
 
 ## 2. Authentication and account routes
 
-### D02 scaffold status
+### D04 implementation status
 
-`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. Until D04, a valid `POST /v1/auth/google` body returns `503 FEATURE_UNAVAILABLE` without issuing credentials, and `GET /v1/me` rejects all unverified sessions. This is implemented locally and covered by [Worker tests](services/api/test/http.test.ts).
+`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. D04 implements Google exchange, refresh, logout and profile routes with a D1 binding and approved Google audience. An unconfigured audience fails closed with `503 FEATURE_UNAVAILABLE`. Approved staging OAuth and Worker smoke evidence is recorded in implementation progress; synthetic identity/session tests run locally.
 
 The D02 edge caps JSON bodies at **65,536 bytes**, measured while reading streams as well as against declared size; the auth token field is capped at **16,384 characters**. Shared ID syntax is alphanumeric/underscore/hyphen, at most 128 characters, beginning alphanumeric; cursors are bounded base64url strings of at most 2,048 characters. Cursor signing and route scope enforcement arrive with D10. Money and UTC timestamps use safe integers; timestamps are nonnegative. These wire bounds are shared in [fixtures](contracts/d02-fixtures.json); financial entry caps and other product limits are still due in their planned phases.
 
 | Method and path | Auth | Request | Success | Main failures |
 |---|---|---|---|---|
-| `POST /v1/auth/google` | None; valid Google ID token required | `{ "idToken": "...", "requestedRole": "owner" }` | `200` existing account or `201` new account: `account`, `accessToken`, `refreshToken`, `accessExpiresAtMs` | `IDENTITY_INVALID`, `ROLE_CONFLICT`, rate limit |
+| `POST /v1/auth/google` | None; valid Google ID token required | `{ "idToken": "...", "requestedRole": "owner", "deviceId": "..." }` | `200` new or existing account: `account`, `accessToken`, `refreshToken`, `accessExpiresAtMs` | `IDENTITY_INVALID`, `ROLE_CONFLICT`, rate limit |
 | `POST /v1/auth/refresh` | Refresh credential in body; TLS | `{ "refreshToken": "...", "deviceId": "..." }` | `200` rotated access and refresh tokens; old refresh revoked | `AUTH_REQUIRED`, rate limit |
 | `POST /v1/auth/logout` | Bearer access token | `{ "deviceId": "..." }` | `204` current session revoked | `AUTH_REQUIRED` |
 | `GET /v1/me` | Either role | None | `200` account, role, app/schema capability versions, shop or own link summary | `AUTH_REQUIRED` |
@@ -84,10 +84,14 @@ The Worker verifies Google token signature, issuer, audience, expiry and stable 
 
 ## 3. Owner shop and customer linking
 
+D05 normalizes shop names to Unicode NFC, trims and collapses whitespace, and requires 1-120 characters. Unknown body properties are rejected. The server derives ownership from the verified session; the existing unique owner constraint serializes concurrent creates. A retry with a different name opens the original shop and does not rename it. Closed shops cannot be replaced in v1. Reads of inaccessible or closed shops return the same generic 404 as missing shops. Shop creation needs internet and is not queued locally.
+
+`GET /v1/me` adds `shop: Shop|null` for owners. For customers it adds only their own active `links` (`id`, `shopId`, `shopName`), up to 100 ordered by link ID, and `linksHasMore` for overflow. It never returns another customer's identity or balance. Complete ledger browsing is D10. Policy helpers recheck active shop/link and live users; entry lookup must also match both shop and link. Existing SQL commit guards continue to protect ledger mutations, whose routes are not exposed in D05.
+
 | Method and path | Auth | Request | Success | Main failures |
 |---|---|---|---|---|
-| `POST /v1/shops` | Owner | `{ "name": "Kiran Store" }` | `201` `Shop`; repeat for same owner returns existing shop or `SHOP_ALREADY_EXISTS` with owned shop ID | `VALIDATION_ERROR`, `FORBIDDEN` |
-| `GET /v1/shops/{shopId}` | Owner of shop | None | `200` `Shop` plus acknowledged shop totals/version | `NOT_FOUND` |
+| `POST /v1/shops` | Owner | `{ "name": "Kiran Store" }` | `201` `Shop`; repeat returns `200` existing active shop unchanged; closed shop returns `409 SHOP_ALREADY_EXISTS` | `VALIDATION_ERROR`, `FORBIDDEN` |
+| `GET /v1/shops/{shopId}` | Owner of shop | None | `200` `Shop`; acknowledged totals/version are added with D10 ledger reads | `NOT_FOUND` |
 | `POST /v1/customer-qr/resolve` | Owner of shop | `{ "shopId": "shp_1", "publicQrId": "..." }` parsed from `udhaar://customer/v1/{publicId}` | `200` `{ "state": "new"\|"linked", "customerDisplayName": "...", "linkId": null-or-id }` | `QR_INVALID`, `QR_REVOKED`, `NOT_FOUND`, rate limit |
 | `POST /v1/shops/{shopId}/customers` | Owner of shop | `clientOperationId`, `publicQrId`, optional `shopNickname` | `201` new `Link`; `200` same existing link | `QR_REVOKED`, `IDEMPOTENCY_CONFLICT`, `NOT_FOUND` |
 | `GET /v1/shops/{shopId}/customers?cursor=&limit=` | Owner of shop | Bounded page parameters | `200` page of `Link` and balances | `NOT_FOUND`, `CURSOR_INVALID` |
@@ -115,7 +119,7 @@ The owner must see and confirm the customer's display label before calling link.
 | `GET /v1/me/ledgers` | Customer | None | `200` full bounded set of own active shop/link summaries with balance, `snapshotAtMs`; later paginate if needed | `AUTH_REQUIRED` |
 | `GET /v1/me/ledgers/{shopId}/entries?cursor=&limit=` | Customer linked to shop | Bounded page parameters | `200` own `LedgerEntry` page and `Balance` | `NOT_FOUND`, `CURSOR_INVALID` |
 
-Rotation is online-only. If its HTTP response is lost, the app calls `GET /v1/me/qr` to recover the current active ID instead of blindly rotating again. The QR contains a random lookup ID and format/version only, never name, email, phone, balance, credentials or Google subject. Customer ledger routes use session user ID for SQL filtering; changing `{shopId}` cannot reveal a different customer's rows.
+Rotation is online-only. If its HTTP response is lost, the app calls `GET /v1/me/qr` to recover the current active ID instead of blindly rotating again. D06 issues 256-bit random lowercase hex public IDs during customer registration and fills missing mappings for existing customers on own-QR read. Rotation is capped at three attempts per customer per ten minutes, using atomic hashed-user rate counters. Revocation and issuance are in one D1 batch: failure rolls both back; old rows remain revoked and internal shop/customer links are unchanged. Mutation bodies must be an empty JSON object. The API returns only version, publicQrId and payload. Mobile stores QR/check time in account-specific Android secure storage; it marks an uncertain rotation durably before sending and hides the old code until own-QR read succeeds. Saved QR is explicitly unverified and may have changed on another device. A rejected rotation, including 429, remains an explicit failure notice after current-QR recovery. A failed cache fallback returns an actionable error instead of leaving loading active. If auth renewal fails in the open customer screen, credentials are discarded and the account database is locked; the public cached QR may remain visible with Sign in again, never granting cloud/ledger access. Offline cold startup remains D12. No owner resolve/link endpoint is exposed until D07. The QR contains a random lookup ID and format/version only, never name, email, phone, balance, credentials or Google subject. Customer ledger routes use session user ID for SQL filtering; changing `{shopId}` cannot reveal a different customer's rows.
 
 ## 5. Ledger reads, writes and sync
 
@@ -264,3 +268,9 @@ Backward-compatible v1 changes may add optional response fields; clients must ig
 | D1 quota failure | Retryable error if Worker can respond; local item remains Pending. |
 
 The API is a design contract, not evidence of a running service. Implementation needs schema validation, authorization and integration tests against the pinned D1 runtime. Cloudflare documents the D1 Worker binding and transactional batch behavior used by this design: [D1 Worker API](https://developers.cloudflare.com/d1/worker-api/d1-database/). The next document, **Security Requirements**, will fix credential lifetimes, rate-limit thresholds, device storage and operational controls.
+
+### D04 session policy
+
+Access credentials contain 256 random bits and expire after 15 minutes. Refresh credentials contain 256 random bits, rotate atomically and expire 30 days from initial session creation; rotation never extends the deadline. D1 stores SHA-256 hashes only. Spent-token replay revokes the session and every associated access credential; lost refresh response requires Google reauthentication. Other device sessions remain valid. Required deviceId is an app identifier, not hardware proof. Profile returns account and capabilities (apiVersion=1, localSchemaVersion=1); D05 adds scoped shop/link summaries as described above.
+
+Controls start at 10 Google exchanges per 10 minutes per network and 30 refresh attempts per minute per network, returning 429 and Retry-After. IP keys are hashed; inactive rate rows expire on auth traffic. Pilot capacity remains untested. Offline sign-out locks local data and clears local credentials; the UI reports unconfirmed cloud revocation. Server credentials still expire by the above deadlines.
