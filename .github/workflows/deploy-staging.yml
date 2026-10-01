@@ -73,6 +73,9 @@ jobs:
           checks = [('/health', None, 200), ('/v1/me', None, 401),
                     ('/v1/customer-qr/resolve', {'shopId': 'synthetic-denied', 'publicQrId': '0' * 64}, 401),
                     ('/v1/shops/synthetic-denied/customers', {'clientOperationId': '00000000-0000-4000-8000-000000000000', 'publicQrId': '0' * 64}, 401)]
+          log = pathlib.Path(os.environ['RUNNER_TEMP'], 'staging-deploy.log').read_text()
+          version = re.search(r'Current Version ID:\s*([0-9a-f-]{36})', log)
+          print('::notice title=Staging Worker deployed::' + json.dumps({'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'version_id': version[1] if version else None}))
           results = []
           for path, body, expected in checks:
               request = urllib.request.Request(target + path, data=None if body is None else json.dumps(body).encode(),
@@ -81,7 +84,14 @@ jobs:
                   with urllib.request.urlopen(request, timeout=20) as response:
                       status, payload = response.status, json.load(response)
               except urllib.error.HTTPError as error:
-                  status, payload = error.code, json.load(error)
+                  status = error.code
+                  raw = error.read()
+                  try: payload = json.loads(raw)
+                  except ValueError: payload = {}
+              except Exception as error:
+                  print('::error title=Staging HTTPS check failed::' + json.dumps({'path': path, 'exception': type(error).__name__, 'message': str(error)}))
+                  raise
+              print('::notice title=Staging HTTPS response::' + json.dumps({'path': path, 'status': status, 'error_code': payload.get('error', {}).get('code'), 'health_status': payload.get('data', {}).get('status')}))
               if status != expected or (status == 401 and payload.get('error', {}).get('code') != 'AUTH_REQUIRED'):
                   raise SystemExit(f'Staging check failed: {path} returned {status}, expected {expected}')
               if path == '/health' and payload.get('data', {}).get('status') != 'ok':
