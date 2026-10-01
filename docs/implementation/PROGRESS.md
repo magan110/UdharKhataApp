@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D06 - next; D05 local engineering and approved staging deployment complete; device shop smoke pending. **Last updated:** 1 October 2026. D04 local checks and user-reported live owner/customer sign-in and sign-out smoke checks are complete.
+**Current phase:** D06 - next; D05 complete: local checks, approved staging deployment and user-reported device shop smoke passed. **Last updated:** 1 October 2026. D04 local checks and user-reported live owner/customer sign-in and sign-out smoke checks are complete.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -12,7 +12,7 @@
 | D02 | Done | 2026-09-30 | Flutter architecture and guarded shells, Worker edge pipeline, shared fixtures, and tests. See D02 evidence below. |
 | D03 | Done | 2026-09-30 | Local D1 migration, SQL ledger/projection/receipt guards, account-scoped SQLite and atomic persistence adapters. See D03 evidence below. |
 | D04 | Done | 2026-10-01 | Local verification plus user-reported live owner/customer sign-in and sign-out on configured staging build. Hardware security and release gates remain explicit below. |
-| D05 | Done (local) | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging deployment passed; device shop smoke pending. |
+| D05 | Done | 2026-10-01 | Shop setup, scoped routes, policy matrix, 54 Worker/38 Flutter tests and Android debug build passed. Staging deployment and user-reported device shop creation/reopen smoke passed. |
 | D06-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -142,3 +142,7 @@ D05 final artifact: `udhaarkhata/build/app/outputs/flutter-apk/app-debug.apk`, c
 ### D05 approved staging deployment (2026-10-01)
 
 User explicitly approved deployment after reviewing the completed D05 checkpoint. Deployed source `aa97c6f` to `udhaarkhata-api-staging`, version `1fcfd3a2-73f2-44bb-9c49-7228f6f9def2`, at https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev. Confirmed the existing staging D1 binding and Google audience; no migration or account/ledger data change. Prior version `21eab16b-9cb6-4cab-80ae-322450ab6f17` remains the code rollback candidate; no schema change is involved. Live HTTPS smoke passed: health 200; unauthenticated profile, shop read and shop creation all 401 AUTH_REQUIRED. Explicit Cloudflare DNS resolution with curl --resolve preserved normal certificate verification. No authenticated live shop creation is claimed; install the D05 debug APK, create a test shop, sign out/in and verify it reopens the same shop to close the remaining device smoke gate. GitHub push was not performed.
+
+### D05 user-reported device smoke (2026-10-01)
+
+User confirmed ?working perfect? after the requested updated-APK owner shop creation and sign-out/sign-in reopening check. This closes the remaining D05 device smoke gate. Evidence is the user's device report, not an independently captured trace. Local authorization tests and staging deployment evidence remain recorded above; no production readiness or full hardware security result is inferred. D05 is complete. Next: D06 customer QR issuance, display and rotation.
