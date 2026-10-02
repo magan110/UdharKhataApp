@@ -1,3 +1,5 @@
+import 'app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 class StatusPage extends StatelessWidget {
@@ -15,31 +17,34 @@ class StatusPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Udhaar Khata')),
+    appBar: AppBar(
+      title: Text(AppStrings.of(context).translate('Udhaar Khata')),
+    ),
     body: SafeArea(
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (loading)
-                const CircularProgressIndicator(
-                  semanticsLabel: 'Opening account',
+                CircularProgressIndicator(
+                  semanticsLabel: AppStrings.of(context)
+                      .translate('Opening account'),
                 ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(message, textAlign: TextAlign.center),
               if (onRetry != null) ...[
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 FilledButton(
                   onPressed: onRetry,
-                  child: const Text('Try again'),
+                  child: Text(AppStrings.of(context).translate('Try again')),
                 ),
               ],
             ],

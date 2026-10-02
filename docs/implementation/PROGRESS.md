@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D11 complete with user-reported Android phone acceptance; D12 design exploration started. D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. **Last updated:** 2 October 2026.
+**Current phase:** D13–D21 private-test candidate implemented; automated verification complete; staging and APK delivery in progress. D12 delivered and user reported working. Physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 2 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -19,8 +19,17 @@
 | D09 | Done | 2026-10-02 | Recorded local/cloud checks and stable APK audit; user confirmed phone acceptance. Detailed device regression remains a release requirement. |
 | D10 | Done | 2026-10-02 | Recorded local/cloud verification, approved staging migration/deployment and persistent-key APK audit; user confirmed the delivered build is working. Detailed device regression remains a release requirement. |
 | D11 | Complete | Durable cache/outbox and owner UI; 118 Flutter tests, 90.91% coverage, clean analysis, independent review. | Stable-key APK published; user reported working on 2 October 2026. |
-| D12 | Implementation plan pending review | Written [specification](../superpowers/specs/2026-10-02-d12-sync-design.md) approved; [implementation plan](../superpowers/plans/2026-10-02-d12-sync.md) prepared. | Plan review and execution-method selection precede product code; no remote changes. |
-| D13-D24 | Not started | - | Follow the order in [README](README.md). |
+| D12 | Complete | 2026-10-02 | Staging, stable-key APK and user-reported phone acceptance; detailed evidence below. |
+| D13 | Implemented | 2026-10-02 | Verified QR/cache and replacement-phone recovery; automated tests. |
+| D14 | Implemented | 2026-10-02 | Immutable revisioned corrections, atomic delta/receipt replay and offline Pending UI. |
+| D15 | Implemented | 2026-10-02 | Scoped paginated disputes, owner resolution and cross-cache revocation. |
+| D16 | Implemented | 2026-10-02 | Effective amount allocation and fresh acknowledged overdue summaries. |
+| D17 | Implemented | 2026-10-02 | Reconciled statement CSV/PDF and reviewed editable reminders with explicit native sharing. |
+| D18 | Implemented; device acceptance pending | 2026-10-02 | English/Hindi resources, actual Hindi large-text widgets; human Hindi/TalkBack checks pending. |
+| D19 | Private-test implementation complete | 2026-10-02 | Non-destructive privacy requests/access removal and synthetic encrypted restore; actual backup infrastructure and reviewed retention/relink policy pending before real use. |
+| D20 | Implemented | 2026-10-02 | Central rate policies, export limits, redacted request events, compatibility guard and operations guidance. |
+| D21 | Automated verification complete; delivery in progress | 2026-10-02 | [Candidate evidence](../verification/d21-evidence.md); final source, deployment and APK provenance to follow. Physical acceptance pending. |
+| D22-D24 | Not started | - | Outside this requested private-test candidate. |
 
 ### D04 evidence (2026-10-01)
 
@@ -469,3 +478,7 @@ Install `app-debug.apk` from the ZIP as an update over D11 to retain app-private
 ### D12 user-reported phone acceptance (2 October 2026)
 
 After receiving the D12 staging APK, the user reported “Working now next phase?”. This records user-reported D12 acceptance; it does not infer independent device traces, completion of every rejection/account-switch check, or physical extraction/security review. The next planned phase is D13: account/shop-scoped offline QR lookup for previously linked customers, clear internet-needed behavior for unknown QR, stale-access/quota recovery explanations and the acknowledged-only replacement-phone recovery boundary. No D13 product implementation or remote action was performed by this acceptance record. Pilot security/device evidence remains a separate gate.
+
+### D13–D21 automated candidate verification (2 October 2026)
+
+236 Flutter tests pass with 83.96% line coverage; 106 Worker tests pass, all coverage categories above 80%; one Node configuration test, analysis, formatting, typecheck, lint, migrations/foreign keys, build, dependency audit, documentation/static release checks and encrypted synthetic restore pass. Independent review blockers are fixed, including offline revocation across both persistent namespaces and navigation-independent access-removal cleanup. See [candidate evidence](../verification/d21-evidence.md) for traceability and remaining physical/public-use gates.

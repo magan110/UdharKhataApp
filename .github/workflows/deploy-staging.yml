@@ -72,6 +72,11 @@ jobs:
           import json, os, pathlib, re, subprocess, urllib.error, urllib.request
           target = 'https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev'
           checks = [('/health', None, 200), ('/v1/me', None, 401),
+                    ('/v1/me/disputes?shopId=synthetic-denied', None, 401),
+                    ('/v1/me/data-requests', None, 401),
+                    ('/v1/me/ledgers/synthetic-denied/access-removal', {}, 401),
+                    ('/v1/shops/synthetic-denied/customers/synthetic-denied/statement', None, 401),
+                    ('/v1/me/ledgers/synthetic-denied/due', None, 401),
                     ('/v1/customer-qr/resolve', {'shopId': 'synthetic-denied', 'publicQrId': '0' * 64}, 401),
                     ('/v1/shops/synthetic-denied/customers', {'clientOperationId': '00000000-0000-4000-8000-000000000000', 'publicQrId': '0' * 64}, 401)]
           log = pathlib.Path(os.environ['RUNNER_TEMP'], 'staging-deploy.log').read_text()
@@ -90,6 +95,11 @@ jobs:
                   raise SystemExit(f'Staging check failed: {path} returned {status}, expected {expected}')
               if path == '/health' and payload.get('data', {}).get('status') != 'ok':
                   raise SystemExit('Staging health response was not verified')
+              if path == '/health':
+                  data = payload.get('data', {})
+                  required = {'owner-ledger-sync-v1', 'immutable-corrections-v1', 'disputes-v1', 'due-allocation-v1', 'privacy-requests-v1'}
+                  if data.get('apiVersion') != 1 or not required.issubset(set(data.get('capabilities', []))):
+                      raise SystemExit('D21 staging capabilities were not verified')
               results.append({'path': path, 'status': status})
           log = pathlib.Path(os.environ['RUNNER_TEMP'], 'staging-deploy.log').read_text()
           version = re.search(r'Current Version ID:\s*([0-9a-f-]{36})', log)

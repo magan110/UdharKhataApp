@@ -14,6 +14,8 @@ import 'local_ledger_view.dart';
 import 'sync_service.dart';
 import 'sync_status_view.dart';
 import 'online_reads.dart';
+import 'due_summary.dart';
+import '../settings/settings_page.dart' show AccessRemovalButton;
 
 String historyDate(int milliseconds) {
   final date = DateTime.fromMillisecondsSinceEpoch(milliseconds);
@@ -36,7 +38,9 @@ class HistoryPage extends ConsumerWidget {
   final bool confirmedOnly;
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-    appBar: AppBar(title: const Text('Transaction history')),
+    appBar: AppBar(
+      title: Text(AppStrings.of(context).translate('Transaction history')),
+    ),
     body: SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -246,19 +250,25 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
     final current = ref.watch(onlineReadRepositoryProvider),
         snapshot = _snapshot;
     if (!identical(current, _repository)) {
-      return const Text('Please sign in to continue.');
+      return Text(
+        AppStrings.of(context).translate('Please sign in to continue.'),
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (snapshot != null) ...[
+          if (snapshot.offline)
+            Text(
+              '${AppStrings.of(context).translate('Last successful sync')}: ${historyDate(snapshot.snapshotAtMs)} · ${AppStrings.of(context).translate('Offline: newer owner changes may be missing.')}',
+            ),
           if (widget.kind == OnlineReadKind.summary) ...[
             Text(
-              'Total customers owe you ${formatPaise(snapshot.total!)}',
+              '${AppStrings.of(context).translate('Total customers owe you')} ${formatPaise(snapshot.total!)}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             Text(
-              '${snapshot.customerCount} customer ledgers, including retained ledgers.',
+              '${snapshot.customerCount} ${AppStrings.of(context).translate('customer ledgers, including retained ledgers.')}',
             ),
           ],
           if (widget.kind == OnlineReadKind.history) ...[
@@ -270,41 +280,69 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
             ),
             Text(
               current?.role == AccountRole.owner
-                  ? 'Customer owes you ${formatPaise(snapshot.balance!.balancePaise)}'
-                  : 'You owe ${snapshot.shopName} ${formatPaise(snapshot.balance!.balancePaise)}',
+                  ? AppStrings.of(context).text(
+                      'owner.owes',
+                      values: {
+                        'amount': formatPaise(snapshot.balance!.balancePaise),
+                      },
+                    )
+                  : AppStrings.of(context).text(
+                      'customer.owes',
+                      values: {
+                        'shop': snapshot.shopName!,
+                        'amount': formatPaise(snapshot.balance!.balancePaise),
+                      },
+                    ),
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const Text(
-              'Confirmed server entries. Payments are manually recorded by the owner; bank transfers are not verified.',
+            Text(
+              AppStrings.of(context).translate(
+                'Confirmed server entries. Payments are manually recorded by the owner; bank transfers are not verified.',
+              ),
             ),
           ],
           Text(
-            'Server snapshot: ${historyDate(snapshot.snapshotAtMs)}. Refresh for newer changes.',
+            '${AppStrings.of(context).translate('Server snapshot')}: ${historyDate(snapshot.snapshotAtMs)} · ${AppStrings.of(context).translate('Refresh for newer changes.')}',
           ),
           if (_records.isEmpty && widget.kind != OnlineReadKind.summary)
-            Text(switch (widget.kind) {
-              OnlineReadKind.history => 'No transactions yet.',
-              OnlineReadKind.shops => 'No shops are linked to this account.',
-              _ => 'No customers yet. Scan a customer QR to add them.',
-            }),
+            Text(
+              AppStrings.of(context).translate(switch (widget.kind) {
+                OnlineReadKind.history => 'No transactions yet.',
+                OnlineReadKind.shops => 'No shops are linked to this account.',
+                _ => 'No customers yet. Scan a customer QR to add them.',
+              }),
+            ),
+          if (widget.kind == OnlineReadKind.history &&
+              widget.linkId == null) ...[
+            DueSummary(shopId: widget.shopId!, customer: true),
+            AccessRemovalButton(shopId: widget.shopId!),
+            TextButton(
+              onPressed: () =>
+                  context.push('/customer/disputes/${widget.shopId}'),
+              child: Text(AppStrings.of(context).translate('View disputes')),
+            ),
+          ],
           for (final record in _records) _record(context, record),
         ],
         if (_error != null) ...[
           if (snapshot != null)
-            const Text(
-              'Showing the earlier server snapshot. The latest page could not be verified.',
+            Text(
+              AppStrings.of(context).translate(
+                'Showing the earlier server snapshot. The latest page could not be verified.',
+              ),
             ),
           Text(
             errorMessage(
               _error is AppFailure
                   ? (_error as AppFailure).messageKey
                   : 'history.failed',
+              languageCode: AppStrings.of(context).languageCode,
             ),
           ),
           if (_cursor != null)
             TextButton(
               onPressed: _loading ? null : () => _load(),
-              child: const Text('Retry page'),
+              child: Text(AppStrings.of(context).translate('Retry page')),
             ),
         ],
         if (_loading)
@@ -319,11 +357,11 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
         if (_cursor != null && _error == null)
           TextButton(
             onPressed: _loading ? null : () => _load(),
-            child: const Text('Load more'),
+            child: Text(AppStrings.of(context).translate('Load more')),
           ),
         TextButton(
           onPressed: _loading ? null : () => _load(restart: true),
-          child: Text(_refresh),
+          child: Text(AppStrings.of(context).translate(_refresh)),
         ),
       ],
     );
@@ -337,25 +375,48 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(switch (e.kind) {
-              'credit' => 'Credit ${formatPaise(e.amount)}',
+              'credit' =>
+                '${AppStrings.of(context).translate('Credit')} ${formatPaise(e.amount)}',
               'payment' =>
-                '${e.method == 'cash' ? 'Cash' : 'UPI'} payment received ${formatPaise(e.amount)}',
+                '${AppStrings.of(context).translate(e.method == 'cash' ? 'Cash' : 'UPI')} ${AppStrings.of(context).translate('Payment received').toLowerCase()} ${formatPaise(e.amount)}',
               _ =>
-                'Correction ${e.effect < 0 ? '-' : '+'}${formatPaise(e.effect.abs())}',
+                '${AppStrings.of(context).translate('Correction')} ${e.effect < 0 ? '-' : '+'}${formatPaise(e.effect.abs())}',
             }, style: Theme.of(context).textTheme.titleMedium),
-            Text('Entry date: ${historyDate(e.occurredAtMs)}'),
-            Text('Recorded: ${historyDate(e.createdAtMs)} · Confirmed'),
+            Text(
+              '${AppStrings.of(context).translate('Entry date')}: ${historyDate(e.occurredAtMs)}',
+            ),
+            Text(
+              '${AppStrings.of(context).translate('Recorded')}: ${historyDate(e.createdAtMs)} · ${AppStrings.of(context).translate('Confirmed')} · ${AppStrings.of(context).translate('Created by shop owner')}',
+            ),
             if (e.note != null) Text(e.note!),
-            if (e.dueDate != null) Text('Due: ${dueDateText(e.dueDate!)}'),
+            if (e.dueDate != null)
+              Text(
+                '${AppStrings.of(context).translate('Due')}: ${dueDateText(e.dueDate!)}',
+              ),
+            if (widget.linkId == null && e.kind != 'correction')
+              TextButton(
+                onPressed: () => context.push(
+                  '/customer/disputes/${widget.shopId}?entry=${e.id}',
+                ),
+                child: Text(
+                  AppStrings.of(context).translate('Raise or view dispute'),
+                ),
+              ),
             if (e.reason != null)
-              Text('Reason: ${e.reason} · Original entry: ${e.targetId}'),
+              Text(
+                '${AppStrings.of(context).translate('Reason')}: ${e.reason} · Original entry: ${e.targetId}',
+              ),
           ],
         ),
       ),
     ),
     CustomerLink c => ListTile(
       title: Text(c.nickname ?? c.displayName),
-      subtitle: Text('Customer owes you ${formatPaise(c.balance.value)}'),
+      subtitle: Text(
+        AppStrings.of(
+          context,
+        ).text('owner.owes', values: {'amount': formatPaise(c.balance.value)}),
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
         await context.push('/owner/customer/${c.shopId.value}/${c.id.value}');
@@ -365,7 +426,7 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
     ShopLedger s => ListTile(
       title: Text(s.name),
       subtitle: Text(
-        'You owe ${s.name} ${formatPaise(s.balance)} (last server read).',
+        '${AppStrings.of(context).text('customer.owes', values: {'shop': s.name, 'amount': formatPaise(s.balance)})} · ${AppStrings.of(context).translate('Last server read')}',
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push('/customer/history/${s.shopId}'),

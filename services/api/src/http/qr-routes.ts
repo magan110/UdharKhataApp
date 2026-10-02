@@ -33,7 +33,9 @@ export function qrRoutes(options:Options) {
     const principal=requireRole(await options.authenticate(request),'owner');
     const shopId=pathId(new URL(request.url).pathname.split('/')[3]);
     const body=await readJson(request,linkSchema) as z.infer<typeof linkSchema>;
-    const result=await linkCustomer(dbRequired(options.db),principal,shopId,body);
+    const db=dbRequired(options.db);
+    await (options.sessions ?? new SessionService(db)).rateLimit(principal.userId,'link-owner');
+    const result=await linkCustomer(db,principal,shopId,body);
     return jsonResponse(result.link,requestId,result.created?201:200);
   }},
   {path:'/v1/shops/{shopId}/customers',method:'GET',handler:async(request:Request,requestId:string)=>{

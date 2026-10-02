@@ -134,7 +134,7 @@ void main() {
       };
     await openShops(tester, auth);
     expect(
-      find.text('You owe Kiran Store ₹500.00 (last server read).'),
+      find.text('You owe Kiran Store ₹500.00 · Last server read'),
       findsOneWidget,
     );
   });

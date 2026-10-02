@@ -1,3 +1,4 @@
+import {redactRequestEvent} from './redaction';
 export interface RequestEvent {
   requestId: string;
   route: string;
@@ -7,4 +8,4 @@ export interface RequestEvent {
 }
 
 export type RequestLogger = (event: RequestEvent) => void;
-export const logRequest: RequestLogger = (event) => console.info(JSON.stringify(event));
+export const logRequest: RequestLogger = (event) => console.info(JSON.stringify(redactRequestEvent(event)));

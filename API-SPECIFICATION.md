@@ -61,7 +61,7 @@ Error:
 | `Link` | `id`, `shopId`, `customerUserId`, `customerDisplayName`, optional `shopNickname`, `status`, `linkedAtMs`, `balancePaise`, `ledgerVersion`. Owner only; customer routes omit other customers. |
 | `LedgerEntry` | `id`, `serverSeq`, `shopId`, `linkId`, `kind`, `amountPaise` (originals), `targetAmountPaise` (corrections), `effectPaise`, `note`, `paymentMethod`, `dueDate`, `correctsEntryId`, `revision` (correction target revision after commit), `correctionReason`, `occurredAtMs`, `createdAtMs`, `createdByUserId`. Nullable fields are consistently `null` when absent. |
 | `Balance` | `balancePaise`, `ledgerVersion`, `asOfServerSeq`, `asOfAtMs`. This is acknowledged cloud state only. |
-| `Dispute` | `id`, `entryId`, `linkId`, `status: open\|resolved`, `reason`, optional `ownerNote`, `createdAtMs`, optional `resolvedAtMs`. |
+| `Dispute` | `id`, `shopId`, `entryId`, `customerUserId`, `status: open\|resolved`, `reason`, nullable `resolutionNote`, `createdAtMs`, nullable `resolvedAtMs`. |
 
 Owner list and ledger responses must remain scoped even if a caller edits a path ID. Customer identity is always derived from the session. A QR public ID is a lookup key only and never grants ledger access or write permission.
 
@@ -69,7 +69,7 @@ Owner list and ledger responses must remain scoped even if a caller edits a path
 
 ### D04 implementation status
 
-`GET /health` is an unversioned liveness route returning only `{ "data": { "status": "ok" }, "requestId": "..." }`. It does not test D1 readiness. D04 implements Google exchange, refresh, logout and profile routes with a D1 binding and approved Google audience. An unconfigured audience fails closed with `503 FEATURE_UNAVAILABLE`. Approved staging OAuth and Worker smoke evidence is recorded in implementation progress; synthetic identity/session tests run locally.
+`GET /health` is an unversioned liveness route returning status, `apiVersion:1` and additive feature capability names with a request ID. It does not test D1 readiness. D04 implements Google exchange, refresh, logout and profile routes with a D1 binding and approved Google audience. An unconfigured audience fails closed with `503 FEATURE_UNAVAILABLE`. Approved staging OAuth and Worker smoke evidence is recorded in implementation progress; synthetic identity/session tests run locally.
 
 The D02 edge caps JSON bodies at **65,536 bytes**, measured while reading streams as well as against declared size; the auth token field is capped at **16,384 characters**. Shared ID syntax is alphanumeric/underscore/hyphen, at most 128 characters, beginning alphanumeric; cursors are bounded base64url strings of at most 2,048 characters. Cursor signing and route scope enforcement arrive with D10. Money and UTC timestamps use safe integers; timestamps are nonnegative. These wire bounds are shared in [fixtures](contracts/d02-fixtures.json); financial entry caps and other product limits are still due in their planned phases.
 
@@ -201,7 +201,7 @@ Successful new commit returns `201`:
 
 A retry with the same operation ID and canonical payload returns `200` with the original `entry`, **original committed balance/version** and `replayed: true`, even if later entries have changed the current balance. The client then performs a read to obtain the latest state. A different payload under that ID returns `409 IDEMPOTENCY_CONFLICT`. The Worker hashes authenticated owner, shop, operation kind and normalized validated fields; it stores the hash and outcome in `sync_operations` atomically with the ledger row. It checks the receipt before revalidating mutable business state, so a legitimate retry after later balance changes remains a replay. A failed command does not create a success receipt; retrying after a permanent rejection needs explicit user review.
 
-The Worker computes signed effect. Credit increases owed balance; payment reduces it. A payment is rejected with `409 BALANCE_CONFLICT` if it exceeds the authoritative current balance at commit time. Correction uses `expectedRevision`; a stale revision gives `409 REVISION_CONFLICT` with the current authorized revision. A correction cannot point to another shop/customer or a correction row. If the proposed correction would make the final balance negative, return `BALANCE_CONFLICT`. Zero target means cancel the original's current effective contribution; the original and every correction remain visible. No `PUT`, `PATCH` or `DELETE` route edits a posted entry.
+The Worker computes signed effect. Credit increases owed balance; payment reduces it. A payment is rejected with `409 BALANCE_CONFLICT` if it exceeds the authoritative current balance at commit time. Correction uses `expectedRevision`; a stale revision gives `409 REVISION_CONFLICT` with a stable actionable error; the client refreshes the complete authorized ledger to obtain the current revision. A correction cannot point to another shop/customer or a correction row. If the proposed correction would make the final balance negative, return `BALANCE_CONFLICT`. Zero target means cancel the original's current effective contribution; the original and every correction remain visible. No `PUT`, `PATCH` or `DELETE` route edits a posted entry.
 
 ### 5.3 Pagination and pull protocol
 
@@ -209,28 +209,33 @@ Ledger pages are ordered by increasing `serverSeq`, with a default 50 and maximu
 
 The app writes the returned entries and advances its local cursor in **one SQLite transaction**. A failed page or crash leaves the previous cursor intact. A response includes `snapshotAtMs` and `Balance` **as of the captured high-water sequence**; the Worker must obtain that balance from the same consistent snapshot or calculate it from effects through that sequence. Reading the current projection after newer entries commit would violate this contract. Full link-list refresh on app start/reconnect detects link removal because the entry cursor alone cannot communicate access changes. If a cursor is invalid after account switch, key rotation or API change, return `409 CURSOR_INVALID`; the app discards only the affected cached snapshot cursor and refetches authorized records, preserving its outbox.
 
-## 6. Disputes
+## 6. Disputes — D15 implemented contract
 
-| Method and path | Auth | Request | Success | Main failures |
-|---|---|---|---|---|
-| `POST /v1/me/disputes` | Customer | `{ "entryId": "ent_1", "reason": "Amount is incorrect" }` | `201` new `Dispute`; repeat for same entry while open returns `200` existing | `NOT_FOUND`, `VALIDATION_ERROR`, rate limit |
-| `GET /v1/me/disputes?cursor=&limit=` | Customer | Own disputes only | `200` page | `CURSOR_INVALID` |
-| `GET /v1/shops/{shopId}/disputes?cursor=&limit=` | Owner | Shop-scoped disputes | `200` page | `NOT_FOUND` |
-| `PATCH /v1/shops/{shopId}/disputes/{disputeId}` | Owner | `{ "status": "resolved", "ownerNote": "Adjusted in a separate correction" }` | `200` resolved dispute | `NOT_FOUND`, `REVISION_CONFLICT` if already resolved differently |
+| Method and path | Auth | Request / success |
+|---|---|---|
+| `POST /v1/me/ledgers/{shopId}/entries/{entryId}/disputes` | Current linked customer, own acknowledged entry | `{reason}`; `201` new item or `200` existing open item. One open dispute per entry; repeat after resolution may create a new open dispute. |
+| `GET /v1/me/disputes?shopId=&before=` | Customer | Scoped own `{items,hasMore,nextCursor}`; app supplies selected shop and fetches all pages, maximum 1,000 then explicit incomplete failure. |
+| `GET /v1/shops/{shopId}/disputes?before=` | Owning shop | `{items,hasMore,nextCursor}`; retained disputes remain owner-readable after customer access removal. |
+| `POST /v1/shops/{shopId}/disputes/{disputeId}/resolve` | Owning shop | `{resolutionNote}`; `200` resolved item; a different note after resolution conflicts. |
 
-A customer may dispute only an acknowledged entry in their own link. The server uses the authenticated customer ID to locate it. Submission requires internet. The reason is required and bounded. Resolution records owner identity and time. Disputes never change `balancePaise`; any adjustment must use the separate correction command. A retry of a resolved dispute submission is not guaranteed to recreate an open dispute; the app should query current status before resubmitting.
+API reason/note bounds are 1–500 trimmed characters; the app editor conservatively limits new input to 240 and accepts all valid server items. Lists sort creation time and ID descending, 100 per page; `before` is a scoped dispute-ID keyset cursor, not an authorization token. Unknown/duplicate query fields and foreign cursor IDs are rejected. Disputes never change money. Offline status requires a valid same-account local grant, is read-only and dated as cached; known revocation clears account dispute snapshots. Resolution is not a financial correction.
 
-## 7. Reports, exports and data controls
+## 7. Due summaries, statements and data controls — D16–D19
 
-| Method and path | Auth | Request | Success | Main failures |
-|---|---|---|---|---|
-| `POST /v1/shops/{shopId}/export` | Owner | `{ "linkId": "lnk_1", "fromDate": "2026-09-01", "toDate": "2026-09-30", "format": "csv" }` | `200` CSV/PDF stream, scoped statement metadata headers | `VALIDATION_ERROR`, `NOT_FOUND`, `CAPACITY_UNAVAILABLE` |
-| `POST /v1/me/data-requests` | Owner/customer | `{ "kind": "export"\|"account_deletion"\|"shop_deletion"\|"access_removal", "shopId": "shp_1" }` where applicable | `202` tracked request ID and status | `FORBIDDEN`, `VALIDATION_ERROR` |
-| `GET /v1/me/data-requests` | Either | None or bounded pagination | `200` own requests/status | `AUTH_REQUIRED` |
+| Method and path | Auth | Request / success |
+|---|---|---|
+| `GET /v1/shops/{shopId}/customers/{linkId}/due?asOfDate=YYYY-MM-DD` | Owning shop/current link | `{asOfDate,balancePaise,overduePaise,asOfServerSeq,asOfMs}` from complete atomic acknowledged dataset. |
+| `GET /v1/me/ledgers/{shopId}/due?asOfDate=YYYY-MM-DD` | Current linked customer | Same own-only due summary. |
+| `GET /v1/shops/{shopId}/customers/{linkId}/statement?cursor=&limit=` | Owning shop/current link | Same immutable fixed-snapshot history contract as entries. Six starts/minute; continuations use bounded owner-read allowance. App generates reviewed PDF/CSV privately. |
+| `POST /v1/me/data-requests` | Owner/customer | `{kind: export/account_deletion/shop_deletion/access_removal,shopId?:id}`; `202` tracked item `{id,kind,shopId,status,createdAtMs,resolvedAtMs}`. |
+| `GET /v1/me/data-requests` | Requester | `{requests,hasMore}` latest 100; app explicitly warns if older requests exist. |
+| `POST /v1/me/ledgers/{shopId}/access-removal` | Customer's own relationship | Strict empty body; immediate relationship revocation and completed tracked request, preserving immutable owner ledger. Repeat is safe. |
 
-Statement generation includes opening balance, dated signed entries, correction history and closing balance; `opening + sum(effects) = closing`. The export is generated from one consistent acknowledged snapshot. This route never silently mixes unsynced owner Pending entries; the phase-3 product decision will specify whether the device offers a separately labeled local provisional export. PDF/CSV content contains financial data, so it is not logged or cached by intermediaries. A full shop data export is a tracked `data-requests` workflow, not necessarily the same as a customer statement. The exact format, secure delivery/expiry and size limits must be fixed before phase 3.
+Due dates are timezone-free calendar dates. Corrected effective credits sort by due date, server sequence then ID, undated last; effective payments allocate in that order. Credit/payment corrections reallocate all payments. Overdue means unpaid dated credit with due date strictly before `asOfDate`; it never changes total balance. `asOfMs` is the fresh server read time, not the last posting time. UI hides incomplete, mismatched, Pending or expired summaries.
 
-`access_removal` is available only to the authenticated customer for their own shop link. It must not silently erase the owner's historical ledger. `shop_deletion` is owner-only; `account_deletion` is self-only. The API records a request and status; actual retention, re-linking and deletion timelines require the reviewed privacy policy. No route immediately cascades deletion of financial rows.
+Statements use a complete authorized acknowledged snapshot, maximum 5,000 entries and an inclusive UTC posting-date period of at most 366 days. Immutable `createdAtMs` chooses the period so a later backdated device occurrence cannot retroactively alter an exported posting period; occurrence remains shown. `opening + selected signed effects = closing`. PDF/CSV exclude device Pending/Needs attention and label that boundary; a separate explicitly reviewed device-request copy is available in settings. CSV formula prefixes are neutralized and licensed Hindi/Latin fonts are bundled locally. Native share launches only after owner action and a final account-generation check. No automatic WhatsApp/SMS integration.
+
+Owner shop export/deletion and self-account deletion are tracked requests, not destructive actions. Customer access removal preserves historical rows; relink remains blocked until published reviewed retention/relink policy exists. There is no operator status-update API or automatic legal retention period. Real policy, operator and backup gates remain in [private-test operations](docs/ops/private-test-operations.md).
 
 ## 8. Status codes, retries and compatibility
 

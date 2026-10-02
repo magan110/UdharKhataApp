@@ -1,3 +1,6 @@
+import 'package:go_router/go_router.dart';
+
+import '../../app/app_strings.dart';
 import '../auth/sign_out_button.dart';
 import 'customer_shops.dart';
 
@@ -16,16 +19,33 @@ class _CustomerShellState extends State<CustomerShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(_selected == 0 ? 'My QR' : 'My shops'),
-      actions: const [SignOutButton()],
+      title: Text(
+        AppStrings.of(context).translate(_selected == 0 ? 'My QR' : 'My shops'),
+      ),
+      actions: [
+        IconButton(
+          onPressed: () => context.push('/settings'),
+          tooltip: AppStrings.of(context).translate('Settings'),
+          icon: const Icon(Icons.settings),
+        ),
+        SignOutButton(),
+      ],
     ),
-    body: _selected == 0 ? const CustomerQrPage() : const CustomerShopsPage(),
+    body: SafeArea(
+      child: _selected == 0 ? CustomerQrPage() : CustomerShopsPage(),
+    ),
     bottomNavigationBar: NavigationBar(
       selectedIndex: _selected,
       onDestinationSelected: (value) => setState(() => _selected = value),
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.qr_code), label: 'My QR'),
-        NavigationDestination(icon: Icon(Icons.storefront), label: 'My shops'),
+      destinations: [
+        NavigationDestination(
+          icon: Icon(Icons.qr_code),
+          label: AppStrings.of(context).translate('My QR'),
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.storefront),
+          label: AppStrings.of(context).translate('My shops'),
+        ),
       ],
     ),
   );

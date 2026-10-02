@@ -64,7 +64,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     });
     try {
       if (repo == null || (links == null && repo is! DeviceLedgerRepository)) {
-        throw const AppFailure('AUTH_REQUIRED', 'auth.required');
+        throw AppFailure('AUTH_REQUIRED', 'auth.required');
       }
       final pending = await repo.pendingPayment(widget.shopId, widget.linkId);
       final customer = repo is DeviceLedgerRepository
@@ -211,6 +211,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final current = ref.watch(paymentRepositoryProvider),
         customer = _customer,
         attempt = _pending?.attempt,
@@ -219,108 +220,183 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         method = attempt?.paymentMethod ?? _method;
     final snapshot = _rejectionBalance;
     final balanceText = snapshot == null
-        ? 'Customer owes you ${formatPaise(customer?.balance.value ?? 0)} ${_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).'}'
-        : 'Customer owes you ${formatPaise(snapshot.balancePaise)} (server balance as of ${_displayTime(snapshot.asOfAtMs)}).';
+        ? '${strings.text('owner.owes', values: {'amount': formatPaise(customer?.balance.value ?? 0)})} ${strings.translate(_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}'
+        : '${strings.text('owner.owes', values: {'amount': formatPaise(snapshot.balancePaise)})} ${strings.format('(server balance as of {time}).', values: {'time': _displayTime(snapshot.asOfAtMs)})}';
     final message = errorMessage(
       _error is AppFailure
           ? (_error as AppFailure).messageKey
           : 'payment.failed',
+      languageCode: AppStrings.of(context).languageCode,
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Record payment received')),
+      appBar: AppBar(
+        title: Text(
+          AppStrings.of(context).translate('Record payment received'),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (!identical(current, _repo))
-                const Text('Please sign in and open this customer again.')
+                Text(
+                  AppStrings.of(
+                    context,
+                  ).translate('Please sign in and open this customer again.'),
+                )
               else if (_loading)
-                const Center(
+                Center(
                   child: CircularProgressIndicator(
-                    semanticsLabel: 'Loading payment form',
+                    semanticsLabel: AppStrings.of(context)
+                        .translate('Loading payment form'),
                   ),
                 )
               else if (customer == null) ...[
                 Text(message),
-                FilledButton(onPressed: _load, child: const Text('Try again')),
+                FilledButton(
+                  onPressed: _load,
+                  child: Text(AppStrings.of(context).translate('Try again')),
+                ),
               ] else ...[
                 Text(
                   customer.displayName,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 if (customer.nickname != null)
-                  Text('Shop nickname: ${customer.nickname}'),
-                const SizedBox(height: 16),
-                const Text(
-                  'Cash/UPI is manually recorded by you. This app does not verify a bank transfer.',
-                ),
-                const SizedBox(height: 16),
-                if (_savedLocal) ...[
-                  const Text('Payment saved · Pending'),
                   Text(
-                    '${method == 'cash' ? 'Cash' : 'UPI'} received on this device: ${formatPaise(attempt!.amountPaise)}',
+                    strings.format(
+                      'Shop nickname: {name}',
+                      values: {'name': customer.nickname!},
+                    ),
+                  ),
+                SizedBox(height: 16),
+                Text(
+                  AppStrings.of(context).translate(
+                    'Cash/UPI is manually recorded by you. This app does not verify a bank transfer.',
+                  ),
+                ),
+                SizedBox(height: 16),
+                if (_savedLocal) ...[
+                  Text(
+                    AppStrings.of(context).translate('Payment saved · Pending'),
+                  ),
+                  Text(
+                    strings.format(
+                      '{method} received on this device: {amount}',
+                      values: {
+                        'method': strings.translate(
+                          method == 'cash' ? 'Cash' : 'UPI',
+                        ),
+                        'amount': formatPaise(attempt!.amountPaise),
+                      },
+                    ),
                   ),
                   if (_localBalance != null)
                     Text(
-                      'Customer owes you ${formatPaise(_localBalance!)} (provisional, including Pending).',
+                      '${strings.text('owner.owes', values: {'amount': formatPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}',
                     ),
-                  const Text(
-                    'Pending entries are only on this device. They are not backed up to the cloud.',
+                  Text(
+                    AppStrings.of(context).translate(
+                      'Pending entries are only on this device. They are not backed up to the cloud.',
+                    ),
                   ),
                   FilledButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Back to customer'),
+                    child: Text(
+                      AppStrings.of(context).translate('Back to customer'),
+                    ),
                   ),
                 ] else if (receipt != null) ...[
-                  const Text('Payment acknowledged by server'),
                   Text(
-                    '${method == 'cash' ? 'Cash' : 'UPI'} received: ${formatPaise(attempt!.amountPaise)}',
+                    AppStrings.of(context)
+                        .translate('Payment acknowledged by server'),
                   ),
                   Text(
-                    'Balance when this payment was recorded: Customer owes you ${formatPaise(receipt.balancePaise)}',
+                    strings.format(
+                      '{method} received: {amount}',
+                      values: {
+                        'method': strings.translate(
+                          method == 'cash' ? 'Cash' : 'UPI',
+                        ),
+                        'amount': formatPaise(attempt!.amountPaise),
+                      },
+                    ),
                   ),
-                  const Text(
-                    'Refresh the customer ledger to see the latest balance.',
+                  Text(
+                    strings.format(
+                      'Balance when this payment was recorded: Customer owes you {amount}',
+                      values: {'amount': formatPaise(receipt.balancePaise)},
+                    ),
+                  ),
+                  Text(
+                    AppStrings.of(context).translate(
+                      'Refresh the customer ledger to see the latest balance.',
+                    ),
                   ),
                   FilledButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Back to customer'),
+                    child: Text(
+                      AppStrings.of(context).translate('Back to customer'),
+                    ),
                   ),
                 ] else if (_review) ...[
                   Text(
-                    '${method == 'cash' ? 'Cash' : 'UPI'} received: ${formatPaise(amount!)}',
+                    strings.format(
+                      '{method} received: {amount}',
+                      values: {
+                        'method': strings.translate(
+                          method == 'cash' ? 'Cash' : 'UPI',
+                        ),
+                        'amount': formatPaise(amount!),
+                      },
+                    ),
                   ),
                   Text(balanceText),
                   if (_pending?.rejected == true) ...[
-                    const Text('Payment rejected; no payment was recorded.'),
-                    const Text(
-                      'The saved amount exceeds the balance or the ledger limit was reached. Review the current balance and correct the amount yourself.',
+                    Text(
+                      AppStrings.of(
+                        context,
+                      ).translate('Payment rejected; no payment was recorded.'),
+                    ),
+                    Text(
+                      AppStrings.of(context).translate(
+                        'The saved amount exceeds the balance or the ledger limit was reached. Review the current balance and correct the amount yourself.',
+                      ),
                     ),
                     if (_error != null) Text(message),
                     FilledButton(
                       onPressed: _busy ? null : _editRejected,
-                      child: const Text('Edit amount and method'),
+                      child: Text(
+                        AppStrings.of(context)
+                            .translate('Edit amount and method'),
+                      ),
                     ),
                     TextButton(
                       onPressed: _busy ? null : _load,
-                      child: const Text('Refresh balance'),
+                      child: Text(
+                        AppStrings.of(context).translate('Refresh balance'),
+                      ),
                     ),
                   ] else ...[
                     if (attempt != null)
-                      const Text(
-                        'This saved payment is not confirmed. It may already have reached the server. Check the same payment; do not enter it again.',
+                      Text(
+                        AppStrings.of(context).translate(
+                          'This saved payment is not confirmed. It may already have reached the server. Check the same payment; do not enter it again.',
+                        ),
                       ),
                     if (_error != null) Text(message),
                     FilledButton(
                       onPressed: _busy ? null : _submit,
                       child: Text(
-                        _busy
-                            ? 'Checking payment…'
-                            : attempt == null
-                            ? 'Confirm payment received'
-                            : 'Check same payment',
+                        strings.translate(
+                          _busy
+                              ? 'Checking payment…'
+                              : attempt == null
+                              ? 'Confirm payment received'
+                              : 'Check same payment',
+                        ),
                       ),
                     ),
                     if (attempt == null)
@@ -328,7 +404,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                         onPressed: _busy
                             ? null
                             : () => setState(() => _review = false),
-                        child: const Text('Edit payment'),
+                        child: Text(
+                          AppStrings.of(context).translate('Edit payment'),
+                        ),
                       ),
                     if (attempt == null &&
                         _error is AppFailure &&
@@ -339,12 +417,18 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                             : () => context.push(
                                 '/owner/credit/${widget.shopId.value}/${widget.linkId.value}',
                               ),
-                        child: const Text('Check saved credit'),
+                        child: Text(
+                          AppStrings.of(context)
+                              .translate('Check saved credit'),
+                        ),
                       ),
                     if (attempt == null && _error != null)
                       TextButton(
                         onPressed: _busy ? null : _load,
-                        child: const Text('Check saved request'),
+                        child: Text(
+                          AppStrings.of(context)
+                              .translate('Check saved request'),
+                        ),
                       ),
                   ],
                 ] else
@@ -355,17 +439,20 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                       children: [
                         Text(balanceText),
                         Text(
-                          _repo is DeviceLedgerRepository
-                              ? 'Review the customer, amount and method before confirming. Saved entries are Pending and only on this device until synced. Payments cannot exceed the locally known balance.'
-                              : 'Internet is needed. Review the customer, amount and method before confirming payment received. The server checks the latest balance.',
+                          strings.translate(
+                            _repo is DeviceLedgerRepository
+                                ? 'Review the customer, amount and method before confirming. Saved entries are Pending and only on this device until synced. Payments cannot exceed the locally known balance.'
+                                : 'Internet is needed. Review the customer, amount and method before confirming payment received. The server checks the latest balance.',
+                          ),
                         ),
                         TextFormField(
                           controller: _amount,
-                          keyboardType: const TextInputType.numberWithOptions(
+                          keyboardType: TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Amount received (₹)',
+                          decoration: InputDecoration(
+                            labelText: AppStrings.of(context)
+                                .translate('Amount received (₹)'),
                           ),
                           validator: (value) {
                             try {
@@ -378,24 +465,34 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                         ),
                         DropdownButtonFormField<String>(
                           initialValue: _method,
-                          decoration: const InputDecoration(
-                            labelText: 'Received by',
+                          decoration: InputDecoration(
+                            labelText: AppStrings.of(context)
+                                .translate('Received by'),
                           ),
-                          items: const [
+                          items: [
                             DropdownMenuItem(
                               value: 'cash',
-                              child: Text('Cash'),
+                              child: Text(
+                                AppStrings.of(context).translate('Cash'),
+                              ),
                             ),
-                            DropdownMenuItem(value: 'upi', child: Text('UPI')),
+                            DropdownMenuItem(
+                              value: 'upi',
+                              child: Text(
+                                AppStrings.of(context).translate('UPI'),
+                              ),
+                            ),
                           ],
                           onChanged: (value) {
                             if (value != null) setState(() => _method = value);
                           },
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         FilledButton(
                           onPressed: _preview,
-                          child: const Text('Review payment'),
+                          child: Text(
+                            AppStrings.of(context).translate('Review payment'),
+                          ),
                         ),
                       ],
                     ),

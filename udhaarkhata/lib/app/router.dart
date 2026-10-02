@@ -16,6 +16,10 @@ import '../features/qr/scanner_page.dart';
 import '../core/network/contracts.dart';
 import 'app_strings.dart';
 import 'status_page.dart';
+import '../features/settings/settings_page.dart';
+import '../features/settings/recovery_help.dart';
+import '../features/sharing/statement_share_page.dart';
+import '../features/disputes/dispute_page.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   void refresh() => notifyListeners();
@@ -45,23 +49,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const WelcomePage()),
+      GoRoute(path: '/settings', builder: (context, _) => SettingsPage()),
+      GoRoute(path: '/recovery', builder: (context, _) => RecoveryHelpPage()),
+      GoRoute(path: '/', builder: (context, _) => WelcomePage()),
       GoRoute(
         path: '/loading',
-        builder: (_, _) => const StatusPage(
-          title: 'Opening your account',
-          message: 'Please wait.',
+        builder: (context, _) => StatusPage(
+          title: AppStrings.of(context).translate('Opening your account'),
+          message: AppStrings.of(context).translate('Please wait.'),
           loading: true,
         ),
       ),
       GoRoute(
         path: '/error',
-        builder: (_, _) {
+        builder: (context, _) {
           final error = ref.read(sessionProvider).error;
           return StatusPage(
-            title: 'Could not open your account',
+            title: AppStrings.of(context)
+                .translate('Could not open your account'),
             message: errorMessage(
               error is AppFailure ? error.messageKey : 'api.internalError',
+              languageCode: AppStrings.of(context).languageCode,
             ),
             onRetry: () => ref.invalidate(sessionProvider),
           );
@@ -69,11 +77,25 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/owner',
-        builder: (_, _) => const OwnerShell(),
+        builder: (context, _) => OwnerShell(),
         routes: [
           GoRoute(
+            path: 'statement/:shopId/:linkId',
+            builder: (_, state) => StatementSharePage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
+              linkId: OpaqueId.fromJson(state.pathParameters['linkId']).value,
+            ),
+          ),
+          GoRoute(
+            path: 'disputes/:shopId',
+            builder: (_, state) => DisputePage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
+              customer: false,
+            ),
+          ),
+          GoRoute(
             path: 'history/:shopId/:linkId',
-            builder: (_, state) => HistoryPage(
+            builder: (context, state) => HistoryPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
               linkId: OpaqueId.fromJson(state.pathParameters['linkId']).value,
               confirmedOnly: state.uri.queryParameters['source'] == 'server',
@@ -81,27 +103,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'payment/:shopId/:linkId',
-            builder: (_, state) => PaymentPage(
+            builder: (context, state) => PaymentPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
               linkId: OpaqueId.fromJson(state.pathParameters['linkId']),
             ),
           ),
           GoRoute(
             path: 'credit/:shopId/:linkId',
-            builder: (_, state) => CreditPage(
+            builder: (context, state) => CreditPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
               linkId: OpaqueId.fromJson(state.pathParameters['linkId']),
             ),
           ),
           GoRoute(
             path: 'scan/:shopId',
-            builder: (_, state) => ScannerPage(
+            builder: (context, state) => ScannerPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
             ),
           ),
           GoRoute(
             path: 'customer/:shopId/:linkId',
-            builder: (_, state) => OwnerCustomerPage(
+            builder: (context, state) => OwnerCustomerPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
               linkId: OpaqueId.fromJson(state.pathParameters['linkId']),
             ),
@@ -110,20 +132,29 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/customer',
-        builder: (_, _) => const CustomerShell(),
+        builder: (context, _) => CustomerShell(),
         routes: [
           GoRoute(
+            path: 'disputes/:shopId',
+            builder: (_, state) => DisputePage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
+              customer: true,
+              entryId: state.uri.queryParameters['entry'],
+            ),
+          ),
+          GoRoute(
             path: 'history/:shopId',
-            builder: (_, state) => HistoryPage(
+            builder: (context, state) => HistoryPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
             ),
           ),
         ],
       ),
     ],
-    errorBuilder: (_, _) => const StatusPage(
-      title: 'Page unavailable',
-      message: 'This page could not be opened.',
+    errorBuilder: (context, _) => StatusPage(
+      title: AppStrings.of(context).translate('Page unavailable'),
+      message: AppStrings.of(context)
+          .translate('This page could not be opened.'),
     ),
   );
   ref.onDispose(() {

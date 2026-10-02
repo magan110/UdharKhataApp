@@ -25,15 +25,17 @@ class _LinkConfirmationState extends State<LinkConfirmation> {
         recovery = state.attempt != null,
         saving = state.stage == ScanStage.saving;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            recovery ? 'Check customer link' : 'Confirm customer',
+            AppStrings.of(
+              context,
+            ).translate(recovery ? 'Check customer link' : 'Confirm customer'),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Semantics(
             header: true,
             child: Text(
@@ -41,27 +43,32 @@ class _LinkConfirmationState extends State<LinkConfirmation> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
-            recovery
-                ? 'Your previous confirmation may have succeeded. Connect to the internet and check the same request.'
-                : 'Check that this is the customer in front of you. A copied QR does not prove identity. Adding a customer records no credit or payment.',
+            AppStrings.of(context).translate(
+              recovery
+                  ? 'Your previous confirmation may have succeeded. Connect to the internet and check the same request.'
+                  : 'Check that this is the customer in front of you. A copied QR does not prove identity. Adding a customer records no credit or payment.',
+            ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           if (!recovery)
             TextField(
               controller: _nickname,
               maxLength: 120,
               enabled: !saving,
-              decoration: const InputDecoration(
-                labelText: 'Shop nickname (optional)',
+              decoration: InputDecoration(
+                labelText: AppStrings.of(context)
+                    .translate('Shop nickname (optional)'),
               ),
             ),
           if (recovery && state.attempt!.nickname != null)
-            Text('Shop nickname: ${state.attempt!.nickname}'),
+            Text(
+              '${AppStrings.of(context).translate('Shop nickname')}: ${state.attempt!.nickname}',
+            ),
           if (state.error != null)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: 16),
               child: Semantics(
                 liveRegion: true,
                 child: Text(
@@ -69,6 +76,7 @@ class _LinkConfirmationState extends State<LinkConfirmation> {
                     state.error is AppFailure
                         ? (state.error as AppFailure).messageKey
                         : 'link.failed',
+                    languageCode: AppStrings.of(context).languageCode,
                   ),
                 ),
               ),
@@ -76,17 +84,21 @@ class _LinkConfirmationState extends State<LinkConfirmation> {
           FilledButton(
             onPressed: saving ? null : () => state.confirm(_nickname.text),
             child: Text(
-              saving
-                  ? 'Checking customer link…'
-                  : recovery
-                  ? 'Check previous request'
-                  : 'Add customer',
+              AppStrings.of(context).translate(
+                saving
+                    ? 'Checking customer link…'
+                    : recovery
+                    ? 'Check previous request'
+                    : 'Add customer',
+              ),
             ),
           ),
           if (!recovery)
             TextButton(
               onPressed: saving ? null : state.rescan,
-              child: const Text('Cancel and scan again'),
+              child: Text(
+                AppStrings.of(context).translate('Cancel and scan again'),
+              ),
             ),
         ],
       ),

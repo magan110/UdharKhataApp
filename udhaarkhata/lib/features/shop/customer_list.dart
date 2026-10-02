@@ -67,7 +67,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
     });
     try {
       if (repo == null && ledger is! DeviceLedgerRepository) {
-        throw const AppFailure('AUTH_REQUIRED', 'auth.required');
+        throw AppFailure('AUTH_REQUIRED', 'auth.required');
       }
       final link = ledger is DeviceLedgerRepository
           ? await ledger.prepareCustomer(
@@ -121,21 +121,28 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
   Widget build(BuildContext context) {
     final current = ref.watch(ownerLinkRepositoryProvider), link = _link;
     return Scaffold(
-      appBar: AppBar(title: const Text('Customer ledger')),
+      appBar: AppBar(
+        title: Text(AppStrings.of(context).translate('Customer ledger')),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SyncStatusView(),
+              SyncStatusView(),
               if (!identical(current, _repository) ||
                   !identical(_ledger, ref.watch(ledgerRepositoryProvider)))
-                const Text('Please sign in and open this customer again.')
+                Text(
+                  AppStrings.of(
+                    context,
+                  ).translate('Please sign in and open this customer again.'),
+                )
               else if (_loading)
-                const Center(
+                Center(
                   child: CircularProgressIndicator(
-                    semanticsLabel: 'Opening customer',
+                    semanticsLabel: AppStrings.of(context)
+                        .translate('Opening customer'),
                   ),
                 )
               else if (link == null) ...[
@@ -144,30 +151,41 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                     _error is AppFailure
                         ? (_error as AppFailure).messageKey
                         : 'link.failed',
+                    languageCode: AppStrings.of(context).languageCode,
                   ),
                 ),
-                FilledButton(onPressed: _load, child: const Text('Try again')),
+                FilledButton(
+                  onPressed: _load,
+                  child: Text(AppStrings.of(context).translate('Try again')),
+                ),
                 if (_error is AppFailure &&
                     (_error as AppFailure).code == 'CACHE_TOO_LARGE') ...[
                   TextButton(
                     onPressed: () => context.push(
                       '/owner/history/${widget.shopId.value}/${widget.linkId.value}?source=server',
                     ),
-                    child: const Text('View confirmed server history'),
+                    child: Text(
+                      AppStrings.of(context)
+                          .translate('View confirmed server history'),
+                    ),
                   ),
                   if (_legacyCredit)
                     TextButton(
                       onPressed: () => context.push(
                         '/owner/credit/${widget.shopId.value}/${widget.linkId.value}',
                       ),
-                      child: const Text('Check saved credit'),
+                      child: Text(
+                        AppStrings.of(context).translate('Check saved credit'),
+                      ),
                     ),
                   if (_legacyPayment)
                     TextButton(
                       onPressed: () => context.push(
                         '/owner/payment/${widget.shopId.value}/${widget.linkId.value}',
                       ),
-                      child: const Text('Check saved payment'),
+                      child: Text(
+                        AppStrings.of(context).translate('Check saved payment'),
+                      ),
                     ),
                 ],
               ] else ...[
@@ -179,19 +197,28 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   ),
                 ),
                 if (link.nickname != null)
-                  Text('Shop nickname: ${link.nickname}'),
-                const SizedBox(height: 16),
-                const Text(
-                  'Customer linked to your shop. Scanning and adding a customer records no credit or payment.',
-                ),
-                const SizedBox(height: 16),
+                  Text(
+                    AppStrings.of(context).format(
+                      'Shop nickname: {name}',
+                      values: {'name': link.nickname!},
+                    ),
+                  ),
+                SizedBox(height: 16),
                 Text(
-                  'Customer owes you ${formatPaise(link.balance.value)} ${ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).'}',
+                  AppStrings.of(context).translate(
+                    'Customer linked to your shop. Scanning and adding a customer records no credit or payment.',
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  '${AppStrings.of(context).text('owner.owes', values: {'amount': formatPaise(link.balance.value)})} ${AppStrings.of(context).translate(ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
                 ),
                 if (ref.watch(ledgerRepositoryProvider)
                     is DeviceLedgerRepository)
-                  const Text(
-                    'Pending entries are only on this device and are not backed up to the cloud.',
+                  Text(
+                    AppStrings.of(context).translate(
+                      'Pending entries are only on this device and are not backed up to the cloud.',
+                    ),
                   ),
                 FilledButton(
                   onPressed: () async {
@@ -202,7 +229,9 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                       await _load();
                     }
                   },
-                  child: const Text('Record credit'),
+                  child: Text(
+                    AppStrings.of(context).translate('Record credit'),
+                  ),
                 ),
                 FilledButton(
                   onPressed: () async {
@@ -211,17 +240,32 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                     );
                     if (mounted) await _load();
                   },
-                  child: const Text('Record payment received'),
+                  child: Text(
+                    AppStrings.of(context).translate('Record payment received'),
+                  ),
                 ),
                 TextButton(
                   onPressed: () => _load(refresh: true),
-                  child: const Text('Refresh balance'),
+                  child: Text(
+                    AppStrings.of(context).translate('Refresh balance'),
+                  ),
                 ),
                 TextButton(
                   onPressed: () => context.push(
                     '/owner/history/${widget.shopId.value}/${widget.linkId.value}',
                   ),
-                  child: const Text('View transaction history'),
+                  child: Text(
+                    AppStrings.of(context)
+                        .translate('View transaction history'),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push(
+                    '/owner/statement/${widget.shopId.value}/${widget.linkId.value}',
+                  ),
+                  child: Text(
+                    AppStrings.of(context).translate('Statement and reminder'),
+                  ),
                 ),
               ],
             ],

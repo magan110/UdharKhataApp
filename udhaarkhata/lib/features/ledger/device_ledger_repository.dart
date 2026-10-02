@@ -11,6 +11,7 @@ import '../../core/sync/operation.dart';
 import '../../core/sync/save_local.dart';
 import '../qr/owner_qr_model.dart';
 import 'entry_model.dart';
+import 'correction_form.dart';
 import 'ledger_repository.dart';
 import 'money.dart';
 import 'online_reads.dart';
@@ -25,7 +26,8 @@ final FutureProvider<List<Map<String, Object?>>> savedCustomersProvider =
 
 // D11 saves new commands locally. D12 adds serial push/pull; legacy uncertain
 // online commands still use their original D08/D09 recovery path.
-class DeviceLedgerRepository extends CloudLedgerRepository {
+class DeviceLedgerRepository extends CloudLedgerRepository
+    implements CorrectionRepository {
   DeviceLedgerRepository(
     super.auth,
     super.accountId,
@@ -299,5 +301,26 @@ class DeviceLedgerRepository extends CloudLedgerRepository {
     );
     await _save(shopId, attempt.body);
     return attempt;
+  });
+  @override
+  Future<void> saveCorrection(
+    OpaqueId shopId,
+    OpaqueId linkId,
+    String entryId,
+    int targetAmountPaise,
+    int expectedRevision,
+    String reason,
+  ) => _localSerial(() async {
+    await _guardLegacy(shopId, linkId);
+    await _save(shopId, {
+      'clientOperationId': newOperationId(),
+      'linkId': linkId.value,
+      'kind': 'correction',
+      'correctsEntryId': entryId,
+      'targetAmountPaise': targetAmountPaise,
+      'expectedRevision': expectedRevision,
+      'correctionReason': reason.trim(),
+      'occurredAtMs': DateTime.now().millisecondsSinceEpoch,
+    });
   });
 }

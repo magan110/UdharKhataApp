@@ -1,3 +1,5 @@
+import '../../app/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,30 +21,36 @@ class _SignOutButtonState extends ConsumerState<SignOutButton> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Sign out?'),
+          title: Text(AppStrings.of(context).translate('Sign out?')),
           content: Text(
-            '$count pending entries will stay on this phone, locked to this account. They are not backed up to the cloud.',
+            AppStrings.of(context).format(
+              '{count} pending entries will stay on this phone, locked to this account. They are not backed up to the cloud.',
+              values: {'count': '$count'},
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(AppStrings.of(context).translate('Cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Sign out'),
+              child: Text(AppStrings.of(context).translate('Sign out')),
             ),
           ],
         ),
       );
       if (confirmed != true || !mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
+      final messenger = ScaffoldMessenger.of(context),
+          strings = AppStrings.of(context);
       final result = await ref.read(sessionProvider.notifier).signOut();
       if (!result.remoteRevoked) {
         messenger.showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Signed out on this phone. Cloud session revocation could not be confirmed.',
+              strings.translate(
+                'Signed out on this phone. Cloud session revocation could not be confirmed.',
+              ),
             ),
           ),
         );
@@ -50,8 +58,11 @@ class _SignOutButtonState extends ConsumerState<SignOutButton> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not sign out. Please try again.'),
+          SnackBar(
+            content: Text(
+              AppStrings.of(context)
+                  .translate('Could not sign out. Please try again.'),
+            ),
           ),
         );
       }
@@ -63,6 +74,6 @@ class _SignOutButtonState extends ConsumerState<SignOutButton> {
   @override
   Widget build(BuildContext context) => TextButton(
     onPressed: busy ? null : signOut,
-    child: const Text('Sign out'),
+    child: Text(AppStrings.of(context).translate('Sign out')),
   );
 }

@@ -70,7 +70,8 @@ class SyncService {
         retryable: true,
       );
     }
-    if (health['capabilities'] is! List ||
+    if ((health['apiVersion'] != null && health['apiVersion'] != 1) ||
+        health['capabilities'] is! List ||
         !(health['capabilities'] as List).contains('owner-ledger-sync-v1')) {
       throw const AppFailure(
         'FEATURE_UNAVAILABLE',

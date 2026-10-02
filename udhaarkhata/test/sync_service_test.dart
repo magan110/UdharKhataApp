@@ -27,7 +27,7 @@ void main() {
   late ProviderContainer container;
   late DateTime now;
   late List<Scheduled> timers;
-  late int authLoss;
+  late int authLoss, apiVersion;
   late bool outage, denied, refreshLost;
   late Future<Object?> Function(http.Request)? handler;
   http.Response success(Object? data) =>
@@ -38,6 +38,7 @@ void main() {
     now = DateTime.utc(2026, 10, 2);
     timers = [];
     authLoss = 0;
+    apiVersion = 1;
     outage = false;
     denied = false;
     refreshLost = false;
@@ -69,6 +70,7 @@ void main() {
           if (r.url.path == '/health') {
             return success({
               'status': 'ok',
+              'apiVersion': apiVersion,
               'capabilities': ['owner-ledger-sync-v1'],
             });
           }
@@ -251,5 +253,25 @@ void main() {
       committed.map((e) => e['clientOperationId']),
       contains(b.operationId),
     );
+  });
+  test('incompatible server version retains original Pending without sending a command', () async {
+    final attempt = await repo.begin(
+      OpaqueId.fromJson('shop'),
+      OpaqueId.fromJson('link'),
+      'Synthetic',
+      100,
+      null,
+      null,
+    );
+    apiVersion = 2;
+    handler = (r) async => throw StateError(
+      'Incompatible server must not receive financial command',
+    );
+    await service.synchronize();
+    expect(service.state.errorCode, 'FEATURE_UNAVAILABLE');
+    final rows = await repo.outbox();
+    expect(rows, hasLength(1));
+    expect(rows.single['operation_id'], attempt.operationId);
+    expect(rows.single['state'], 'pending');
   });
 }

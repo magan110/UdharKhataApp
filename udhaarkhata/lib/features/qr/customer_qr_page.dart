@@ -21,78 +21,93 @@ class CustomerQrPage extends ConsumerWidget {
     final account = ref.watch(sessionProvider).value;
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Show this to the shopkeeper',
+            Text(
+              AppStrings.of(context).translate('Show this to the shopkeeper'),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             state.when(
               skipLoadingOnRefresh: false,
-              loading: () => const Center(
+              loading: () => Center(
                 child: CircularProgressIndicator(
-                  semanticsLabel: 'Checking your QR',
+                  semanticsLabel: AppStrings.of(context)
+                      .translate('Checking your QR'),
                 ),
               ),
               error: (error, _) => Text(
                 errorMessage(
                   error is AppFailure ? error.messageKey : 'api.internalError',
+                  languageCode: AppStrings.of(context).languageCode,
                 ),
                 textAlign: TextAlign.center,
               ),
               data: (value) => Column(
                 children: [
                   Semantics(
-                    label: 'Customer identification QR. Show this to the shopkeeper. It does not authorize a payment.',
+                    label: AppStrings.of(context).translate(
+                      'Customer identification QR. Show this to the shopkeeper. It does not authorize a payment.',
+                    ),
                     child: ExcludeSemantics(
                       child: QrImageView(
                         data: value.record.qr.payload,
                         size: 256,
-                        padding: const EdgeInsets.all(32),
+                        padding: EdgeInsets.all(32),
                         backgroundColor: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   if (value.needsSignIn)
-                    const Text(
-                      'Sign in again to check or replace your QR. This saved code has not been verified online.',
+                    Text(
+                      AppStrings.of(context).translate(
+                        'Sign in again to check or replace your QR. This saved code has not been verified online.',
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   if (value.record.noticeKey != null)
                     Text(
                       value.record.noticeKey == 'qr.rotationRecovered'
-                          ? errorMessage(value.record.noticeKey!)
-                          : 'QR replacement failed. ${errorMessage(value.record.noticeKey!)}',
+                          ? errorMessage(
+                              value.record.noticeKey!,
+                              languageCode: AppStrings.of(context).languageCode,
+                            )
+                          : '${AppStrings.of(context).translate('QR replacement failed.')} ${errorMessage(value.record.noticeKey!, languageCode: AppStrings.of(context).languageCode)}',
                       textAlign: TextAlign.center,
                     ),
                   Text(
-                    account?.displayName ?? 'Your customer account',
+                    account?.displayName ??
+                        AppStrings.of(context)
+                            .translate('Your customer account'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(
-                    value.cached
-                        ? 'Saved QR — not checked online. It may have changed on another phone.'
-                        : 'QR checked online.',
+                    AppStrings.of(context).translate(
+                      value.cached
+                          ? 'Saved QR — not checked online. It may have changed on another phone.'
+                          : 'QR checked online.',
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   Text(
-                    'Last checked: ${DateTime.fromMillisecondsSinceEpoch(value.record.checkedAtMs).toLocal().toString().split('.').first}',
+                    '${AppStrings.of(context).translate('Last checked')}: ${DateTime.fromMillisecondsSinceEpoch(value.record.checkedAtMs).toLocal().toString().split('.').first}',
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'This QR identifies your account. The shopkeeper confirms your identity and enters the amount. It is not a payment QR.',
+            SizedBox(height: 20),
+            Text(
+              AppStrings.of(context).translate(
+                'This QR identifies your account. The shopkeeper confirms your identity and enters the amount. It is not a payment QR.',
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             FilledButton(
               onPressed: state.isLoading
                   ? null
@@ -100,9 +115,11 @@ class CustomerQrPage extends ConsumerWidget {
                   ? () => ref.invalidate(sessionProvider)
                   : () => ref.read(qrProvider.notifier).refresh(),
               child: Text(
-                state.value?.needsSignIn == true
-                    ? 'Sign in again'
-                    : 'Refresh QR',
+                AppStrings.of(context).translate(
+                  state.value?.needsSignIn == true
+                      ? 'Sign in again'
+                      : 'Refresh QR',
+                ),
               ),
             ),
             OutlinedButton(
@@ -116,18 +133,28 @@ class CustomerQrPage extends ConsumerWidget {
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Replace your QR?'),
-                          content: const Text(
-                            'Internet is required. The old QR will stop working for new shop links. Your existing shop ledgers will remain.',
+                          scrollable: true,
+                          title: Text(
+                            AppStrings.of(context)
+                                .translate('Replace your QR?'),
+                          ),
+                          content: Text(
+                            AppStrings.of(context).translate(
+                              'Internet is required. The old QR will stop working for new shop links. Your existing shop ledgers will remain.',
+                            ),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
+                              child: Text(
+                                AppStrings.of(context).translate('Cancel'),
+                              ),
                             ),
                             FilledButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Replace'),
+                              child: Text(
+                                AppStrings.of(context).translate('Replace'),
+                              ),
                             ),
                           ],
                         ),
@@ -140,7 +167,7 @@ class CustomerQrPage extends ConsumerWidget {
                             .refresh(rotate: true);
                       }
                     },
-              child: const Text('Replace QR'),
+              child: Text(AppStrings.of(context).translate('Replace QR')),
             ),
           ],
         ),

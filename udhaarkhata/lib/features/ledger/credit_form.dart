@@ -97,6 +97,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
     FocusScope.of(context).unfocus();
     final date = await showDatePicker(
       context: context,
+      locale: Locale(AppStrings.of(context).languageCode),
       initialDate: _date.text.isEmpty
           ? DateTime.now()
           : DateTime.parse(_apiDueDate()!),
@@ -169,6 +170,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final current = ref.watch(ledgerRepositoryProvider),
         customer = _customer,
         receipt = _receipt;
@@ -178,7 +180,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
         : (_note.text.trim().isEmpty ? null : _note.text.trim());
     final due = _attempt != null ? _attempt!.dueDate : _apiDueDate();
     return Scaffold(
-      appBar: AppBar(title: const Text('Record credit')),
+      appBar: AppBar(title: Text(strings.translate('Record credit'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -186,11 +188,15 @@ class _CreditPageState extends ConsumerState<CreditPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (!identical(current, _repo))
-                const Text('Please sign in and open this customer again.')
+                Text(
+                  strings.translate(
+                    'Please sign in and open this customer again.',
+                  ),
+                )
               else if (_loading)
-                const Center(
+                Center(
                   child: CircularProgressIndicator(
-                    semanticsLabel: 'Loading credit form',
+                    semanticsLabel: strings.translate('Loading credit form'),
                   ),
                 )
               else if (customer == null) ...[
@@ -199,60 +205,109 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                     _error is AppFailure
                         ? (_error as AppFailure).messageKey
                         : 'credit.failed',
+                    languageCode: strings.languageCode,
                   ),
                 ),
-                FilledButton(onPressed: _load, child: const Text('Try again')),
+                FilledButton(
+                  onPressed: _load,
+                  child: Text(strings.translate('Try again')),
+                ),
               ] else ...[
                 Text(
                   customer.displayName,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 if (customer.nickname != null)
-                  Text('Shop nickname: ${customer.nickname}'),
+                  Text(
+                    strings.format(
+                      'Shop nickname: {name}',
+                      values: {'name': customer.nickname!},
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 if (_savedLocal) ...[
-                  const Text('Credit saved · Pending'),
+                  Text(strings.translate('Credit saved · Pending')),
                   Text(
-                    'Credit recorded on this device: ${formatPaise(_attempt!.amountPaise)}',
+                    strings.format(
+                      'Credit recorded on this device: {amount}',
+                      values: {'amount': formatPaise(_attempt!.amountPaise)},
+                    ),
                   ),
                   if (_localBalance != null)
                     Text(
-                      'Customer owes you ${formatPaise(_localBalance!)} (provisional, including Pending).',
+                      '${strings.text('owner.owes', values: {'amount': formatPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}',
                     ),
-                  const Text(
-                    'Pending entries are only on this device. They are not backed up to the cloud.',
+                  Text(
+                    strings.translate(
+                      'Pending entries are only on this device. They are not backed up to the cloud.',
+                    ),
                   ),
                   FilledButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Back to customer'),
+                    child: Text(strings.translate('Back to customer')),
                   ),
                 ] else if (receipt != null) ...[
-                  const Text('Credit acknowledged by server'),
+                  Text(strings.translate('Credit acknowledged by server')),
                   Text(
-                    'Credit recorded: ${formatPaise(_attempt!.amountPaise)}',
+                    strings.format(
+                      'Credit recorded: {amount}',
+                      values: {'amount': formatPaise(_attempt!.amountPaise)},
+                    ),
                   ),
                   Text(
-                    'Balance when this credit was recorded: Customer owes you ${formatPaise(receipt.balancePaise)}',
+                    strings.format(
+                      'Balance when this credit was recorded: {balance}',
+                      values: {
+                        'balance': strings.text(
+                          'owner.owes',
+                          values: {'amount': formatPaise(receipt.balancePaise)},
+                        ),
+                      },
+                    ),
                   ),
-                  const Text(
-                    'Refresh the customer ledger to see the latest balance.',
+                  Text(
+                    strings.translate(
+                      'Refresh the customer ledger to see the latest balance.',
+                    ),
                   ),
                   FilledButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Back to customer'),
+                    child: Text(strings.translate('Back to customer')),
                   ),
                 ] else if (_review) ...[
-                  Text('Credit amount: ${formatPaise(amount!)}'),
+                  Text(
+                    strings.format(
+                      'Credit amount: {amount}',
+                      values: {'amount': formatPaise(amount!)},
+                    ),
+                  ),
                   Text(
                     _repo is DeviceLedgerRepository && _attempt == null
-                        ? 'Customer owes you ${formatPaise(amount)} more in the provisional balance after saving.'
-                        : 'Customer owes you ${formatPaise(amount)} more after this credit is acknowledged.',
+                        ? strings.format(
+                            'Customer owes you {amount} more in the provisional balance after saving.',
+                            values: {'amount': formatPaise(amount)},
+                          )
+                        : strings.format(
+                            'Customer owes you {amount} more after this credit is acknowledged.',
+                            values: {'amount': formatPaise(amount)},
+                          ),
                   ),
-                  if (note != null) Text('Note: $note'),
-                  if (due != null) Text('Due date: ${_displayDueDate(due)}'),
+                  if (note != null)
+                    Text(
+                      strings.format('Note: {note}', values: {'note': note}),
+                    ),
+                  if (due != null)
+                    Text(
+                      strings.format(
+                        'Due date: {date}',
+                        values: {'date': _displayDueDate(due)},
+                      ),
+                    ),
                   if (_attempt != null)
-                    const Text(
-                      'This saved credit is not confirmed. It may already have reached the server. Check the same credit; do not enter it again.',
+                    Text(
+                      strings.translate(
+                        'This saved credit is not confirmed. It may already have reached the server. Check the same credit; do not enter it again.',
+                      ),
                     ),
                   if (_error != null)
                     Text(
@@ -260,16 +315,19 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                         _error is AppFailure
                             ? (_error as AppFailure).messageKey
                             : 'credit.failed',
+                        languageCode: strings.languageCode,
                       ),
                     ),
                   FilledButton(
                     onPressed: _busy ? null : _submit,
                     child: Text(
-                      _busy
-                          ? 'Checking credit…'
-                          : _attempt == null
-                          ? 'Confirm credit'
-                          : 'Check same credit',
+                      strings.translate(
+                        _busy
+                            ? 'Checking credit…'
+                            : _attempt == null
+                            ? 'Confirm credit'
+                            : 'Check same credit',
+                      ),
                     ),
                   ),
                   if (_attempt == null)
@@ -277,12 +335,12 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                       onPressed: _busy
                           ? null
                           : () => setState(() => _review = false),
-                      child: const Text('Edit credit'),
+                      child: Text(strings.translate('Edit credit')),
                     ),
                   if (_error != null && _attempt == null)
                     TextButton(
                       onPressed: _busy ? null : _load,
-                      child: const Text('Check saved request'),
+                      child: Text(strings.translate('Check saved request')),
                     ),
                 ] else
                   Form(
@@ -291,39 +349,41 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Customer owes you ${formatPaise(customer.balance.value)} ${_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).'}',
+                          '${strings.text('owner.owes', values: {'amount': formatPaise(customer.balance.value)})} ${strings.translate(_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
                         ),
                         Text(
-                          _repo is DeviceLedgerRepository
-                              ? 'Review the customer and amount before confirming. Saved entries are Pending and only on this device until synced.'
-                              : 'Internet is needed. Review the customer and amount before confirming. No credit is posted until confirmation.',
+                          strings.translate(
+                            _repo is DeviceLedgerRepository
+                                ? 'Review the customer and amount before confirming. Saved entries are Pending and only on this device until synced.'
+                                : 'Internet is needed. Review the customer and amount before confirming. No credit is posted until confirmation.',
+                          ),
                         ),
                         TextFormField(
                           controller: _amount,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Amount (₹)',
+                          decoration: InputDecoration(
+                            labelText: strings.translate('Amount (₹)'),
                           ),
                           validator: (value) {
                             try {
                               parseCreditRupees(value ?? '');
                               return null;
                             } on FormatException catch (error) {
-                              return error.message;
+                              return strings.translate(error.message);
                             }
                           },
                         ),
                         TextFormField(
                           controller: _note,
                           maxLength: maxCreditNoteCharacters,
-                          decoration: const InputDecoration(
-                            labelText: 'Note (optional)',
+                          decoration: InputDecoration(
+                            labelText: strings.translate('Note (optional)'),
                           ),
                           validator: (value) =>
                               (value?.length ?? 0) > maxCreditNoteCharacters
-                              ? 'Use at most 500 characters.'
+                              ? strings.translate('Use at most 500 characters.')
                               : null,
                         ),
                         TextFormField(
@@ -331,12 +391,14 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                           readOnly: true,
                           onTap: _pickDueDate,
                           decoration: InputDecoration(
-                            labelText: 'Due date (optional)',
-                            hintText: 'DD-MM-YYYY',
+                            labelText: strings.translate('Due date (optional)'),
+                            hintText: strings.translate('DD-MM-YYYY'),
                             suffixIcon: _date.text.isEmpty
                                 ? const Icon(Icons.calendar_month)
                                 : IconButton(
-                                    tooltip: 'Clear due date',
+                                    tooltip: strings.translate(
+                                      'Clear due date',
+                                    ),
                                     onPressed: () =>
                                         setState(() => _date.clear()),
                                     icon: const Icon(Icons.clear),
@@ -347,12 +409,14 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                                   value.trim().isEmpty ||
                                   validDueDate(_apiDueDate())
                               ? null
-                              : 'Choose a valid date from the calendar.',
+                              : strings.translate(
+                                  'Choose a valid date from the calendar.',
+                                ),
                         ),
                         const SizedBox(height: 16),
                         FilledButton(
                           onPressed: _preview,
-                          child: const Text('Review credit'),
+                          child: Text(strings.translate('Review credit')),
                         ),
                       ],
                     ),

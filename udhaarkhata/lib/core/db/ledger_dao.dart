@@ -72,7 +72,11 @@ final class OwnerLedgerDao {
       }
       await tx.update(
         'cached_links',
-        link,
+        {
+          ...link,
+          if (link['verified_qr_id'] == null)
+            'verified_qr_id': existingLink.single['verified_qr_id'],
+        },
         where: 'id=?',
         whereArgs: [link['id']],
       );

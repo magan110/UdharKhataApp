@@ -1,3 +1,5 @@
+import '../../app/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,9 +20,9 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
     body: SafeArea(
       child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
+            constraints: BoxConstraints(maxWidth: 420),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -29,40 +31,45 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   size: 64,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 Text(
-                  'Udhaar Khata',
+                  AppStrings.of(context).translate('Udhaar Khata'),
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
-                const SizedBox(height: 12),
-                const Text(
-                  'A simple record of customer credit.',
+                SizedBox(height: 12),
+                Text(
+                  AppStrings.of(context)
+                      .translate('A simple record of customer credit.'),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 SegmentedButton<AccountRole>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: AccountRole.owner,
-                      label: Text('Shop owner'),
+                      label: Text(
+                        AppStrings.of(context).translate('Shop owner'),
+                      ),
                     ),
                     ButtonSegment(
                       value: AccountRole.customer,
-                      label: Text('Customer'),
+                      label: Text(AppStrings.of(context).translate('Customer')),
                     ),
                   ],
                   selected: {role},
                   onSelectionChanged: (value) =>
                       setState(() => role = value.single),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 FilledButton(
                   onPressed: ref.watch(authRepositoryProvider).canSignIn
                       ? () => ref.read(sessionProvider.notifier).signIn(role)
                       : null,
-                  child: const Text('Continue with Google'),
+                  child: Text(
+                    AppStrings.of(context).translate('Continue with Google'),
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   ref.watch(authRepositoryProvider).canSignIn
                       ? 'Your account role is fixed when you first register.'

@@ -318,7 +318,7 @@ Do not rely on a narrow unit test for transactional safety. The payment and corr
 | Decision | Current rule until resolved |
 |---|---|
 | Maximum entry and text lengths | Reject inputs outside conservative, versioned server limits; publish exact values in API/Security specs before pilot. |
-| Due-date payment allocation and overdue total | Store due dates; do not calculate/display an aggregate overdue amount. |
+| Due-date payment allocation and overdue total | D16 implemented deterministic corrected-credit/payment allocation; complete fresh server summary only. |
 | Retention/deletion periods and relinking after access removal | Keep immutable financial history and receipts; define policy before public launch. |
 | Backup destination, schedule and key custody | No real-user launch until chosen and restore tested. |
 | Export inclusion of owner Pending entries | Never silently mix them with acknowledged entries; API/product decision before export release. |
@@ -361,3 +361,11 @@ Local schema v2 is an additive v1 upgrade: cached link display name/nickname/lin
 ### D12 incremental-feed checkpoint (local implementation)
 
 No D1 migration is needed for owner incremental sync: existing ledger entries retain operation IDs and the ledger-sequence index supports ascending bounded pages. One authorized batch reads relationship metadata, fixed-high-water sums/count/maximum and rows. Cursor codec has an optional sync-only starting sequence without invalidating old D10 cursors. Entry/projection/receipt triggers and hashes are unchanged. Occurrence timestamps may predate submission by more than 24 hours; server sequence/created time remains authoritative commit order. Native local acknowledgement/cursor migration remains a separate D12 task.
+
+## D13–D21 private-test candidate update (2026-10-02)
+
+The candidate adds verified offline repeat QR, dated acknowledged customer cache, immutable owner corrections, online disputes/resolution, deterministic due summaries, bounded reconciled PDF/CSV and reviewed reminders, persisted English/Hindi, settings/help and tracked privacy controls. See [implemented API](API-SPECIFICATION.md), [operations and pending policy/backup gates](docs/ops/private-test-operations.md), and [D21 evidence/device matrix](docs/verification/d21-evidence.md). Historical phase notes above describe their earlier phase, not the current candidate boundary.
+
+Pending owner entries remain device-only until acknowledged. Statements exclude Pending; settings offer an explicitly reviewed copy of original device requests for investigation. Exports use immutable UTC posting dates, inclusive maximum 366 days/5,000 acknowledged entries. Due allocation follows effective dated credits by due date, server sequence/ID, undated last; cancelled/reduced credits reallocate effective payments. Disputes do not change balances. Customer removal revokes access and retains history; relink and destructive deletion await reviewed policy.
+
+This is a synthetic private-test candidate, with physical Android/native share/TalkBack and Hindi-speaker acceptance pending the user's final APK test. Public/real-data use still requires reviewed privacy retention, actual separately controlled encrypted backup, named operators and verified remote alarms. No production release is claimed.

@@ -10,6 +10,11 @@ START = "<!-- DOC_NAV_START -->"
 END = "<!-- DOC_NAV_END -->"
 
 LABELS = {
+    'docs/superpowers/specs/2026-10-02-d13-d21-design.md': 'D13–D21 design',
+    'docs/superpowers/plans/2026-10-02-d13-d21.md': 'D13–D21 implementation plan',
+    'docs/ops/private-test-operations.md': 'Private-test operations',
+    'docs/verification/d21-evidence.md': 'D21 candidate evidence',
+
     "docs/superpowers/plans/2026-10-02-d12-sync.md": "D12 implementation plan",
     "docs/superpowers/specs/2026-10-02-d12-sync-design.md": "D12 sync design",
     "AGENTS.md": "Repository instructions",
@@ -54,6 +59,11 @@ LABELS = {
 
 # Each list is intentionally short and topical. DOCUMENT-MAP.md connects all files.
 RELATED = {
+    'docs/superpowers/specs/2026-10-02-d13-d21-design.md': ['SRS.md', 'SECURITY-REQUIREMENTS.md', 'docs/implementation/PROGRESS.md'],
+    'docs/superpowers/plans/2026-10-02-d13-d21.md': ['docs/superpowers/specs/2026-10-02-d13-d21-design.md', 'docs/verification/d21-evidence.md'],
+    'docs/ops/private-test-operations.md': ['DEPLOYMENT-RUNBOOK.md', 'MONITORING-LOGGING.md', 'SECURITY-REQUIREMENTS.md', 'docs/verification/d21-evidence.md'],
+    'docs/verification/d21-evidence.md': ['SRS.md', 'TEST-PLAN.md', 'TEST-CASES-QA-CHECKLIST.md', 'docs/ops/private-test-operations.md'],
+
     "docs/superpowers/plans/2026-10-02-d12-sync.md": ["docs/superpowers/specs/2026-10-02-d12-sync-design.md", "docs/implementation/03-offline-trust.md", "docs/implementation/PROGRESS.md"],
     "docs/superpowers/specs/2026-10-02-d12-sync-design.md": ["docs/implementation/03-offline-trust.md", "API-SPECIFICATION.md", "SECURITY-REQUIREMENTS.md", "docs/implementation/PROGRESS.md"],
     "AGENTS.md": ["SCOPE.md", "SRS.md", "PRD.md", "docs/implementation/README.md"],

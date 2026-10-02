@@ -1,3 +1,7 @@
+import {exportRoutes} from '../export/routes';
+import {financialRoutes} from '../ledger/financial-routes';
+import {disputeRoutes} from '../disputes/routes';
+import {privacyRoutes} from '../privacy/routes';
 import { ledgerRoutes } from './ledger-routes';
 import {readRoutes} from '../ledger/read-routes';
 import {syncRoutes} from '../ledger/sync-routes';
@@ -8,6 +12,7 @@ import { unavailableAuthenticator } from '../auth/authenticator';
 import { requirePrincipal, requireRole } from '../policy/access';
 import { createShop, shopSummary } from '../shop/service';
 import { ownQr, rotateQr } from '../qr/service';
+import {redactRequestEvent} from '../telemetry/redaction';
 import { logRequest, type RequestLogger } from '../telemetry/request-event';
 import { errorResponse, HttpError, jsonResponse } from './errors';
 import { googleExchangeSchema, refreshSchema, logoutSchema, readJson, idSchema } from './schemas';
@@ -28,10 +33,14 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
   const unavailable = () => { throw new HttpError(503, 'FEATURE_UNAVAILABLE', 'api.featureUnavailable', true); };
   const routes: Route[] = [
     ...ledgerRoutes({db:options.db,authenticate,sessions:options.sessions}),
+    ...financialRoutes({db:options.db,authenticate,sessions:options.sessions}),
+    ...exportRoutes({db:options.db,authenticate,sessions:options.sessions}),
+    ...disputeRoutes({db:options.db,authenticate,sessions:options.sessions}),
+    ...privacyRoutes({db:options.db,authenticate,sessions:options.sessions}),
     ...readRoutes({db:options.db,authenticate}),
     ...syncRoutes({db:options.db,authenticate}),
     ...qrRoutes({db:options.db,authenticate,sessions:options.sessions}),
-    { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok', capabilities: ['owner-ledger-sync-v1'] }, requestId) },
+    { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok', apiVersion: 1, capabilities: ['owner-ledger-sync-v1', 'immutable-corrections-v1', 'disputes-v1', 'due-allocation-v1', 'privacy-requests-v1'] }, requestId) },
     { path: '/v1/auth/google', method: 'POST', handler: async (request,requestId) => {
       const body=await readJson(request, googleExchangeSchema) as z.infer<typeof googleExchangeSchema>;
       if(!options.sessions || !options.verifyGoogle) return unavailable();
@@ -111,8 +120,8 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
         response = errorResponse(safe, requestId);
       }
       try {
-        logger({ requestId, route: routeTemplate, status: response.status, errorCode,
-          durationMs: Math.max(0, Math.round(performance.now() - started)) });
+        logger(redactRequestEvent({ requestId, route: routeTemplate, status: response.status, errorCode,
+          durationMs: Math.max(0, Math.round(performance.now() - started)) }));
       } catch { /* A telemetry failure must not change the API outcome. */ }
       return response;
     },

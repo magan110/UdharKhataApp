@@ -13,6 +13,8 @@ import 'online_reads.dart';
 import 'ledger_repository.dart';
 import 'money.dart';
 import 'local_changes.dart';
+import 'entry_detail.dart';
+import 'due_summary.dart';
 import 'sync_status_view.dart';
 
 class LocalLedgerView extends ConsumerStatefulWidget {
@@ -102,7 +104,9 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
   Widget build(BuildContext context) {
     final current = ref.watch(ledgerRepositoryProvider), snapshot = _snapshot;
     if (!identical(current, _repository)) {
-      return const Text('Please sign in to open this ledger.');
+      return Text(
+        AppStrings.of(context).translate('Please sign in to open this ledger.'),
+      );
     }
     if (_online) {
       return Column(
@@ -110,7 +114,7 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
         children: [
           TextButton(
             onPressed: () => setState(() => _online = false),
-            child: const Text('View saved ledger'),
+            child: Text(AppStrings.of(context).translate('View saved ledger')),
           ),
           OnlineRecordsView(
             path:
@@ -125,36 +129,52 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        TextButton(
+          onPressed: _loading ? null : () => _load(refresh: true),
+          child: Text(AppStrings.of(context).translate('Refresh from server')),
+        ),
+
         if (snapshot != null) ...[
           Text(
             snapshot.link['display_name'] as String,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           Text(
-            'Customer owes you ${formatPaise(snapshot.provisionalPaise)} (provisional, including Pending).',
+            '${AppStrings.of(context).text('owner.owes', values: {'amount': formatPaise(snapshot.provisionalPaise)})} ${AppStrings.of(context).translate('(provisional, including Pending).')}',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           Text(
-            'Synced balance: ${formatPaise(snapshot.syncedPaise)} · Last server snapshot: ${historyDate(snapshot.snapshotAtMs)}',
+            '${AppStrings.of(context).translate('Synced balance')}: ${formatPaise(snapshot.syncedPaise)} · ${AppStrings.of(context).translate('Last server snapshot')}: ${historyDate(snapshot.snapshotAtMs)}',
           ),
           if (snapshot.partialSyncAtMs != null &&
               snapshot.partialSyncAtMs != snapshot.snapshotAtMs)
             Text(
-              'Partial refresh: ${historyDate(snapshot.partialSyncAtMs!)} · Complete snapshot remains dated above.',
+              '${AppStrings.of(context).translate('Partial refresh')}: ${historyDate(snapshot.partialSyncAtMs!)} · ${AppStrings.of(context).translate('Complete snapshot remains dated above.')}',
             ),
           if (snapshot.syncBlockedCode != null)
-            Text(syncExplanation(snapshot.syncBlockedCode)),
-          if (snapshot.provisionalPaise < 0)
-            const Text(
-              'The server balance changed. Review Pending entries before recording another entry.',
+            Text(
+              AppStrings.of(context)
+                  .translate(syncExplanation(snapshot.syncBlockedCode)),
             ),
-          const Text(
-            'Pending entries are only on this device. They are not backed up to the cloud. Customer views show only server-acknowledged entries.',
+          if (snapshot.provisionalPaise < 0)
+            Text(
+              AppStrings.of(context).translate(
+                'The server balance changed. Review Pending entries before recording another entry.',
+              ),
+            ),
+          Text(
+            AppStrings.of(context).translate(
+              'Pending entries are only on this device. They are not backed up to the cloud. Customer views show only server-acknowledged entries.',
+            ),
           ),
-          const Text(
-            'Cash/UPI payments are manually recorded by the owner; bank transfers are not verified.',
+          Text(
+            AppStrings.of(context).translate(
+              'Cash/UPI payments are manually recorded by the owner; bank transfers are not verified.',
+            ),
           ),
-          if (snapshot.entries.isEmpty) const Text('No transactions yet.'),
+          DueSummary(shopId: widget.shopId, linkId: widget.linkId),
+          if (snapshot.entries.isEmpty)
+            Text(AppStrings.of(context).translate('No transactions yet.')),
           for (final entry in snapshot.entries)
             Card(
               child: Padding(
@@ -164,36 +184,62 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
                   children: [
                     Text(switch (entry['kind']) {
                       'credit' =>
-                        'Credit ${formatPaise(entry['amount_paise'] as int)}',
+                        '${AppStrings.of(context).translate('Credit')} ${formatPaise(entry['amount_paise'] as int)}',
                       'payment' =>
-                        '${entry['payment_method'] == 'cash' ? 'Cash' : 'UPI'} payment received ${formatPaise(entry['amount_paise'] as int)}',
+                        '${AppStrings.of(context).translate(entry['payment_method'] == 'cash' ? 'Cash' : 'UPI')} ${AppStrings.of(context).translate('Payment received').toLowerCase()} ${formatPaise(entry['amount_paise'] as int)}',
                       _ =>
-                        'Correction ${formatPaise(entry['effect_paise'] as int)}',
+                        '${AppStrings.of(context).translate('Correction')} ${formatPaise(entry['effect_paise'] as int)}',
                     }),
                     Text(
-                      'Entry date: ${historyDate(entry['occurred_at_ms'] as int)}',
+                      '${AppStrings.of(context).translate('Entry date')}: ${historyDate(entry['occurred_at_ms'] as int)}',
                     ),
-                    Text(switch (entry['sync_status']) {
-                      'synced' => 'Synced',
-                      'pending' =>
-                        'Pending · Waiting to sync · Only on this device',
-                      _ => 'Needs attention',
-                    }),
+                    Text(
+                      AppStrings.of(context)
+                          .translate(switch (entry['sync_status']) {
+                            'synced' => 'Synced',
+                            'pending' =>
+                              'Pending · Waiting to sync · Only on this device',
+                            _ => 'Needs attention',
+                          }),
+                    ),
+                    if (entry['created_at_ms'] != null)
+                      Text(
+                        '${AppStrings.of(context).translate('Recorded')}: ${historyDate(entry['created_at_ms'] as int)} · ${AppStrings.of(context).translate('Created by shop owner')}',
+                      ),
                     if (entry['sync_status'] == 'needs_attention')
-                      const Text(
-                        'Original entry is retained. Review it before recording another entry.',
+                      Text(
+                        AppStrings.of(context).translate(
+                          'Original entry is retained. Review it before recording another entry.',
+                        ),
                       ),
                     if (entry['blocked_by_earlier'] == 1)
-                      const Text(
-                        'Blocked by an earlier entry. Review the original entry first.',
+                      Text(
+                        AppStrings.of(context).translate(
+                          'Blocked by an earlier entry. Review the original entry first.',
+                        ),
                       ),
                     if (entry['error_code'] != null)
-                      Text(syncExplanation(entry['error_code'] as String)),
+                      Text(
+                        AppStrings.of(context).translate(
+                          syncExplanation(entry['error_code'] as String),
+                        ),
+                      ),
                     if (entry['note'] != null) Text(entry['note'] as String),
                     if (entry['due_date'] != null)
-                      Text('Due: ${dueDateText(entry['due_date'] as String)}'),
+                      Text(
+                        '${AppStrings.of(context).translate('Due')}: ${dueDateText(entry['due_date'] as String)}',
+                      ),
+                    if (['credit', 'payment'].contains(entry['kind']))
+                      EntryDetail(
+                        shopId: widget.shopId,
+                        linkId: widget.linkId,
+                        entry: entry,
+                        entries: snapshot.entries,
+                      ),
                     if (entry['correction_reason'] != null)
-                      Text('Reason: ${entry['correction_reason']}'),
+                      Text(
+                        '${AppStrings.of(context).translate('Reason')}: ${entry['correction_reason']}',
+                      ),
                   ],
                 ),
               ),
@@ -205,6 +251,7 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
               _error is AppFailure
                   ? (_error as AppFailure).messageKey
                   : 'history.failed',
+              languageCode: AppStrings.of(context).languageCode,
             ),
           ),
         if (_loading)
@@ -214,12 +261,10 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
             ),
           ),
         TextButton(
-          onPressed: _loading ? null : () => _load(refresh: true),
-          child: const Text('Refresh from server'),
-        ),
-        TextButton(
           onPressed: () => setState(() => _online = true),
-          child: const Text('View confirmed server history'),
+          child: Text(
+            AppStrings.of(context).translate('View confirmed server history'),
+          ),
         ),
       ],
     );
@@ -239,8 +284,10 @@ class SavedCustomersView extends ConsumerWidget {
           'Saved customer ledgers',
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        const Text(
-          'Saved on this device. Balances may include Pending entries.',
+        Text(
+          AppStrings.of(context).translate(
+            'Saved on this device. Balances may include Pending entries.',
+          ),
         ),
         for (final link in links)
           ListTile(

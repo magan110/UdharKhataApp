@@ -208,7 +208,7 @@ D03 implements local D1/SQLite schema guards with safe integer money and version
 
 The following must be resolved before their affected phase exits:
 
-1. **Due-date allocation:** Confirm oldest-unpaid-credit-first (then entry ID for ties) or choose another deterministic rule before showing aggregate overdue amounts.
+1. **Due-date allocation:** D16 resolves allocation: corrected effective credits by due date, server sequence then ID, undated last; effective payments allocate in that order. Due is calendar-only and overdue is strictly before the selected date.
 2. **Amount and input limits:** D08 sets the approved pilot credit limit to ₹1,00,000 per entry and note limit to 500 UTF-16 code units. Dispute reason length and export range remain to be fixed before pilot.
 3. **Deletion and retention:** Define published duration, customer access removal/re-link behavior, shop deletion handling and support process before public release.
 4. **Backup destination and restore owner:** Choose encrypted operational backup location, key custody and restore schedule before live financial records.
@@ -260,3 +260,11 @@ Unresolved D08/D09 secure-storage commands retain their original Check same cred
 ### D12 event-time and incremental sync clarification
 
 A previously verified offline owner command may be submitted after days without changing its original operation ID or occurrence time. Worker credit/payment validation accepts nonnegative safe-integer event time through server now plus five minutes, superseding the earlier online-only 24-hour past-age bound. Event time is descriptive and untrusted; acknowledged order is server sequence. The owner-only incremental feed returns bounded, scoped, fixed-high-water acknowledged pages including operation identity; the client must atomically apply rows and cursor and preserve rejected/outstanding commands. Current local implementation evidence is in Progress; remote deployment and full phone acceptance are separate gates.
+
+## D13–D21 private-test candidate update (2026-10-02)
+
+The candidate adds verified offline repeat QR, dated acknowledged customer cache, immutable owner corrections, online disputes/resolution, deterministic due summaries, bounded reconciled PDF/CSV and reviewed reminders, persisted English/Hindi, settings/help and tracked privacy controls. See [implemented API](API-SPECIFICATION.md), [operations and pending policy/backup gates](docs/ops/private-test-operations.md), and [D21 evidence/device matrix](docs/verification/d21-evidence.md). Historical phase notes above describe their earlier phase, not the current candidate boundary.
+
+Pending owner entries remain device-only until acknowledged. Statements exclude Pending; settings offer an explicitly reviewed copy of original device requests for investigation. Exports use immutable UTC posting dates, inclusive maximum 366 days/5,000 acknowledged entries. Due allocation follows effective dated credits by due date, server sequence/ID, undated last; cancelled/reduced credits reallocate effective payments. Disputes do not change balances. Customer removal revokes access and retains history; relink and destructive deletion await reviewed policy.
+
+This is a synthetic private-test candidate, with physical Android/native share/TalkBack and Hindi-speaker acceptance pending the user's final APK test. Public/real-data use still requires reviewed privacy retention, actual separately controlled encrypted backup, named operators and verified remote alarms. No production release is claimed.

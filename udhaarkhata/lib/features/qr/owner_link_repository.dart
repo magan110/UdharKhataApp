@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../core/auth/auth_repository.dart';
+import '../../core/db/qr_link_dao.dart';
+import '../../core/network/error_classifier.dart';
 import '../../core/network/contracts.dart';
 import '../../core/network/app_failure.dart';
 import '../auth/session_controller.dart';
@@ -47,10 +49,40 @@ final customerLinksProvider = FutureProvider.autoDispose
     }, retry: (_, _) => null);
 
 class CloudOwnerLinkRepository implements OwnerLinkRepository {
-  CloudOwnerLinkRepository(this.auth, this.accountId, this.storage);
+  CloudOwnerLinkRepository(
+    this.auth,
+    this.accountId,
+    this.storage, {
+    this.qrCache,
+  });
+  final QrLinkDao? qrCache;
   final AuthRepository auth;
   final OpaqueId accountId;
   final FlutterSecureStorage storage;
+  CustomerLink? _justResolved;
+  QrLinkDao? get _cache =>
+      qrCache ??
+      (auth is GoogleAuthRepository
+          ? QrLinkDao((auth as GoogleAuthRepository).database, accountId)
+          : null);
+  Future<void> _invalidate(
+    OpaqueId shopId, {
+    String? publicId,
+    String? linkId,
+    bool removeAccess = false,
+  }) async {
+    try {
+      await _cache?.invalidate(
+        shopId.value,
+        publicId: publicId,
+        linkId: linkId,
+        removeAccess: removeAccess,
+      );
+    } on StateError {
+      // Authentication loss locks the DB; never replace that error with cache cleanup.
+    }
+  }
+
   Future<void> _queue = Future.value();
   Future<T> _serial<T>(Future<T> Function() action) {
     final result = _queue.then((_) => action());
@@ -84,16 +116,46 @@ class CloudOwnerLinkRepository implements OwnerLinkRepository {
   }
 
   @override
-  Future<ResolvedCustomer> resolve(OpaqueId shopId, String publicId) {
+  Future<ResolvedCustomer> resolve(OpaqueId shopId, String publicId) async {
+    _justResolved = null;
     parseOwnerQr('udhaar://customer/v1/$publicId');
-    return _decode(
-      auth.cloudRequest(
-        accountId,
-        '/v1/customer-qr/resolve',
-        body: {'shopId': shopId.value, 'publicQrId': publicId},
-      ),
-      (value) => ResolvedCustomer.fromJson(publicId, value),
-    );
+    try {
+      final resolved = await _decode(
+        auth.cloudRequest(
+          accountId,
+          '/v1/customer-qr/resolve',
+          body: {'shopId': shopId.value, 'publicQrId': publicId},
+        ),
+        (value) => ResolvedCustomer.fromJson(publicId, value),
+      );
+      if (resolved.linkId != null) {
+        final link = await customer(shopId, resolved.linkId!);
+        await _cache?.cache(publicId, link);
+        _justResolved = link;
+      } else {
+        await _invalidate(shopId, publicId: publicId);
+      }
+      return resolved;
+    } on AppFailure catch (failure) {
+      if (classifySyncFailure(failure) == SyncFailureKind.transient &&
+          failure.code != 'INVALID_RESPONSE') {
+        final link = await _cache?.lookup(shopId.value, publicId: publicId);
+        if (link != null) {
+          return ResolvedCustomer(publicId, link.displayName, link.id);
+        }
+        throw const AppFailure(
+          'NETWORK_ERROR',
+          'link.internetNeeded',
+          retryable: true,
+        );
+      }
+      await _invalidate(
+        shopId,
+        publicId: publicId,
+        removeAccess: ['FORBIDDEN', 'NOT_FOUND'].contains(failure.code),
+      );
+      rethrow;
+    }
   }
 
   @override
@@ -113,19 +175,43 @@ class CloudOwnerLinkRepository implements OwnerLinkRepository {
     },
   );
   @override
-  Future<CustomerLink> customer(OpaqueId shopId, OpaqueId linkId) => _decode(
-    auth.cloudRequest(
-      accountId,
-      '/v1/shops/${shopId.value}/customers/${linkId.value}',
-    ),
-    (value) {
-      final link = _link(shopId, value);
-      if (link.id.value != linkId.value) {
-        throw const FormatException('Wrong link');
+  Future<CustomerLink> customer(OpaqueId shopId, OpaqueId linkId) async {
+    final resolved = _justResolved;
+    _justResolved = null;
+    if (resolved?.shopId.value == shopId.value &&
+        resolved?.id.value == linkId.value) {
+      return resolved!;
+    }
+    try {
+      return await _decode(
+        auth.cloudRequest(
+          accountId,
+          '/v1/shops/${shopId.value}/customers/${linkId.value}',
+        ),
+        (value) {
+          final link = _link(shopId, value);
+          if (link.id.value != linkId.value) {
+            throw const FormatException('Wrong link');
+          }
+          return link;
+        },
+      );
+    } on AppFailure catch (failure) {
+      if (classifySyncFailure(failure) == SyncFailureKind.transient &&
+          failure.code != 'INVALID_RESPONSE') {
+        final link = await _cache?.lookup(shopId.value, linkId: linkId.value);
+        if (link != null) return link;
+      } else {
+        await _invalidate(
+          shopId,
+          linkId: linkId.value,
+          removeAccess: ['FORBIDDEN', 'NOT_FOUND'].contains(failure.code),
+        );
       }
-      return link;
-    },
-  );
+      rethrow;
+    }
+  }
+
   @override
   Future<LinkAttempt?> pending(OpaqueId shopId) async {
     final text = await storage.read(key: _key(shopId));
@@ -195,6 +281,7 @@ class CloudOwnerLinkRepository implements OwnerLinkRepository {
           ),
           (value) => _link(shopId, value),
         );
+        await _cache?.cache(saved.publicId, link);
         await storage.delete(key: _key(shopId));
         return link;
       } on AppFailure catch (error) {

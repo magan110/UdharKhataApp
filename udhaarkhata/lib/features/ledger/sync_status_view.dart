@@ -1,3 +1,5 @@
+import '../../app/app_strings.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -10,7 +12,7 @@ import 'money.dart';
 
 String syncExplanation(String? code) => switch (code) {
   'NOT_FOUND' || 'FORBIDDEN' => 'Access is no longer available. Original entries are retained on this device.',
-  'BALANCE_CONFLICT' || 'LOCAL_BALANCE_CONFLICT' => 'The balance changed. Review the confirmed ledger before recording another entry.',
+  'REVISION_CONFLICT' || 'BALANCE_CONFLICT' || 'LOCAL_BALANCE_CONFLICT' => 'The balance changed. Review the confirmed ledger before recording another entry.',
   'CACHE_TOO_LARGE' => 'This ledger is too large for offline entry. View confirmed server history online.',
   'FEATURE_UNAVAILABLE' =>
     'Sync is unavailable on this server. Saved entries remain on this device.',
@@ -25,14 +27,27 @@ String syncExplanation(String? code) => switch (code) {
 };
 final _syncDetailsProvider =
     FutureProvider.autoDispose<
-      ({int? verified, List<Map<String, Object?>> attention})
+      ({int? verified, int? oldest, List<Map<String, Object?>> attention})
     >((ref) async {
       ref.watch(cacheRevisionProvider);
       final service = ref.watch(syncServiceProvider);
       if (service == null) {
-        return (verified: null, attention: <Map<String, Object?>>[]);
+        return (
+          verified: null,
+          oldest: null,
+          attention: <Map<String, Object?>>[],
+        );
+      }
+      final pending = (await service.repository.outbox()).where(
+        (row) => row['state'] == 'pending',
+      );
+      int? oldest;
+      for (final row in pending) {
+        final time = row['created_at_ms'] as int;
+        if (oldest == null || time < oldest) oldest = time;
       }
       return (
+        oldest: oldest,
         verified: await service.verifiedAt(),
         attention: await service.attention(),
       );
@@ -43,7 +58,7 @@ class SyncStatusView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(syncServiceProvider);
-    if (service == null) return const SizedBox.shrink();
+    if (service == null) return SizedBox.shrink();
     final state =
         ref.watch(syncRunStateProvider).asData?.value ?? service.state;
     final details = ref.watch(_syncDetailsProvider).asData?.value;
@@ -51,44 +66,97 @@ class SyncStatusView extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (service.repository.auth.offlineAccess)
-          const Text('Offline · Saved account access on this device'),
+          Text(
+            AppStrings.of(context)
+                .translate('Offline · Saved account access on this device'),
+          ),
         if (details?.verified != null)
-          Text('Last verified: ${historyDate(details!.verified!)}'),
+          Text(
+            AppStrings.of(context).format(
+              'Last verified: {time}',
+              values: {'time': historyDate(details!.verified!)},
+            ),
+          ),
         Text(
-          '${state.pendingCount} Pending · ${state.needsAttentionCount} Needs attention',
+          AppStrings.of(context).format(
+            '{pending} Pending · {attention} Needs attention',
+            values: {
+              'pending': '${state.pendingCount}',
+              'attention': '${state.needsAttentionCount}',
+            },
+          ),
         ),
+        if (details?.oldest != null)
+          Text(
+            AppStrings.of(context).format(
+              'Oldest Pending saved: {time}',
+              values: {'time': historyDate(details!.oldest!)},
+            ),
+          ),
         if (state.lastSuccessfulAtMs != null)
-          Text('Last sync: ${historyDate(state.lastSuccessfulAtMs!)}'),
-        const Text(
-          'Pending entries are only on this device and are not backed up to the cloud.',
+          Text(
+            AppStrings.of(context).format(
+              'Last sync: {time}',
+              values: {'time': historyDate(state.lastSuccessfulAtMs!)},
+            ),
+          ),
+        Text(
+          AppStrings.of(context).translate(
+            'Pending entries are only on this device and are not backed up to the cloud.',
+          ),
         ),
-        if (state.errorCode != null) Text(syncExplanation(state.errorCode)),
+        if (state.errorCode != null)
+          Text(
+            AppStrings.of(context).translate(syncExplanation(state.errorCode)),
+          ),
         TextButton(
           onPressed: state.running
               ? null
               : () => unawaited(service.synchronize()),
-          child: Text(state.running ? 'Syncing…' : 'Sync now'),
+          child: Text(
+            AppStrings.of(context)
+                .translate(state.running ? 'Syncing…' : 'Sync now'),
+          ),
         ),
         for (final entry in details?.attention ?? <Map<String, Object?>>[])
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${entry['kind'] == 'credit' ? 'Credit' : 'Payment'} ${formatPaise(entry['amount_paise'] as int)} · Needs attention',
+                    '${AppStrings.of(context).translate(entry['kind'] == 'credit'
+                        ? 'Credit'
+                        : entry['kind'] == 'correction'
+                        ? 'Correction'
+                        : 'Payment')} ${formatPaise((entry['amount_paise'] ?? entry['target_amount_paise']) as int)} · ${AppStrings.of(context).translate('Needs attention')}',
                   ),
                   Text(
-                    'Entry date: ${historyDate(entry['occurred_at_ms'] as int)}',
+                    AppStrings.of(context).format(
+                      'Entry date: {time}',
+                      values: {
+                        'time': historyDate(entry['occurred_at_ms'] as int),
+                      },
+                    ),
                   ),
                   if (entry['payment_method'] != null)
-                    Text('Method: ${entry['payment_method']}'),
+                    Text(
+                      '${AppStrings.of(context).translate('Method')}: ${entry['payment_method']}',
+                    ),
                   if (entry['note'] != null) Text(entry['note'] as String),
-                  const Text(
-                    'Original entry is retained. Review it before recording another entry.',
+                  if (entry['correction_reason'] != null)
+                    Text(entry['correction_reason'] as String),
+                  Text(
+                    AppStrings.of(context).translate(
+                      'Original entry is retained. Review it before recording another entry.',
+                    ),
                   ),
-                  Text(syncExplanation(entry['error_code'] as String?)),
+                  Text(
+                    AppStrings.of(context).translate(
+                      syncExplanation(entry['error_code'] as String?),
+                    ),
+                  ),
                 ],
               ),
             ),

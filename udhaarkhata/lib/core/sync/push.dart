@@ -30,8 +30,20 @@ final class SyncPush {
       body = jsonObject(jsonDecode(outboxRow['payload'] as String));
       final operation = LocalOperation(accountId.value, shopId, body);
       final credit = body['kind'] == 'credit',
-          payment = body['kind'] == 'payment';
-      final keys = credit
+          payment = body['kind'] == 'payment',
+          correction = body['kind'] == 'correction';
+      final keys = correction
+          ? {
+              'clientOperationId',
+              'linkId',
+              'kind',
+              'correctsEntryId',
+              'targetAmountPaise',
+              'expectedRevision',
+              'correctionReason',
+              'occurredAtMs',
+            }
+          : credit
           ? {
               'clientOperationId',
               'linkId',
@@ -49,7 +61,7 @@ final class SyncPush {
               'paymentMethod',
               'occurredAtMs',
             };
-      if ((!credit && !payment) ||
+      if ((!credit && !payment && !correction) ||
           body.keys.any((key) => !keys.contains(key)) ||
           body['clientOperationId'] != outboxRow['operation_id'] ||
           body['linkId'] != outboxRow['link_id'] ||
@@ -66,16 +78,74 @@ final class SyncPush {
         expectedGeneration: dao.generation,
       );
       if (rows.length != 1) throw const FormatException('Missing command');
+      if (correction) {
+        final expected = body['expectedRevision'];
+        final reason = body['correctionReason'];
+        if (expected is! int ||
+            expected < 0 ||
+            reason is! String ||
+            reason.trim().isEmpty ||
+            reason.length > 240) {
+          throw const FormatException('Invalid correction');
+        }
+        final history = await dao.database.transaction(
+          accountId,
+          (tx) => tx.query(
+            'cached_entries',
+            where: 'link_id=? AND sync_status=? AND (server_id=? OR corrects_entry_id=?)',
+            whereArgs: [
+              body['linkId'],
+              'synced',
+              body['correctsEntryId'],
+              body['correctsEntryId'],
+            ],
+            orderBy: 'server_seq',
+          ),
+          expectedGeneration: dao.generation,
+        );
+        final originals = history
+            .where((e) => e['server_id'] == body['correctsEntryId'])
+            .toList();
+        final prior = history
+            .where(
+              (e) =>
+                  e['corrects_entry_id'] == body['correctsEntryId'] &&
+                  (e['expected_revision'] as int) < expected,
+            )
+            .toList();
+        if (originals.length != 1 ||
+            !['credit', 'payment'].contains(originals.single['kind']) ||
+            prior.length != expected) {
+          throw const FormatException('Missing correction history');
+        }
+        final effective = prior.isEmpty
+            ? originals.single['amount_paise'] as int
+            : prior.last['target_amount_paise'] as int;
+        final delta =
+            (MoneyPaise.fromJson(body['targetAmountPaise']).value - effective) *
+            (originals.single['kind'] == 'credit' ? 1 : -1);
+        if (rows.single['effect_paise'] != delta) {
+          throw const FormatException('Correction effect mismatch');
+        }
+      }
       final row = rows.single;
-      final amount = MoneyPaise.fromJson(body['amountPaise']).value;
+      final amount = MoneyPaise.fromJson(
+        body[correction ? 'targetAmountPaise' : 'amountPaise'],
+      ).value;
       if (row['shop_id'] != shopId ||
           row['owner_user_id'] != accountId.value ||
           row['link_status'] != 'active' ||
           row['sync_status'] != 'pending' ||
           row['kind'] != body['kind'] ||
-          row['amount_paise'] != amount ||
-          amount < 1 ||
-          row['effect_paise'] != (credit ? amount : -amount) ||
+          (correction
+              ? row['target_amount_paise'] != amount ||
+                    row['corrects_entry_id'] != body['correctsEntryId'] ||
+                    row['expected_revision'] != body['expectedRevision'] ||
+                    row['correction_reason'] != body['correctionReason'] ||
+                    amount < 0
+              : row['amount_paise'] != amount ||
+                    amount < 1 ||
+                    row['effect_paise'] != (credit ? amount : -amount)) ||
           row['note'] != body['note'] ||
           row['due_date'] != body['dueDate'] ||
           row['payment_method'] != body['paymentMethod'] ||

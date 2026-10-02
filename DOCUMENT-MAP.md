@@ -60,3 +60,12 @@ This is the navigation hub for every Markdown file currently in the repository. 
 ## Change propagation
 
 When a decision changes, update its owning document and downstream contract/test documents in the same work item. Examples: a new QR format touches [PRD](PRD.md), [SRS](SRS.md), [SES](SES.md), [API](API-SPECIFICATION.md), [Security](SECURITY-REQUIREMENTS.md), [UI/UX](UI-UX-DESIGN-SPEC.md), and [QA cases](TEST-CASES-QA-CHECKLIST.md); a ledger rule touches [SRS](SRS.md), [LLD](LLD.md), [database](DATABASE-DESIGN-ERD.md), [API](API-SPECIFICATION.md), [test plan](TEST-PLAN.md), and [QA cases](TEST-CASES-QA-CHECKLIST.md). Update [progress](docs/implementation/PROGRESS.md) with implementation evidence. Run `python scripts/check_docs.py` after editing Markdown to catch broken file links and missing navigation.
+
+## D13–D21 candidate packet
+
+| Document | Purpose |
+|---|---|
+| [D13–D21 design](docs/superpowers/specs/2026-10-02-d13-d21-design.md) | D13–D21 design; source-backed candidate scope and evidence. |
+| [D13–D21 implementation plan](docs/superpowers/plans/2026-10-02-d13-d21.md) | D13–D21 implementation plan; source-backed candidate scope and evidence. |
+| [Private-test operations](docs/ops/private-test-operations.md) | Private-test operations; source-backed candidate scope and evidence. |
+| [D21 candidate evidence](docs/verification/d21-evidence.md) | D21 candidate evidence; source-backed candidate scope and evidence. |

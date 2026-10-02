@@ -16,6 +16,7 @@ All documents below are important project references. Before changing a feature,
 |---|---|
 | Vision, business and market | [Product Vision](PRODUCT-VISION.md), [BRD](BRD.md), [Market / Competitor Research](MARKET-COMPETITOR-RESEARCH.md) |
 | Product scope and users | [Scope](SCOPE.md), [PRD](PRD.md), [User Personas](USER-PERSONAS.md), [User Journey / User Flow](USER-JOURNEY-USER-FLOW.md), [Use Cases / User Stories](USE-CASES-USER-STORIES.md) |
+| D13–D21 delivery design | [Candidate design](docs/superpowers/specs/2026-10-02-d13-d21-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-d13-d21.md), [operations](docs/ops/private-test-operations.md), [D21 evidence](docs/verification/d21-evidence.md) |
 | D12 architectural design | [D12 sync design](docs/superpowers/specs/2026-10-02-d12-sync-design.md) (approved specification) and [implementation plan](docs/superpowers/plans/2026-10-02-d12-sync.md) (approved Native execution) |
 | Requirements and delivery | [SRS](SRS.md), [SES](SES.md), [Project Plan / Roadmap](PROJECT-PLAN-ROADMAP.md), [Implementation Plan](docs/implementation/README.md), [Progress](docs/implementation/PROGRESS.md) |
 | Architecture, data and API | [HLD](HLD.md), [LLD](LLD.md), [Database Design / ERD](DATABASE-DESIGN-ERD.md), [API Specification](API-SPECIFICATION.md) |

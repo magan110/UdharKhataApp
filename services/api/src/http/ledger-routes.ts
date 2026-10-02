@@ -2,6 +2,7 @@ import {z} from 'zod';
 import type {Authenticator} from '../auth/authenticator';
 import type {SessionService} from '../auth/sessions';
 import {postCredit,postPayment,readBalance,type CreditCommand,type PaymentCommand} from '../ledger/commands';
+import {postCorrection,type CorrectionCommand} from '../ledger/correction';
 import {CREDIT_LIMITS} from '../ledger/limits';
 import {requireRole} from '../policy/access';
 import {HttpError,jsonResponse} from './errors';
@@ -19,16 +20,17 @@ export const paymentSchema=z.object({
  clientOperationId:creditSchema.shape.clientOperationId,linkId:idSchema,kind:z.literal('payment'),
  amountPaise:creditSchema.shape.amountPaise,paymentMethod:z.enum(['cash','upi']),occurredAtMs:timestampMsSchema,
 }).strict();
-const entrySchema=z.union([creditSchema,paymentSchema]);
+export const correctionSchema=z.object({clientOperationId:creditSchema.shape.clientOperationId,linkId:idSchema,kind:z.literal('correction'),correctsEntryId:idSchema,targetAmountPaise:z.number().int().min(0).max(CREDIT_LIMITS.maxAmountPaise),expectedRevision:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER-1),correctionReason:z.string().trim().min(1).max(240),occurredAtMs:timestampMsSchema}).strict();
+const entrySchema=z.union([creditSchema,paymentSchema,correctionSchema]);
 function pathId(value:string){const parsed=idSchema.safeParse(value);if(!parsed.success)throw new HttpError(400,'VALIDATION_ERROR','api.validationError');return parsed.data;}
 export function ledgerRoutes(options:{db?:D1Database;authenticate:Authenticator;sessions?:SessionService}){
  return [{path:'/v1/shops/{shopId}/entries',method:'POST',handler:async(request:Request,requestId:string)=>{
   const principal=requireRole(await options.authenticate(request),'owner');
   if(!options.db)throw new HttpError(503,'FEATURE_UNAVAILABLE','api.featureUnavailable',true);
   const shopId=pathId(new URL(request.url).pathname.split('/')[3]);
-  const body=await readJson(request,entrySchema,CREDIT_LIMITS.maxBodyBytes) as CreditCommand|PaymentCommand;
+  const body=await readJson(request,entrySchema,CREDIT_LIMITS.maxBodyBytes) as CreditCommand|PaymentCommand|CorrectionCommand;
   if(options.sessions)await options.sessions.rateLimit(principal.userId,'entry-owner');
-  const result=await (body.kind==='credit'?postCredit(options.db,principal,shopId,body):postPayment(options.db,principal,shopId,body));
+  const result=await (body.kind==='credit'?postCredit(options.db,principal,shopId,body):body.kind==='payment'?postPayment(options.db,principal,shopId,body):postCorrection(options.db,principal,shopId,body));
   return jsonResponse(result,requestId,result.replayed?200:201);
  }},{path:'/v1/shops/{shopId}/customers/{linkId}/balance',method:'GET',handler:async(request:Request,requestId:string)=>{
   const principal=requireRole(await options.authenticate(request),'owner');

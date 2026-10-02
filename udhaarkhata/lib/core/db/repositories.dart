@@ -38,6 +38,9 @@ final class LocalLedgerStore {
       whereArgs: [entry['client_operation_id']],
     );
     if (existing.isNotEmpty) {
+      if (entry['kind'] == 'correction') {
+        entry = {...entry, 'effect_paise': existing.single['effect_paise']};
+      }
       final saved = await tx.query(
         'outbox',
         where: 'operation_id=?',
@@ -70,6 +73,46 @@ final class LocalLedgerStore {
           blocked.isNotEmpty) {
         throw StateError('Verified complete ledger required');
       }
+    }
+    if (entry['kind'] == 'correction') {
+      final original = await tx.query(
+        'cached_entries',
+        where: 'server_id=? AND link_id=? AND sync_status=?',
+        whereArgs: [entry['corrects_entry_id'], entry['link_id'], 'synced'],
+      );
+      if (original.length != 1 ||
+          !['credit', 'payment'].contains(original.single['kind'])) {
+        throw StateError('Acknowledged original required');
+      }
+      final corrections = await tx.query(
+        'cached_entries',
+        where: 'corrects_entry_id=? AND link_id=?',
+        whereArgs: [entry['corrects_entry_id'], entry['link_id']],
+        orderBy: 'server_seq',
+      );
+      if (corrections.any((row) => row['sync_status'] != 'synced') ||
+          corrections.length != entry['expected_revision']) {
+        throw StateError('Correction revision changed');
+      }
+      final target = entry['target_amount_paise'];
+      final reason = entry['correction_reason'];
+      if (target is! int ||
+          target < 0 ||
+          target > maxSafeInteger ||
+          reason is! String ||
+          reason.trim().isEmpty ||
+          reason.length > 240) {
+        throw StateError('Invalid correction');
+      }
+      final effective = corrections.isEmpty
+          ? original.single['amount_paise'] as int
+          : corrections.last['target_amount_paise'] as int;
+      entry = {
+        ...entry,
+        'effect_paise':
+            (target - effective) *
+            (original.single['kind'] == 'credit' ? 1 : -1),
+      };
     }
     await tx.insert('cached_entries', entry);
     await tx.insert('outbox', {

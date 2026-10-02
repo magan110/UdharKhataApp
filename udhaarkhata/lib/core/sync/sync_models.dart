@@ -43,7 +43,12 @@ final class SyncEntry {
       operationId == body['clientOperationId'] &&
       linkId == body['linkId'] &&
       entry.kind == body['kind'] &&
-      entry.amount == body['amountPaise'] &&
+      (entry.kind == 'correction'
+          ? entry.amount == body['targetAmountPaise'] &&
+                entry.targetId == body['correctsEntryId'] &&
+                entry.revision == (body['expectedRevision'] as int) + 1 &&
+                entry.reason == body['correctionReason']
+          : entry.amount == body['amountPaise']) &&
       entry.note == body['note'] &&
       entry.method == body['paymentMethod'] &&
       entry.dueDate == body['dueDate'] &&

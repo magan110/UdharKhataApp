@@ -74,53 +74,68 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
   Widget build(BuildContext context) {
     final repo = ref.watch(ownerLinkRepositoryProvider), state = _controller;
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan customer QR')),
+      appBar: AppBar(
+        title: Text(AppStrings.of(context).translate('Scan customer QR')),
+      ),
       body: SafeArea(
         child: state == null || !identical(repo, state.repository)
-            ? const StatusPage(
-                title: 'Please sign in',
-                message: 'Open your shop again to scan a customer.',
+            ? StatusPage(
+                title: AppStrings.of(context).translate('Please sign in'),
+                message: AppStrings.of(context)
+                    .translate('Open your shop again to scan a customer.'),
               )
             : switch (state.stage) {
-                ScanStage.loading => const StatusPage(
-                  title: 'Checking previous request',
-                  message: 'Please wait.',
+                ScanStage.loading => StatusPage(
+                  title: AppStrings.of(context)
+                      .translate('Checking previous request'),
+                  message: AppStrings.of(context).translate('Please wait.'),
                   loading: true,
                 ),
-                ScanStage.resolving => const StatusPage(
-                  title: 'Finding customer',
-                  message: 'Checking this QR online.',
+                ScanStage.resolving => StatusPage(
+                  title: AppStrings.of(context).translate('Finding customer'),
+                  message: AppStrings.of(context)
+                      .translate('Checking this QR online.'),
                   loading: true,
                 ),
-                ScanStage.ready => Column(
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        'Scan the customer’s Udhaar Khata QR. Internet is needed to identify and add customers.',
-                      ),
+                ScanStage.ready => LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            AppStrings.of(context).translate(
+                              'Scan the customer’s Udhaar Khata QR. Known saved customers can open offline. Internet is needed to add a customer.',
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: constraints.maxHeight * .7,
+                          child: _Camera(onScan: state.scan),
+                        ),
+                      ],
                     ),
-                    Expanded(child: _Camera(onScan: state.scan)),
-                  ],
+                  ),
                 ),
                 ScanStage.confirm ||
                 ScanStage.saving ||
                 ScanStage.recovery => LinkConfirmation(controller: state),
-                ScanStage.linked => const StatusPage(
-                  title: 'Opening customer',
-                  message: 'Please wait.',
+                ScanStage.linked => StatusPage(
+                  title: AppStrings.of(context).translate('Opening customer'),
+                  message: AppStrings.of(context).translate('Please wait.'),
                   loading: true,
                 ),
                 ScanStage.failed => SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Could not open customer',
+                        AppStrings.of(context)
+                            .translate('Could not open customer'),
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Semantics(
                         liveRegion: true,
                         child: Text(
@@ -128,18 +143,23 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
                             state.error is AppFailure
                                 ? (state.error as AppFailure).messageKey
                                 : 'link.failed',
+                            languageCode: AppStrings.of(context).languageCode,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       FilledButton(
                         onPressed: state.retry,
-                        child: const Text('Try again'),
+                        child: Text(
+                          AppStrings.of(context).translate('Try again'),
+                        ),
                       ),
                       if (state.attempt == null)
                         TextButton(
                           onPressed: state.rescan,
-                          child: const Text('Scan another QR'),
+                          child: Text(
+                            AppStrings.of(context).translate('Scan another QR'),
+                          ),
                         ),
                     ],
                   ),
@@ -247,14 +267,16 @@ class _CameraState extends State<_Camera> with WidgetsBindingObserver {
 
   Future<void> _settings() async {
     try {
-      await const MethodChannel('com.udhaarkhata.app/settings')
+      await MethodChannel('com.udhaarkhata.app/settings')
           .invokeMethod<void>('openSettings');
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Open Android Settings, then Apps, Udhaar Khata, Permissions to allow Camera.',
+              AppStrings.of(context).translate(
+                'Open Android Settings, then Apps, Udhaar Khata, Permissions to allow Camera.',
+              ),
             ),
           ),
         );
@@ -264,7 +286,7 @@ class _CameraState extends State<_Camera> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Customer QR camera scanner',
+    label: AppStrings.of(context).translate('Customer QR camera scanner'),
     child: MobileScanner(
       key: ValueKey(_generation),
       controller: _camera,
@@ -279,32 +301,66 @@ class _CameraState extends State<_Camera> with WidgetsBindingObserver {
         _detected = true;
         widget.onScan(values.first.rawValue!);
       },
-      errorBuilder: (_, error) => SingleChildScrollView(
+      errorBuilder: (_, error) => ScannerCameraError(
+        permissionDenied:
+            error.errorCode == MobileScannerErrorCode.permissionDenied,
+        restarting: _restarting,
+        onRetry: _retry,
+        onSettings: _settings,
+      ),
+    ),
+  );
+}
+
+class ScannerCameraError extends StatelessWidget {
+  const ScannerCameraError({
+    super.key,
+    required this.permissionDenied,
+    required this.restarting,
+    required this.onRetry,
+    required this.onSettings,
+  });
+  final bool permissionDenied, restarting;
+  final VoidCallback onRetry, onSettings;
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final title = strings.translate(
+      permissionDenied ? 'Camera permission needed' : 'Camera unavailable',
+    );
+    return Semantics(
+      liveRegion: true,
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              error.errorCode == MobileScannerErrorCode.permissionDenied
-                  ? 'Camera permission needed'
-                  : 'Camera unavailable',
-              style: Theme.of(context).textTheme.headlineSmall,
+            Semantics(
+              header: true,
+              child: Text(
+                title,
+                semanticsLabel: title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Allow camera access to scan a customer QR. You can change Camera permission in Android Settings.',
+            Text(
+              strings.translate(
+                'Allow camera access to scan a customer QR. You can change Camera permission in Android Settings.',
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: _restarting ? null : _retry,
-              child: const Text('Try camera again'),
+              onPressed: restarting ? null : onRetry,
+              child: Text(strings.translate('Try camera again')),
             ),
             TextButton(
-              onPressed: _settings,
-              child: const Text('Open settings'),
+              onPressed: onSettings,
+              child: Text(strings.translate('Open settings')),
             ),
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
