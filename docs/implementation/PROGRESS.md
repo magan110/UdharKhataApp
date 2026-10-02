@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D13–D21 private-test candidate implemented; automated verification complete; staging and APK delivery in progress. D12 delivered and user reported working. Physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 2 October 2026.
+**Current phase:** D13–D21 private-test candidate implemented; implementation, automated verification and private staging APK delivery complete; physical acceptance pending. D12 delivered and user reported working. Physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 2 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -28,7 +28,7 @@
 | D18 | Implemented; device acceptance pending | 2026-10-02 | English/Hindi resources, actual Hindi large-text widgets; human Hindi/TalkBack checks pending. |
 | D19 | Private-test implementation complete | 2026-10-02 | Non-destructive privacy requests/access removal and synthetic encrypted restore; actual backup infrastructure and reviewed retention/relink policy pending before real use. |
 | D20 | Implemented | 2026-10-02 | Central rate policies, export limits, redacted request events, compatibility guard and operations guidance. |
-| D21 | Automated verification complete; delivery in progress | 2026-10-02 | [Candidate evidence](../verification/d21-evidence.md); final source, deployment and APK provenance to follow. Physical acceptance pending. |
+| D21 | Private-test candidate delivered; phone acceptance pending | 2026-10-02 | [Candidate evidence](../verification/d21-evidence.md); verified source, staging deployment and stable-key APK provenance recorded. Physical acceptance pending. |
 | D22-D24 | Not started | - | Outside this requested private-test candidate. |
 
 ### D04 evidence (2026-10-01)
@@ -482,3 +482,7 @@ After receiving the D12 staging APK, the user reported “Working now next phase
 ### D13–D21 automated candidate verification (2 October 2026)
 
 236 Flutter tests pass with 83.96% line coverage; 106 Worker tests pass, all coverage categories above 80%; one Node configuration test, analysis, formatting, typecheck, lint, migrations/foreign keys, build, dependency audit, documentation/static release checks and encrypted synthetic restore pass. Independent review blockers are fixed, including offline revocation across both persistent namespaces and navigation-independent access-removal cleanup. See [candidate evidence](../verification/d21-evidence.md) for traceability and remaining physical/public-use gates.
+
+### D13–D21 staging and phone-test delivery (2 October 2026)
+
+Immutable candidate `4763f286afa9129ada71a39a0412b957a621bb44` was published to main. Cloud CI `37058730481`, staging deployment `37058753061` (retry after propagation) and stable-key APK build `37058758355` pass. Worker version `883fa8e7-ff3a-4c09-9021-7a30bf54cded` exposes D21 capabilities and rejects all unauthenticated scoped smoke requests. Downloaded APK hash/package/signer/staging configuration match CI. [APK artifact](https://github.com/magan110/UdharKhataApp/actions/runs/37058758355/artifacts/11249188043); [full evidence](../verification/d21-evidence.md). Phone testing, reviewed public-use retention/relink policy and actual managed encrypted backups remain pending; the delivered candidate is for synthetic private testing.

@@ -98,3 +98,15 @@ Prepared parameter binding is required on all external values; static SQL identi
 Update the existing app without uninstalling/clearing storage. Use dummy owner/customer accounts: (1) sign in and language switch, (2) new and repeat QR at two shops, (3) credit with due date, partial/full Cash/UPI payment, (4) airplane-mode repeat QR then unknown QR, save/restart/reconnect and verify one posting, (5) correction ₹500→₹450, cancellation and stale/offline correction, (6) customer dispute and owner resolution without monetary change, (7) reminder preview, bounded PDF/CSV and native share cancel, (8) account switch isolation and device-only request export, (9) customer access removal/request status, (10) replacement phone with same account restores acknowledged records only. Report model/Android version, language, action and displayed error/request ID; do not send tokens, private QR or real ledger data.
 
 D21 remains open for any failed financial/privacy/recovery gate or unperformed mandatory device checks. D22–D24 (participants, real-shop pilot, public launch decision) are outside this delivery.
+
+## Published source and staging
+
+Candidate source: `4763f286afa9129ada71a39a0412b957a621bb44`, pushed to main. [Cloud CI](https://github.com/magan110/UdharKhataApp/actions/runs/37058730481) passes, confirming the final 236-test Flutter suite/83.96% line coverage, Worker checks and docs/restore gates on the immutable source.
+
+[Staging deployment](https://github.com/magan110/UdharKhataApp/actions/runs/37058753061) passes on its retry, Worker version `883fa8e7-ff3a-4c09-9021-7a30bf54cded`. Initial immediate capability check reached the previous version during propagation, although deployment had completed; rerun verified all D21 capabilities plus eight unauthenticated scoped routes returning AUTH_REQUIRED. Existing migrations were applied idempotently; no new D21 schema migration was needed. Only the existing synthetic staging target was deployed.
+
+[APK build and audit](https://github.com/magan110/UdharKhataApp/actions/runs/37058758355) passes for the same immutable source. [Artifact download](https://github.com/magan110/UdharKhataApp/actions/runs/37058758355/artifacts/11249188043), expires 16 October 2026. Version `0.2.0+2`, package `com.udhaarkhata.app`, stable SHA-1 `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6`.
+
+Downloaded the actual artifact and independently matched its APK SHA-256 to the CI audit: `26ca98409c0daadbd60e297d5aa45f947f84888bba4f6cfbdc84d98a9069c8fc`, size 202,715,939 bytes. Audit confirms the staging HTTPS endpoint, registered Google audience and package/signer; private signing-key contents were not printed or committed. ZIP contains `app-debug.apk` and `apk-audit.json`. Install as an update to preserve Pending data; do not uninstall or clear app data.
+
+D13–D21 implementation, automated checks, staging delivery and private-test APK are complete. D21 physical acceptance remains for the user; public-use backup/operator and policy gates remain as listed above.
