@@ -191,4 +191,28 @@ final class SyncDao {
           await _reject(tx, command['operation_id'] as String, code);
         }
       });
+  Future<Map<String, Object?>?> retry(String scope) => _tx((tx) async {
+    final rows = await tx.query(
+      'sync_retry_state',
+      where: 'scope=?',
+      whereArgs: [scope],
+    );
+    return rows.isEmpty ? null : rows.single;
+  });
+  Future<void> retryScope(
+    String scope,
+    int attempts,
+    DateTime retryAt,
+    String code,
+  ) => _tx((tx) async {
+    await tx.insert('sync_retry_state', {
+      'scope': scope,
+      'attempts': attempts,
+      'retry_at_ms': retryAt.millisecondsSinceEpoch,
+      'error_code': code,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  });
+  Future<void> clearRetry(String scope) => _tx((tx) async {
+    await tx.delete('sync_retry_state', where: 'scope=?', whereArgs: [scope]);
+  });
 }

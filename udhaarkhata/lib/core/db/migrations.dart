@@ -134,6 +134,10 @@ const localSchema = <String>[
 ];
 
 const localSchemaV3 = <String>[
+  """CREATE TABLE sync_retry_state (
+    scope TEXT PRIMARY KEY, attempts INTEGER NOT NULL CHECK(attempts>=0),
+    retry_at_ms INTEGER NOT NULL CHECK(retry_at_ms>=0), error_code TEXT NOT NULL
+  )""",
   'ALTER TABLE owner_ledger_snapshots ADD COLUMN partial_sync_at_ms INTEGER',
   'ALTER TABLE owner_ledger_snapshots ADD COLUMN sync_blocked_code TEXT',
   'DROP TRIGGER cached_command_immutable',
