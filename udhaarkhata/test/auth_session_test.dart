@@ -145,7 +145,7 @@ void main() {
     await db.lock();
     await directory.delete(recursive: true);
   });
-  test('uncertain refresh requires reauthentication and leaves cached account data locked', () async {
+  test('offline preflight without grant leaves cache locked and does not spend refresh token', () async {
     final directory = await Directory.systemTemp.createTemp('auth-test');
     final db = SqliteAccountDatabase(
       factory: databaseFactoryFfi,
@@ -167,7 +167,7 @@ void main() {
       googleToken: () async => 'synthetic',
     );
     await expectLater(repo.restoreSession(), throwsA(anything));
-    expect(await store.read(), isNull);
+    expect(await store.read(), isNotNull);
     await db.lock();
     await directory.delete(recursive: true);
   });
@@ -185,6 +185,15 @@ void main() {
       final repo = GoogleAuthRepository(
         api: ApiClient(
           MockClient((request) async {
+            if (request.url.path == '/health') {
+              return http.Response(
+                jsonEncode({
+                  'requestId': 'test',
+                  'data': {'status': 'ok'},
+                }),
+                200,
+              );
+            }
             if (request.url.path.endsWith('refresh')) {
               return http.Response(
                 jsonEncode({

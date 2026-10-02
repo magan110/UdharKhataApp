@@ -30,7 +30,9 @@ void main() {
       api: ApiClient(
         MockClient((request) async {
           Object? data;
-          if (request.url.path.endsWith('google')) {
+          if (request.url.path == '/health') {
+            data = {'status': 'ok'};
+          } else if (request.url.path.endsWith('google')) {
             data = {
               'account': {
                 'id': user,

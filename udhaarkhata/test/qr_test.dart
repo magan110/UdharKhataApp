@@ -71,10 +71,19 @@ void main() {
       directory: directory.path,
     );
     final storage = MemorySecureStorage(), store = SessionStore(storage);
-    var offline = false;
+    var offline = false, healthAvailable = false;
     final auth = GoogleAuthRepository(
       api: ApiClient(
         MockClient((request) async {
+          if (offline && healthAvailable && request.url.path == '/health') {
+            return http.Response(
+              jsonEncode({
+                'data': {'status': 'ok'},
+                'requestId': 'test',
+              }),
+              200,
+            );
+          }
           if (offline) throw http.ClientException('offline');
           final data = request.url.path.endsWith('google')
               ? {
@@ -123,6 +132,15 @@ void main() {
         expect(container.read(qrProvider).hasError, false);
         expect(container.read(qrProvider).hasValue, true);
         expect(container.read(qrProvider).value!.cached, true);
+        expect(container.read(qrProvider).value!.needsSignIn, false);
+        expect(await store.read(), isNotNull);
+        expect(
+          await db.transaction(account.id, (tx) => tx.query('local_account')),
+          hasLength(1),
+        );
+        // Reachable health followed by lost refresh is uncertain and still fails closed.
+        healthAvailable = true;
+        await container.read(qrProvider.notifier).refresh();
         expect(container.read(qrProvider).value!.needsSignIn, true);
         expect(await store.read(), null);
         await expectLater(
