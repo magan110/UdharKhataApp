@@ -9,8 +9,12 @@ final class CachedOwnerLedger {
     this.entries,
     this.syncedPaise,
     this.pendingPaise,
-    this.snapshotAtMs,
-  );
+    this.snapshotAtMs, {
+    this.partialSyncAtMs,
+    this.syncBlockedCode,
+  });
+  final int? partialSyncAtMs;
+  final String? syncBlockedCode;
   final Map<String, Object?> link;
   final List<Map<String, Object?>> entries;
   final int syncedPaise, pendingPaise, snapshotAtMs;
@@ -130,8 +134,8 @@ final class OwnerLedgerDao {
         );
         if (links.isEmpty || snapshots.isEmpty) return null;
         final entries = await tx.rawQuery(
-          "SELECT * FROM cached_entries WHERE link_id=? ORDER BY CASE WHEN sync_status='synced' THEN 0 ELSE 1 END, server_seq, rowid",
-          [linkId],
+          "SELECT e.*,o.error_code,CASE WHEN EXISTS(SELECT 1 FROM outbox earlier WHERE earlier.link_id=e.link_id AND earlier.rowid<o.rowid AND (earlier.state='needs_attention' OR earlier.retry_at_ms>?)) THEN 1 ELSE 0 END AS blocked_by_earlier FROM cached_entries e LEFT JOIN outbox o ON o.operation_id=e.client_operation_id WHERE e.link_id=? ORDER BY CASE WHEN e.sync_status='synced' THEN 0 ELSE 1 END,e.server_seq,e.rowid",
+          [DateTime.now().millisecondsSinceEpoch, linkId],
         );
         final totals = (await tx.query(
           'cached_balances',
@@ -144,6 +148,8 @@ final class OwnerLedgerDao {
           totals['synced_paise'] as int,
           totals['pending_paise'] as int,
           snapshots.single['snapshot_at_ms'] as int,
+          partialSyncAtMs: snapshots.single['partial_sync_at_ms'] as int?,
+          syncBlockedCode: snapshots.single['sync_blocked_code'] as String?,
         );
       });
 

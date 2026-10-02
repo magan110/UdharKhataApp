@@ -13,6 +13,8 @@ import '../auth/session_controller.dart';
 import 'entry_model.dart';
 import 'device_ledger_repository.dart';
 import 'money.dart';
+import 'local_changes.dart';
+import 'sync_service.dart';
 
 abstract interface class LedgerRepository {
   Future<CreditAttempt?> pending(OpaqueId shopId, OpaqueId linkId);
@@ -45,17 +47,37 @@ final paymentRepositoryProvider = Provider<PaymentRepository?>((ref) {
   return repo is PaymentRepository ? repo as PaymentRepository : null;
 });
 
-final ledgerRepositoryProvider = Provider<LedgerRepository?>((ref) {
-  final account = ref.watch(sessionProvider).value;
-  if (account == null || account.role != AccountRole.owner) return null;
-  final auth = ref.watch(authRepositoryProvider);
-  const storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(resetOnError: false),
-  );
-  return auth is GoogleAuthRepository
-      ? DeviceLedgerRepository(auth, account.id, storage, auth.database)
-      : CloudLedgerRepository(auth, account.id, storage);
-});
+final Provider<LedgerRepository?> ledgerRepositoryProvider =
+    Provider<LedgerRepository?>((ref) {
+      final account = ref.watch(sessionProvider).value;
+      if (account == null || account.role != AccountRole.owner) return null;
+      final auth = ref.watch(authRepositoryProvider);
+      const storage = FlutterSecureStorage(
+        aOptions: AndroidOptions(resetOnError: false),
+      );
+      return auth is GoogleAuthRepository
+          ? DeviceLedgerRepository(
+              auth,
+              account.id,
+              storage,
+              auth.database,
+              onLocalSaved: () {
+                if (ref.mounted) {
+                  ref.read(cacheRevisionProvider.notifier).bump();
+                  ref.read(syncWakeRevisionProvider.notifier).bump();
+                }
+              },
+              onCacheReady: () {
+                if (ref.mounted) {
+                  ref.read(syncWakeRevisionProvider.notifier).bump();
+                }
+              },
+              refreshCached: (shop, link) async {
+                await ref.read(syncServiceProvider)?.refreshLink(shop, link);
+              },
+            )
+          : CloudLedgerRepository(auth, account.id, storage);
+    });
 
 class CloudLedgerRepository implements LedgerRepository, PaymentRepository {
   CloudLedgerRepository(this.auth, this.accountId, this.storage);

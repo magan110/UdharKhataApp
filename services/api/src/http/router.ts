@@ -31,7 +31,7 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
     ...readRoutes({db:options.db,authenticate}),
     ...syncRoutes({db:options.db,authenticate}),
     ...qrRoutes({db:options.db,authenticate,sessions:options.sessions}),
-    { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok' }, requestId) },
+    { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok', capabilities: ['owner-ledger-sync-v1'] }, requestId) },
     { path: '/v1/auth/google', method: 'POST', handler: async (request,requestId) => {
       const body=await readJson(request, googleExchangeSchema) as z.infer<typeof googleExchangeSchema>;
       if(!options.sessions || !options.verifyGoogle) return unavailable();

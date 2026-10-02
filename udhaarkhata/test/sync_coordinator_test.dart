@@ -60,6 +60,34 @@ void main() {
     coordinator.dispose();
     await f.close();
   });
+  test('expiredLocalGrantStopsAndRequestsAuthentication', () async {
+    final deadline = now.add(const Duration(seconds: 1));
+    f.database.requireLocalAccess(deadline, () => now);
+    now = deadline;
+    await coordinator.synchronize();
+    expect(coordinator.state.running, false);
+    expect(coordinator.state.errorCode, 'AUTH_REQUIRED');
+    expect(f.auth.requests, isEmpty);
+  });
+  test('manualRefreshPrioritizesRequestedLinkWithinBound', () async {
+    for (var i = 0; i < 25; i++) {
+      await f.addLink('z_$i');
+    }
+    f.auth.handler = (path, body) async {
+      final link = Uri.parse(path).pathSegments[4];
+      return feed(
+        link: link,
+        items: [],
+        balance: 0,
+        version: 0,
+        high: 0,
+        through: 0,
+      );
+    };
+    await coordinator.refreshLink('z_9');
+    expect(Uri.parse(f.auth.requests.first.path).pathSegments[4], 'z_9');
+    expect(f.auth.requests.length, 20);
+  });
   test('coalescedTriggersBoundedSerialRun', () async {
     for (var i = 0; i < 25; i++) {
       await f.queue(

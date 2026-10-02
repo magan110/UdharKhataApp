@@ -45,8 +45,10 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
     required this.legacyBlocked,
     DateTime Function()? clock,
     SyncSchedule? schedule,
+    this.beforeRun,
   }) : clock = clock ?? DateTime.now,
        schedule = schedule ?? _timer;
+  final Future<void> Function()? beforeRun;
   final AuthRepository auth;
   final SqliteAccountDatabase database;
   final OpaqueId accountId;
@@ -66,7 +68,7 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
   void Function()? _cancel;
   int _offset = 0, _pages = 0;
   final _remaining = <String>{}, _blocked = <String>{};
-  String? _error;
+  String? _error, _priority;
   DateTime? _wake;
   int? _lastSuccess;
   SyncDao get _dao => push.dao;
@@ -145,6 +147,9 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
     if (kind == SyncFailureKind.permanent) {
       if (link != null) {
         _blocked.add(link);
+        if (failure.code == 'CACHE_TOO_LARGE') {
+          await _dao.blockCache(shopId, link, failure.code);
+        }
         if (['FORBIDDEN', 'NOT_FOUND'].contains(failure.code)) {
           await _dao.denyLink(shopId, link, failure.code);
           _remaining.remove(link);
@@ -156,7 +161,7 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
       }
       return;
     }
-    final scope = _global(failure) ? _runScope : 'link:$link';
+    final scope = link == null || _global(failure) ? _runScope : 'link:$link';
     final saved = await _dao.retry(scope);
     final attempts = (saved?['attempts'] as int? ?? 0);
     final deadline = retryPolicy.nextRetry(
@@ -174,7 +179,7 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
         failure.code,
       );
     }
-    if (_global(failure)) _stop = true;
+    if (link == null || _global(failure)) _stop = true;
   }
 
   Future<void> _syncLink(String link) async {
@@ -205,10 +210,26 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
           reset = true;
           continue;
         }
+        if (failure.code == 'NOT_FOUND' && beforeRun != null) {
+          try {
+            await beforeRun!();
+          } on AppFailure catch (capability) {
+            await _failure(capability);
+            return;
+          }
+        }
         await _failure(failure, link: link);
         return;
       }
     }
+  }
+
+  Future<void> refreshLink(String link) async {
+    await _active;
+    if (_disposed) return;
+    _priority = link;
+    _remaining.clear();
+    await synchronize();
   }
 
   @override
@@ -217,9 +238,7 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
     if (_active != null) return _active!;
     _cancel?.call();
     _cancel = null;
-    final future = _run();
-    _active = future;
-    return future.whenComplete(() => _active = null);
+    return _active = _run().whenComplete(() => _active = null);
   }
 
   Future<void> _run() async {
@@ -240,6 +259,8 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
         );
         return;
       }
+      await beforeRun?.call();
+      _guard();
       final links = await database.transaction(
         accountId,
         (tx) => tx.rawQuery(
@@ -253,7 +274,9 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
       _remaining.removeWhere((id) => !ids.contains(id));
       if (_remaining.isEmpty) _remaining.addAll(ids);
       if (ids.isNotEmpty) {
-        final offset = _offset % ids.length;
+        final priority = ids.indexOf(_priority ?? '');
+        final offset = priority >= 0 ? priority : _offset % ids.length;
+        _priority = null;
         for (var i = 0; i < ids.length && _pages < 20 && !_stop; i++) {
           final at = (offset + i) % ids.length, link = ids[at];
           if (!_remaining.contains(link)) continue;
@@ -306,7 +329,16 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
           (attempted >= 20 || (_pages >= 20 && _remaining.isNotEmpty))) {
         _later(clock().add(const Duration(seconds: 2)));
       }
-    } on StateError {
+    } on StateError catch (error) {
+      if (!_disposed &&
+          database.generation == _dao.generation &&
+          [
+            'Local access expired',
+            'Account database locked',
+          ].contains(error.message)) {
+        _state = const SyncRunState(errorCode: 'AUTH_REQUIRED');
+        _states.add(_state);
+      }
       _stop = true;
       _wake = null;
     } on AppFailure catch (failure) {

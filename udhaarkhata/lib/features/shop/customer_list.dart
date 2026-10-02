@@ -11,6 +11,8 @@ import '../qr/owner_qr_model.dart';
 import '../ledger/money.dart';
 import '../ledger/ledger_repository.dart';
 import '../ledger/device_ledger_repository.dart';
+import '../ledger/sync_status_view.dart';
+import '../ledger/local_changes.dart';
 import '../ledger/history_page.dart';
 import '../ledger/online_reads.dart';
 
@@ -46,6 +48,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
   @override
   void initState() {
     super.initState();
+    ref.listenManual(cacheRevisionProvider, (_, _) => _load());
     _load();
   }
 
@@ -125,6 +128,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SyncStatusView(),
               if (!identical(current, _repository) ||
                   !identical(_ledger, ref.watch(ledgerRepositoryProvider)))
                 const Text('Please sign in and open this customer again.')

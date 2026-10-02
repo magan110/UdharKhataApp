@@ -12,6 +12,8 @@ import 'history_page.dart' show historyDate, dueDateText, OnlineRecordsView;
 import 'online_reads.dart';
 import 'ledger_repository.dart';
 import 'money.dart';
+import 'local_changes.dart';
+import 'sync_status_view.dart';
 
 class LocalLedgerView extends ConsumerStatefulWidget {
   const LocalLedgerView({
@@ -33,6 +35,7 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
   @override
   void initState() {
     super.initState();
+    ref.listenManual(cacheRevisionProvider, (_, _) => _load());
     ref.listenManual(ledgerRepositoryProvider, (_, repo) {
       _repository = repo is DeviceLedgerRepository ? repo : null;
       _load();
@@ -134,6 +137,17 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
           Text(
             'Synced balance: ${formatPaise(snapshot.syncedPaise)} · Last server snapshot: ${historyDate(snapshot.snapshotAtMs)}',
           ),
+          if (snapshot.partialSyncAtMs != null &&
+              snapshot.partialSyncAtMs != snapshot.snapshotAtMs)
+            Text(
+              'Partial refresh: ${historyDate(snapshot.partialSyncAtMs!)} · Complete snapshot remains dated above.',
+            ),
+          if (snapshot.syncBlockedCode != null)
+            Text(syncExplanation(snapshot.syncBlockedCode)),
+          if (snapshot.provisionalPaise < 0)
+            const Text(
+              'The server balance changed. Review Pending entries before recording another entry.',
+            ),
           const Text(
             'Pending entries are only on this device. They are not backed up to the cloud. Customer views show only server-acknowledged entries.',
           ),
@@ -165,6 +179,16 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
                         'Pending · Waiting to sync · Only on this device',
                       _ => 'Needs attention',
                     }),
+                    if (entry['sync_status'] == 'needs_attention')
+                      const Text(
+                        'Original entry is retained. Review it before recording another entry.',
+                      ),
+                    if (entry['blocked_by_earlier'] == 1)
+                      const Text(
+                        'Blocked by an earlier entry. Review the original entry first.',
+                      ),
+                    if (entry['error_code'] != null)
+                      Text(syncExplanation(entry['error_code'] as String)),
                     if (entry['note'] != null) Text(entry['note'] as String),
                     if (entry['due_date'] != null)
                       Text('Due: ${dueDateText(entry['due_date'] as String)}'),

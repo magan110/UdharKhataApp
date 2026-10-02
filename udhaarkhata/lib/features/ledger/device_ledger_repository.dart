@@ -15,7 +15,7 @@ import 'ledger_repository.dart';
 import 'money.dart';
 import 'online_reads.dart';
 
-final savedCustomersProvider =
+final FutureProvider<List<Map<String, Object?>>> savedCustomersProvider =
     FutureProvider.autoDispose<List<Map<String, Object?>>>((ref) {
       final repository = ref.watch(ledgerRepositoryProvider);
       return repository is DeviceLedgerRepository
@@ -30,8 +30,13 @@ class DeviceLedgerRepository extends CloudLedgerRepository {
     super.auth,
     super.accountId,
     super.storage,
-    this.database,
-  );
+    this.database, {
+    this.onLocalSaved,
+    this.onCacheReady,
+    this.refreshCached,
+  });
+  final void Function()? onLocalSaved, onCacheReady;
+  final Future<void> Function(OpaqueId, OpaqueId)? refreshCached;
   final SqliteAccountDatabase database;
   OwnerLedgerDao get _dao => OwnerLedgerDao(database, accountId);
   Future<void> _localQueue = Future.value();
@@ -86,6 +91,12 @@ class DeviceLedgerRepository extends CloudLedgerRepository {
   }) async {
     final saved = await snapshot(shop, link);
     if (saved != null && !refresh) return _customer(saved);
+    if (saved != null && refreshCached != null) {
+      await refreshCached!(shop, link);
+      final latest = await snapshot(shop, link);
+      if (latest == null) throw const AppFailure('NOT_FOUND', 'api.notFound');
+      return _customer(latest);
+    }
     try {
       final customer = CustomerLink.fromJson(
         await auth.cloudRequest(
@@ -190,6 +201,7 @@ class DeviceLedgerRepository extends CloudLedgerRepository {
         balance.asOfServerSeq,
         first.snapshotAtMs,
       );
+      onCacheReady?.call();
       return _customer((await snapshot(shop, link))!);
     } on AppFailure catch (error) {
       if (['FORBIDDEN', 'NOT_FOUND'].contains(error.code)) {
@@ -216,6 +228,7 @@ class DeviceLedgerRepository extends CloudLedgerRepository {
   Future<void> _save(OpaqueId shop, Map<String, Object?> body) async {
     try {
       await SaveLocal(LocalLedgerStore(database, accountId))(shop.value, body);
+      onLocalSaved?.call();
     } on StateError catch (error) {
       if (error.message == 'Provisional balance out of range') {
         throw const AppFailure(

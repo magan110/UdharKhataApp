@@ -84,6 +84,10 @@ Map<String, Object?> feed({
 final class SyncTestAuth extends AuthRepository {
   SyncTestAuth(this.database);
   final SqliteAccountDatabase database;
+  bool offline = false;
+  bool supportsSync = true;
+  @override
+  bool get offlineAccess => offline;
   final requests = <({String path, Map<String, Object?>? body})>[];
   Future<Object?> Function(String, Map<String, Object?>?)? handler;
   @override
@@ -102,6 +106,12 @@ final class SyncTestAuth extends AuthRepository {
     Map<String, Object?>? body,
   }) async {
     requests.add((path: path, body: body));
+    if (path == '/health') {
+      return {
+        'status': 'ok',
+        'capabilities': supportsSync ? ['owner-ledger-sync-v1'] : [],
+      };
+    }
     return handler!(path, body);
   }
 }
@@ -111,11 +121,11 @@ final class SyncFixture {
   late SqliteAccountDatabase database;
   late SyncTestAuth auth;
   final accountId = OpaqueId.fromJson('owner');
-  Future<void> open() async {
+  Future<void> open({bool noIsolate = false}) async {
     sqfliteFfiInit();
     root = await Directory.systemTemp.createTemp('d12_sync_');
     database = SqliteAccountDatabase(
-      factory: databaseFactoryFfi,
+      factory: noIsolate ? databaseFactoryFfiNoIsolate : databaseFactoryFfi,
       directory: root.path,
     );
     await database.openForAccount(accountId);
@@ -131,6 +141,8 @@ final class SyncFixture {
           'shop_id': 'shop',
           'customer_user_id': 'customer_$id',
           'owner_user_id': 'owner',
+          'display_name': 'Synthetic',
+          'linked_at_ms': 1,
           'status': 'active',
           'last_verified_at_ms': 1,
         });

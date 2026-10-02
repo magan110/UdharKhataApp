@@ -7,6 +7,7 @@ import '../ledger/online_reads.dart';
 import '../ledger/local_ledger_view.dart';
 import '../ledger/ledger_repository.dart';
 import '../ledger/device_ledger_repository.dart';
+import '../ledger/sync_status_view.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,6 +42,7 @@ class OwnerShell extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SyncStatusView(),
               Text(
                 'Could not open your shop',
                 style: Theme.of(context).textTheme.titleLarge,
@@ -67,6 +69,8 @@ class OwnerShell extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const SyncStatusView(),
+                    const SyncStatusView(),
                     Text(
                       value.name,
                       style: Theme.of(context).textTheme.headlineSmall,

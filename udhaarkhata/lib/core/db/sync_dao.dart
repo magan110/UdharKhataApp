@@ -139,6 +139,16 @@ final class SyncDao {
           'last_sync_at_ms': page.snapshotAtMs,
         }, conflictAlgorithm: ConflictAlgorithm.replace);
       });
+  Future<void> blockCache(String shop, String link, String code) =>
+      _tx((tx) async {
+        await _link(tx, shop, link);
+        await tx.update(
+          'owner_ledger_snapshots',
+          {'sync_blocked_code': code},
+          where: 'link_id=?',
+          whereArgs: [link],
+        );
+      });
   Future<void> defer(
     String operationId,
     int attempts,

@@ -10,7 +10,7 @@ describe('D02 Worker edge contract', () => {
     const response = await worker.fetch(new Request('https://api.test/health'));
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body).toMatchObject({ data: { status: 'ok' } });
+    expect(body).toMatchObject({ data: { status: 'ok', capabilities:['owner-ledger-sync-v1'] } });
     expect(response.headers.get('X-Request-Id')).toBeTruthy();
     expect(response.headers.get('Cache-Control')).toBe('no-store');
     expect(Object.keys(body as object).sort()).toEqual(['data', 'requestId']);

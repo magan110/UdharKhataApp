@@ -11,6 +11,8 @@ import 'money.dart';
 import 'ledger_repository.dart';
 import 'device_ledger_repository.dart';
 import 'local_ledger_view.dart';
+import 'sync_service.dart';
+import 'sync_status_view.dart';
 import 'online_reads.dart';
 
 String historyDate(int milliseconds) {
@@ -42,7 +44,13 @@ class HistoryPage extends ConsumerWidget {
             !confirmedOnly &&
                 linkId != null &&
                 ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository
-            ? LocalLedgerView(shopId: shopId, linkId: linkId!)
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SyncStatusView(),
+                  LocalLedgerView(shopId: shopId, linkId: linkId!),
+                ],
+              )
             : OnlineRecordsView(
                 kind: OnlineReadKind.history,
                 shopId: shopId,
@@ -84,6 +92,15 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ref.listenManual(syncRunStateProvider, (previous, next) {
+      final state = next.asData?.value;
+      if (widget.kind == OnlineReadKind.summary &&
+          state?.lastSuccessfulAtMs != null &&
+          state!.lastSuccessfulAtMs !=
+              previous?.asData?.value.lastSuccessfulAtMs) {
+        _load(restart: true);
+      }
+    });
     ref.listenManual(onlineReadRepositoryProvider, (_, next) {
       _repository = next;
       _load(restart: true);
