@@ -153,3 +153,9 @@ The next [Test Cases / QA Checklist](TEST-CASES-QA-CHECKLIST.md) will turn this 
 ### D11 local ledger/outbox checkpoint (2 October 2026)
 
 D11 verification uses real host SQLite for rollback, idempotent local replay, concurrent payments, complete-cache reconciliation, account locking and v1→v2 migration. A separate Flutter process commits a synthetic command, signals its PID and is SIGKILLed without closing SQLite; reopening verifies original UUID/body, Pending entry, balance and foreign keys. Widget tests use SQLite FFI without a separate isolate to work with Flutter simulated time; production storage is unchanged. Android airplane-mode/force-stop behavior and offline cold-start policy remain explicit device/D12 gates.
+
+## D12 local verification scope
+
+Use native SQLite and synthetic data for atomic operation/page reconciliation, v1/v2 migration preservation, SIGKILL/reopen of committed command and partial page, queue ordering, account generation and grant expiry/rollback. Transport tests cover original-body integrity, discarded response followed by idempotent receipt/feed, malformed status, Retry-After beyond the base cap, global and per-link backoff after restart, bounded coalesced runs and more than 100 cached links. Local Worker/D1 tests exercise authenticated cursor scope/expiry/high-water and aged immutable commands. Widgets cover reconnect balance direction, retained rejection and blocked successors, offline dates/device-only warnings, access removal, cache capacity and Worker capability rollback.
+
+These host checks do not establish Android secure-storage/extraction behavior, background/foreground networking on a phone, or delivery of a new APK. The D12 phone gate must independently verify airplane-mode save/restart, reconnect with one cloud effect, original identity retention, rejection explanation, and account A/B isolation.

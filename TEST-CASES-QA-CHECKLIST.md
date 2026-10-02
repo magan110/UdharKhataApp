@@ -174,3 +174,9 @@ D10 local API tests cover ₹500 credit/₹200 payment/retry → ₹300 history 
 ### D11 local ledger/outbox checkpoint (2 October 2026)
 
 Automated D11 scenarios cover inert review, double-tap local confirmation, no new-command HTTP, Pending-only-device wording, local overpayment/concurrent-payment rollback, outbox insertion failure, queue/body persistence after reopen and forced process termination, account separation, active-link/shop/role guards, complete paged history reconciliation, denied access preserving pending money, cache-size bound, and v1 migration retaining original outbox bytes. Owner saved history labels Synced and Pending separately; customer acknowledged-only reads keep prior regressions. Phone airplane-mode/force-stop and D12 sync fault cases remain unchecked until their own evidence.
+
+## D12 local checkpoint and remaining device gate
+
+Synthetic tests now cover the serial original-command retry and reconciliation portions of TC-029–033/036: lost response, rollback, permanent rejection retention, dependent blocking, durable cursor/backoff, grant bounds and session isolation. Both command and partial-pull SIGKILL/reopen probes use real local SQLite. Widgets verify original rejected details, acknowledged/provisional balance direction, Sync now, offline verification date, and large-cache online fallback. Capability absence/rollback retains Pending rather than falsely marking access removed.
+
+TC-027/029 phone restart/reconnect and account-switch checks still require the D12 staging/APK delivery and physical acceptance. TC-034 customer offline ledger cache, TC-035 replacement-phone drill, and TC-036 export/resolution tooling are not claimed complete by D12. D1/SQLite host results are recorded in implementation progress.
