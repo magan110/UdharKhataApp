@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D11 local implementation, verification and review complete; publication and Android acceptance are pending. D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. **Last updated:** 2 October 2026.
+**Current phase:** D11 local implementation, verification, review and APK publication complete; Android phone acceptance is pending. D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. **Last updated:** 2 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -18,7 +18,7 @@
 | D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
 | D09 | Done | 2026-10-02 | Recorded local/cloud checks and stable APK audit; user confirmed phone acceptance. Detailed device regression remains a release requirement. |
 | D10 | Done | 2026-10-02 | Recorded local/cloud verification, approved staging migration/deployment and persistent-key APK audit; user confirmed the delivered build is working. Detailed device regression remains a release requirement. |
-| D11 | Local checkpoint verified | Durable cache/outbox and owner UI; 118 Flutter tests, 90.91% coverage, clean analysis, independent review. | Publish/build and phone acceptance pending; D12 sync has not started. |
+| D11 | Local checkpoint verified | Durable cache/outbox and owner UI; 118 Flutter tests, 90.91% coverage, clean analysis, independent review. | Stable-key APK published; phone acceptance pending. D12 sync has not started. |
 | D12-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -372,3 +372,19 @@ Next handoff after local integration: obtain explicit publication authorization,
 ### D11 local main integration (2 October 2026)
 
 The user selected option 1, merge locally. Fetched `origin/main` at the recorded D10 acceptance commit `64ccc22`, created a local tracking `main`, and fast-forwarded D11 implementation `abec2b0` into it. The merged tree was verified again: **118 Flutter tests passed**, coverage **2440/2684 = 90.91%**, **1 Node configuration + 83 Worker runtime tests passed**, documentation/navigation/diff checks passed. This is local integration only; no push, PR, APK publication, Worker deployment, D1 migration or credential change was authorized or performed. The fully merged D11 feature branch is cleaned up; the shared normal workspace remains on `main`. D11 phone acceptance and D12 sync remain pending.
+
+### D11 approved publication and verified APK (2 October 2026)
+
+After selecting local integration, the user asked what comes next. The proposed next task was publishing D11 and building the stable-key APK for phone checks; the user instructed “start”. This authorized D11 source push and APK workflow/publication. Main was fast-forward pushed to immutable source `d32c30c1045b8ffa13fceeeac60291b6208c6a1d`. No PR, Worker deployment, D1 migration, OAuth edit or signing-key change was needed or performed.
+
+Cloud [CI run 36994358315](https://github.com/magan110/UdharKhataApp/actions/runs/36994358315) passed Flutter, Worker and documentation jobs against that source. [APK run 36994390185](https://github.com/magan110/UdharKhataApp/actions/runs/36994390185) succeeded with the existing persistent debug signing secret and unchanged public staging defines. The cloud job verified the exact built APK with apksigner, package badging and embedded public defines before uploading; temporary signing-key cleanup succeeded. The public annotation and artifact metadata were independently fetched and matched programmatically. No local exact-byte APK audit is claimed.
+
+- Application ID: `com.udhaarkhata.app`.
+- Registered signing SHA-1 remains `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6`.
+- Exact APK SHA-256: `34134478385c28d474d396d0a2adda2d0768ab62188b18f032b92911319b42c2`.
+- API base: `https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev`.
+- Public web client ID: `1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com`.
+- [Download D11 APK ZIP](https://github.com/magan110/UdharKhataApp/actions/runs/36994390185/artifacts/11221465345); extract `app-debug.apk` and install over the existing app to preserve local data.
+- Artifact `11221465345`, `Udhaar-Khata-debug-APK`, 104484092 bytes, unexpired at verification; expires **16 October 2026 15:49:03 IST**. ZIP artifact digest `sha256:cc7da179346ca3f952bf0bdaf0f5928031ee52765fd9f173c6ae3f4455dd09a1` is distinct from the APK SHA-256 above.
+
+Phone acceptance is still pending: open a customer online to cache the verified ledger; enable airplane mode; confirm a credit and Cash/UPI payment and check the provisional balance, dated history and each Pending label. Pending is only on this device and not cloud-backed up. Force-stop/restart, reconnect for the current session-verification requirement and confirm original entries remain. Customer history should remain acknowledged-only. New D11 entries do not upload yet; D12 serial sync and offline cold-start access have not started. Do not clear app data/uninstall or infer phone acceptance from the successful build.

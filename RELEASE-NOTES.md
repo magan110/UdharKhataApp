@@ -111,3 +111,5 @@ Publication is an external action and follows the release approval process in th
 ### D11 local ledger/outbox checkpoint (2 October 2026)
 
 Local D11 implementation adds durable owner entry/outbox commits, Pending/provisional history, complete authorized cache bootstrap and an additive local schema upgrade preserving existing operations. New entries remain device-only Pending until D12 sync is implemented. This is a local implementation checkpoint, not a production-release or phone-acceptance claim. Publication, stable-key APK audit and Android airplane-mode/force-stop checks remain pending. D10 staging deployment is unchanged.
+
+D11 delivery on 2 October 2026: approved source publication, cloud CI and [stable-key APK build](https://github.com/magan110/UdharKhataApp/actions/runs/36994390185) succeeded against `d32c30c1045b8ffa13fceeeac60291b6208c6a1d`. The exact APK audit matches the existing certificate, package and staging settings; [APK ZIP](https://github.com/magan110/UdharKhataApp/actions/runs/36994390185/artifacts/11221465345) is available for phone testing. Device acceptance is pending, and new entries remain locally Pending until D12 sync.
