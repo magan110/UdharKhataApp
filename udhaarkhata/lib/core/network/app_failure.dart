@@ -7,14 +7,22 @@ final class AppFailure implements Exception {
     this.retryable = false,
     this.requestId,
     this.balance,
+    this.httpStatus,
+    this.retryAfter,
   });
+  final int? httpStatus;
+  final DateTime? retryAfter;
   final String code;
   final String messageKey;
   final bool retryable;
   final String? requestId;
   final LedgerBalanceSnapshot? balance;
 
-  factory AppFailure.fromJson(Object? value) {
+  factory AppFailure.fromJson(
+    Object? value, {
+    int? httpStatus,
+    DateTime? retryAfter,
+  }) {
     final map = jsonObject(value);
     final error = jsonObject(map['error']);
     final retryable = error['retryable'];
@@ -31,6 +39,8 @@ final class AppFailure implements Exception {
       retryable: retryable,
       requestId: OpaqueId.fromJson(map['requestId']).value,
       balance: balance,
+      httpStatus: httpStatus,
+      retryAfter: retryAfter,
     );
   }
 

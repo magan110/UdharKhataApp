@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io' show HttpDate;
 
 import 'package:http/http.dart' as http;
 
@@ -31,11 +32,14 @@ final class ApiClient {
           )
           .timeout(const Duration(seconds: 20));
       if (response.statusCode == 204) return null;
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw _failure(response);
+      }
       final value = jsonDecode(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return ApiSuccess.fromJson(value, (data) => data).data;
       }
-      throw AppFailure.fromJson(value);
+      throw _failure(response);
     } on http.ClientException {
       throw const AppFailure(
         'NETWORK_ERROR',
@@ -90,16 +94,59 @@ final class ApiClient {
       );
     }
     try {
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw _failure(response);
+      }
       final body = jsonDecode(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return ApiSuccess.fromJson(body, decode);
       }
-      throw AppFailure.fromJson(body);
+      throw _failure(response);
     } on FormatException {
       throw const AppFailure(
         'INVALID_RESPONSE',
         'api.invalidResponse',
         retryable: true,
+      );
+    }
+  }
+
+  AppFailure _failure(http.Response response) {
+    DateTime? retryAfter;
+    final header = response.headers['retry-after'];
+    if (header != null) {
+      final seconds = int.tryParse(header);
+      if (seconds != null && seconds >= 0 && seconds <= 315360000) {
+        retryAfter = DateTime.now().toUtc().add(Duration(seconds: seconds));
+      } else {
+        try {
+          retryAfter = HttpDate.parse(header);
+        } on FormatException {
+          /* Invalid hint. */
+        }
+      }
+    }
+    try {
+      return AppFailure.fromJson(
+        jsonDecode(response.body),
+        httpStatus: response.statusCode,
+        retryAfter: retryAfter,
+      );
+    } on FormatException {
+      final status = response.statusCode;
+      final code = status == 401
+          ? 'AUTH_REQUIRED'
+          : status == 429
+          ? 'RATE_LIMITED'
+          : status >= 500
+          ? 'SERVER_ERROR'
+          : 'HTTP_ERROR';
+      return AppFailure(
+        code,
+        'api.networkError',
+        retryable: status == 429 || status >= 500,
+        httpStatus: status,
+        retryAfter: retryAfter,
       );
     }
   }

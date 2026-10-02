@@ -97,7 +97,9 @@ void main() {
           isA<AppFailure>().having(
             (e) => e.toString(),
             'diagnostic',
-            'AppFailure(INVALID_RESPONSE)',
+            status == 500
+                ? 'AppFailure(SERVER_ERROR)'
+                : 'AppFailure(INVALID_RESPONSE)',
           ),
         ),
       );
