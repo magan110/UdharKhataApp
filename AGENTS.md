@@ -16,6 +16,7 @@ All documents below are important project references. Before changing a feature,
 |---|---|
 | Vision, business and market | [Product Vision](PRODUCT-VISION.md), [BRD](BRD.md), [Market / Competitor Research](MARKET-COMPETITOR-RESEARCH.md) |
 | Product scope and users | [Scope](SCOPE.md), [PRD](PRD.md), [User Personas](USER-PERSONAS.md), [User Journey / User Flow](USER-JOURNEY-USER-FLOW.md), [Use Cases / User Stories](USE-CASES-USER-STORIES.md) |
+| D12 architectural design | [D12 sync design](docs/superpowers/specs/2026-10-02-d12-sync-design.md) (proposed; approval state is recorded inside) |
 | Requirements and delivery | [SRS](SRS.md), [SES](SES.md), [Project Plan / Roadmap](PROJECT-PLAN-ROADMAP.md), [Implementation Plan](docs/implementation/README.md), [Progress](docs/implementation/PROGRESS.md) |
 | Architecture, data and API | [HLD](HLD.md), [LLD](LLD.md), [Database Design / ERD](DATABASE-DESIGN-ERD.md), [API Specification](API-SPECIFICATION.md) |
 | User interface and help | [Wireframes](WIREFRAMES.md), [UI/UX Design Spec](UI-UX-DESIGN-SPEC.md), [User Manual / Help](USER-MANUAL-HELP.md) |

@@ -10,6 +10,7 @@ START = "<!-- DOC_NAV_START -->"
 END = "<!-- DOC_NAV_END -->"
 
 LABELS = {
+    "docs/superpowers/specs/2026-10-02-d12-sync-design.md": "D12 sync design",
     "AGENTS.md": "Repository instructions",
     "README.md": "Repository README",
     "DOCUMENT-MAP.md": "Document map",
@@ -52,6 +53,7 @@ LABELS = {
 
 # Each list is intentionally short and topical. DOCUMENT-MAP.md connects all files.
 RELATED = {
+    "docs/superpowers/specs/2026-10-02-d12-sync-design.md": ["docs/implementation/03-offline-trust.md", "API-SPECIFICATION.md", "SECURITY-REQUIREMENTS.md", "docs/implementation/PROGRESS.md"],
     "AGENTS.md": ["SCOPE.md", "SRS.md", "PRD.md", "docs/implementation/README.md"],
     "README.md": ["AGENTS.md", "docs/implementation/README.md", "docs/implementation/PROGRESS.md", "udhaarkhata/README.md"],
     "PRODUCT-VISION.md": ["MARKET-COMPETITOR-RESEARCH.md", "BRD.md", "SCOPE.md", "PRD.md"],

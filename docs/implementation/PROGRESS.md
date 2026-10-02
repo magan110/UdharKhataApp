@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D11 local implementation, verification, review and APK publication complete; Android phone acceptance is pending. D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. **Last updated:** 2 October 2026.
+**Current phase:** D11 complete with user-reported Android phone acceptance; D12 design exploration started. D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. **Last updated:** 2 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -18,8 +18,9 @@
 | D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
 | D09 | Done | 2026-10-02 | Recorded local/cloud checks and stable APK audit; user confirmed phone acceptance. Detailed device regression remains a release requirement. |
 | D10 | Done | 2026-10-02 | Recorded local/cloud verification, approved staging migration/deployment and persistent-key APK audit; user confirmed the delivered build is working. Detailed device regression remains a release requirement. |
-| D11 | Local checkpoint verified | Durable cache/outbox and owner UI; 118 Flutter tests, 90.91% coverage, clean analysis, independent review. | Stable-key APK published; phone acceptance pending. D12 sync has not started. |
-| D12-D24 | Not started | - | Follow the order in [README](README.md). |
+| D11 | Complete | Durable cache/outbox and owner UI; 118 Flutter tests, 90.91% coverage, clean analysis, independent review. | Stable-key APK published; user reported working on 2 October 2026. |
+| D12 | Written design pending review | Conversational direction approved; [specification](../superpowers/specs/2026-10-02-d12-sync-design.md) prepared. | Written-spec review precedes implementation planning; no product code or remote changes. |
+| D13-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
 
@@ -388,3 +389,11 @@ Cloud [CI run 36994358315](https://github.com/magan110/UdharKhataApp/actions/run
 - Artifact `11221465345`, `Udhaar-Khata-debug-APK`, 104484092 bytes, unexpired at verification; expires **16 October 2026 15:49:03 IST**. ZIP artifact digest `sha256:cc7da179346ca3f952bf0bdaf0f5928031ee52765fd9f173c6ae3f4455dd09a1` is distinct from the APK SHA-256 above.
 
 Phone acceptance is still pending: open a customer online to cache the verified ledger; enable airplane mode; confirm a credit and Cash/UPI payment and check the provisional balance, dated history and each Pending label. Pending is only on this device and not cloud-backed up. Force-stop/restart, reconnect for the current session-verification requirement and confirm original entries remain. Customer history should remain acknowledged-only. New D11 entries do not upload yet; D12 serial sync and offline cold-start access have not started. Do not clear app data/uninstall or infer phone acceptance from the successful build.
+
+### D11 phone acceptance and D12 start (2 October 2026)
+
+After receiving the D11 APK and phone-check instructions, the user reported “working start d12”. This records user-reported D11 acceptance, without inferring independent device traces or additional checks. D12 design exploration is authorized next. No D12 implementation, push, publication, Worker deployment or D1 migration has been performed.
+
+### D12 conversational approval and written specification (2 October 2026)
+
+The user approved the proposed serial push, atomic reconciliation, incremental sync feed and isolated offline access direction. The [written specification](../superpowers/specs/2026-10-02-d12-sync-design.md) makes retry scheduling, uncertain-refresh handling, old occurrence timestamps, migration compatibility and verification criteria concrete. It is proposed and awaiting user review; its rules do not yet replace implemented API/security behavior. No D12 product code or remote changes have been made.
