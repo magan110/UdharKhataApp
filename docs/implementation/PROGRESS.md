@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D10 — approved staging deployment and stable-key APK verified; phone acceptance pending. User confirmed D09 phone acceptance on 2 October 2026 (“D09 passed start d10”). D01–D09 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. Detailed device/release matrices remain explicit below. **Last updated:** 2 October 2026.
+**Current phase:** D10 complete; D11 is next and has not started. User confirmed the delivered D10 build is working on 2 October 2026 (“working”). D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. Detailed device/release matrices remain explicit below. **Last updated:** 2 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -17,7 +17,7 @@
 | D07 | Done | 2026-10-01 | Scoped scan/confirm/link, staging and stable APK verified; user confirmed owner addition and repaired customer My shops visibility. Detailed camera/invalid QR release regression remains explicit below. |
 | D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
 | D09 | Done | 2026-10-02 | Recorded local/cloud checks and stable APK audit; user confirmed phone acceptance. Detailed device regression remains a release requirement. |
-| D10 | Deployed; phone gate pending | 2026-10-02 | Local verification/review, frozen-source cloud CI, staging migration/deployment/ten authorization smoke checks and exact persistent-key APK audit passed. |
+| D10 | Done | 2026-10-02 | Recorded local/cloud verification, approved staging migration/deployment and persistent-key APK audit; user confirmed the delivered build is working. Detailed device regression remains a release requirement. |
 | D11-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -330,3 +330,9 @@ APK workflow [36988634918](https://github.com/magan110/UdharKhataApp/actions/run
 The standard GitHub artifact redirect could not be downloaded into this workspace (403); no local exact-byte audit is claimed. Exact signing/package/configuration verification was performed successfully on the cloud runner, and its public audit, successful steps and artifact metadata were independently checked through GitHub API. The provided URL is the normal authenticated GitHub artifact ZIP, not an anonymous raw APK link. No signing key or credential was exposed or committed.
 
 D10 is deployed with phone acceptance pending. On the new APK: owner customer → View transaction history and customer My shops → shop should both show dated credit/payment entries and matching balance; verify notes, due-date DD-MM-YYYY, Cash/UPI labels, refresh and Load more where available, plus signout/calendar regression. Synthetic API tests establish paging/snapshot/retry/isolation invariants; these do not replace phone evidence. D11 has not started.
+
+### D10 phone acceptance and D11 handoff (2 October 2026)
+
+After receiving the verified stable-key D10 APK and the request to check owner/customer dated history and matching balances, the user confirmed “working”. This closes D10 phone smoke acceptance by user report, together with its recorded local/cloud tests, scoped-read checks, approved staging migration/deployment and exact APK audit. It does not claim independent observation of every pagination, failure/retry, accessibility or device-matrix scenario; detailed release regression remains required.
+
+D11 local ledger/outbox transactions are the next phase in the existing implementation sequence. D11 has not started; this confirmation records D10 acceptance and does not infer approval for future remote changes.
