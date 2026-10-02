@@ -19,7 +19,7 @@
 | D09 | Done | 2026-10-02 | Recorded local/cloud checks and stable APK audit; user confirmed phone acceptance. Detailed device regression remains a release requirement. |
 | D10 | Done | 2026-10-02 | Recorded local/cloud verification, approved staging migration/deployment and persistent-key APK audit; user confirmed the delivered build is working. Detailed device regression remains a release requirement. |
 | D11 | Complete | Durable cache/outbox and owner UI; 118 Flutter tests, 90.91% coverage, clean analysis, independent review. | Stable-key APK published; user reported working on 2 October 2026. |
-| D12 | Written design pending review | Conversational direction approved; [specification](../superpowers/specs/2026-10-02-d12-sync-design.md) prepared. | Written-spec review precedes implementation planning; no product code or remote changes. |
+| D12 | Implementation plan pending review | Written [specification](../superpowers/specs/2026-10-02-d12-sync-design.md) approved; [implementation plan](../superpowers/plans/2026-10-02-d12-sync.md) prepared. | Plan review and execution-method selection precede product code; no remote changes. |
 | D13-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -397,3 +397,7 @@ After receiving the D11 APK and phone-check instructions, the user reported “w
 ### D12 conversational approval and written specification (2 October 2026)
 
 The user approved the proposed serial push, atomic reconciliation, incremental sync feed and isolated offline access direction. The [written specification](../superpowers/specs/2026-10-02-d12-sync-design.md) makes retry scheduling, uncertain-refresh handling, old occurrence timestamps, migration compatibility and verification criteria concrete. It is proposed and awaiting user review; its rules do not yet replace implemented API/security behavior. No D12 product code or remote changes have been made.
+
+### D12 written-spec approval and implementation plan (2 October 2026)
+
+The user approved the written D12 specification. The [implementation plan](../superpowers/plans/2026-10-02-d12-sync.md) defines eight task checkpoints, component interfaces and fault/migration/account-isolation verification. It awaits user review and execution-method selection. No D12 product code or remote changes have been performed.

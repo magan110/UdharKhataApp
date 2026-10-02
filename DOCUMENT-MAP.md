@@ -50,6 +50,7 @@ This is the navigation hub for every Markdown file currently in the repository. 
 | [Offline and trust D11–D15](docs/implementation/03-offline-trust.md) | Outbox, sync, offline QR, corrections, and disputes. |
 | [Release completeness D16–D20](docs/implementation/04-release-completeness.md) | Due dates, sharing, localization, privacy, backups, and monitoring. |
 | [Pilot and release D21–D24](docs/implementation/05-pilot-release.md) | Regression, private test, pilot, and launch decision. |
+| [D12 implementation plan](docs/superpowers/plans/2026-10-02-d12-sync.md) | Task interfaces, failure tests and verification for the approved D12 spec; awaits plan review and execution selection. |
 | [D12 sync design](docs/superpowers/specs/2026-10-02-d12-sync-design.md) | Proposed durable sync, incremental feed and offline account-access contract; needs written-spec review before planning. |
 | [Progress](docs/implementation/PROGRESS.md) | Actual phase state and evidence; never infer completion from a specification. |
 | [Root README](README.md) | Current repository/tooling entry point. |

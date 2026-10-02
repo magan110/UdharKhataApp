@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../../DOCUMENT-MAP.md). **Read with:** [Offline and trust phases](../../implementation/03-offline-trust.md) · [API specification](../../../API-SPECIFICATION.md) · [Security requirements](../../../SECURITY-REQUIREMENTS.md) · [Implementation progress](../../implementation/PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-**Status:** proposed written specification; conversational direction approved 2 October 2026. This document needs user review before implementation planning. D11 phone acceptance is user-reported. No D12 product code or remote changes are implied.
+**Status:** written specification approved by the user on 2 October 2026. The [implementation plan](../plans/2026-10-02-d12-sync.md) awaits review and execution-method selection. D11 phone acceptance is user-reported. No D12 product code or remote changes are implied.
 
 ## Purpose and scope
 
