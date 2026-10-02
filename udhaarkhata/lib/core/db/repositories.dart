@@ -65,7 +65,9 @@ final class LocalLedgerStore {
         where: 'link_id=? AND state=?',
         whereArgs: [entry['link_id'], 'needs_attention'],
       );
-      if (ready.length != 1 || blocked.isNotEmpty) {
+      if (ready.length != 1 ||
+          ready.single['sync_blocked_code'] != null ||
+          blocked.isNotEmpty) {
         throw StateError('Verified complete ledger required');
       }
     }
@@ -138,13 +140,37 @@ final class LocalLedgerStore {
       whereArgs: [linkId],
     );
     final previous = cursors.isEmpty ? 0 : cursors.single['sequence'] as int;
-    var last = previous;
+    final last = await reconcile(
+      tx,
+      linkId,
+      entries,
+      minimumSequence: previous,
+    );
+    if (sequence < previous || sequence != last) {
+      throw StateError('Cursor must match the last stored sequence');
+    }
+    await tx.insert('sync_cursors', {
+      'scope': linkId,
+      'sequence': sequence,
+      'last_sync_at_ms': syncedAtMs,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  });
+  static Future<int> reconcile(
+    Transaction tx,
+    String linkId,
+    List<Map<String, Object?>> entries, {
+    int minimumSequence = 0,
+  }) async {
+    var last = minimumSequence;
+    var seen = false;
     for (final entry in entries) {
       if (entry['link_id'] != linkId || entry['sync_status'] != 'synced') {
         throw StateError('Page scope or status mismatch');
       }
       final serverSequence = entry['server_seq'];
-      if (serverSequence is! int || serverSequence < last) {
+      if (serverSequence is! int ||
+          serverSequence < last ||
+          (seen && serverSequence == last)) {
         throw StateError('Unordered page');
       }
       final serverId = entry['server_id'];
@@ -152,6 +178,7 @@ final class LocalLedgerStore {
         throw StateError('Acknowledged server identity required');
       }
       last = serverSequence;
+      seen = true;
       final operationId = entry['client_operation_id'];
       final existing = await tx.query(
         'cached_entries',
@@ -202,6 +229,8 @@ final class LocalLedgerStore {
             'server_seq': entry['server_seq'],
             'sync_status': 'synced',
             'created_at_ms': entry['created_at_ms'],
+            if (old['client_operation_id'] == null && operationId != null)
+              'client_operation_id': operationId,
           },
           where: 'local_id=?',
           whereArgs: [old['local_id']],
@@ -215,13 +244,6 @@ final class LocalLedgerStore {
         );
       }
     }
-    if (sequence < previous || sequence != last) {
-      throw StateError('Cursor must match the last stored sequence');
-    }
-    await tx.insert('sync_cursors', {
-      'scope': linkId,
-      'sequence': sequence,
-      'last_sync_at_ms': syncedAtMs,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
-  });
+    return last;
+  }
 }

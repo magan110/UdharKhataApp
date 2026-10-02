@@ -255,12 +255,12 @@ void main() {
           (db) => db.rawQuery('PRAGMA user_version'),
         ),
         [
-          {'user_version': 2},
+          {'user_version': 3},
         ],
       );
       await store.transaction(
         account,
-        (db) => db.execute('PRAGMA user_version=3'),
+        (db) => db.execute('PRAGMA user_version=4'),
       );
       await store.lock();
       await expectLater(store.openForAccount(account), throwsStateError);

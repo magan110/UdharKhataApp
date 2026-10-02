@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
-const localSchemaVersion = 2;
+const localSchemaVersion = 3;
 
 Future<void> createLocalSchema(Database db, int version) async {
   for (final sql in localSchema) {
@@ -14,13 +14,20 @@ Future<void> upgradeLocalSchema(
   int oldVersion,
   int newVersion,
 ) async {
-  if (oldVersion != 1 || newVersion != 2) {
+  if (oldVersion < 1 || newVersion > 3 || oldVersion >= newVersion) {
     throw StateError(
       'Unsupported local schema upgrade: $oldVersion to $newVersion',
     );
   }
-  for (final sql in localSchemaV2) {
-    await db.execute(sql);
+  if (oldVersion < 2 && newVersion >= 2) {
+    for (final sql in localSchemaV2) {
+      await db.execute(sql);
+    }
+  }
+  if (oldVersion < 3 && newVersion >= 3) {
+    for (final sql in localSchemaV3) {
+      await db.execute(sql);
+    }
   }
 }
 
@@ -124,4 +131,15 @@ const localSchema = <String>[
   END''',
   '''CREATE TRIGGER local_account_identity BEFORE UPDATE OF user_id ON local_account
     BEGIN SELECT RAISE(ABORT,'ACCOUNT_IMMUTABLE'); END''',
+];
+
+const localSchemaV3 = <String>[
+  'ALTER TABLE owner_ledger_snapshots ADD COLUMN partial_sync_at_ms INTEGER',
+  'ALTER TABLE owner_ledger_snapshots ADD COLUMN sync_blocked_code TEXT',
+  'DROP TRIGGER cached_command_immutable',
+  """CREATE TRIGGER cached_command_immutable BEFORE UPDATE OF local_id,link_id,kind,amount_paise,target_amount_paise,effect_paise,note,payment_method,due_date,corrects_entry_id,expected_revision,correction_reason,occurred_at_ms ON cached_entries
+    BEGIN SELECT RAISE(ABORT,'COMMAND_IMMUTABLE'); END""",
+  """CREATE TRIGGER cached_operation_immutable BEFORE UPDATE OF client_operation_id ON cached_entries
+    WHEN NOT (OLD.client_operation_id IS NULL AND NEW.client_operation_id IS NOT NULL AND OLD.sync_status='synced' AND NEW.sync_status='synced' AND OLD.server_id IS NOT NULL AND OLD.server_id IS NEW.server_id AND OLD.server_seq IS NEW.server_seq)
+    BEGIN SELECT RAISE(ABORT,'COMMAND_IMMUTABLE'); END""",
 ];

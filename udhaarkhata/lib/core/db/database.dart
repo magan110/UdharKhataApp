@@ -17,6 +17,8 @@ final class SqliteAccountDatabase implements AccountDatabase {
   Database? _database;
   String? _accountId;
   Future<void> _lifecycle = Future.value();
+  int _generation = 0;
+  int get generation => _generation;
 
   Future<void> _serialize(Future<void> Function() action) {
     final next = _lifecycle.then((_) => action());
@@ -68,6 +70,7 @@ final class SqliteAccountDatabase implements AccountDatabase {
   Future<void> lock() => _serialize(_close);
 
   Future<void> _close() async {
+    _generation++;
     final db = _database;
     _database = null;
     _accountId = null;
@@ -76,14 +79,19 @@ final class SqliteAccountDatabase implements AccountDatabase {
 
   Future<T> transaction<T>(
     OpaqueId accountId,
-    Future<T> Function(Transaction) action,
-  ) async {
+    Future<T> Function(Transaction) action, {
+    int? expectedGeneration,
+  }) async {
     final db = _database;
-    if (db == null || _accountId != accountId.value) {
+    if (db == null ||
+        _accountId != accountId.value ||
+        (expectedGeneration != null && expectedGeneration != generation)) {
       throw StateError('Account database locked');
     }
     return db.transaction((tx) async {
-      if (_database != db || _accountId != accountId.value) {
+      if (_database != db ||
+          _accountId != accountId.value ||
+          (expectedGeneration != null && expectedGeneration != generation)) {
         throw StateError('Account database locked');
       }
       return action(tx);
