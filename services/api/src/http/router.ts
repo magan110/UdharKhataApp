@@ -1,5 +1,6 @@
 import { ledgerRoutes } from './ledger-routes';
 import {readRoutes} from '../ledger/read-routes';
+import {syncRoutes} from '../ledger/sync-routes';
 import {totals} from '../ledger/reads';
 import { qrRoutes } from './qr-routes';
 import type { Authenticator } from '../auth/authenticator';
@@ -28,6 +29,7 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
   const routes: Route[] = [
     ...ledgerRoutes({db:options.db,authenticate,sessions:options.sessions}),
     ...readRoutes({db:options.db,authenticate}),
+    ...syncRoutes({db:options.db,authenticate}),
     ...qrRoutes({db:options.db,authenticate,sessions:options.sessions}),
     { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok' }, requestId) },
     { path: '/v1/auth/google', method: 'POST', handler: async (request,requestId) => {

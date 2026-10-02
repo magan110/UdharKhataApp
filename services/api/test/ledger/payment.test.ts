@@ -50,7 +50,7 @@ it('D09 concurrent payments cannot overdraw and concurrent duplicate payments ha
 });
 it('D09 invalid/forged fields and cross-shop/customer/removed access payment attempts change no balance',async()=>{
  const s=setup();await s.credit();
- for(const overrides of [{amountPaise:0},{amountPaise:-1},{amountPaise:0.1},{amountPaise:10000001},{paymentMethod:'bank'},{paymentMethod:null},{dueDate:'2026-12-01'},{effectPaise:-1},{occurredAtMs:Date.now()+600000},{occurredAtMs:Date.now()-86400001},{clientOperationId:'bad'}])expect((await s.call(s.payment(overrides))).status).toBe(400);
+ for(const overrides of [{amountPaise:0},{amountPaise:-1},{amountPaise:0.1},{amountPaise:10000001},{paymentMethod:'bank'},{paymentMethod:null},{dueDate:'2026-12-01'},{effectPaise:-1},{occurredAtMs:Date.now()+600000},{clientOperationId:'bad'}])expect((await s.call(s.payment(overrides))).status).toBe(400);
  for(const [owner,shop,status] of [['other','shop',404],['owner','other',404],['customer','shop',403],['','shop',401]] as const)expect((await s.call(s.payment(),owner,shop)).status).toBe(status);
  expect((await s.call(s.payment({linkId:'missing'}))).status).toBe(404);
  const body=s.payment();expect((await s.call(body)).status).toBe(201);

@@ -33,7 +33,7 @@ def main() -> int:
     authored = {
         p.relative_to(ROOT).as_posix()
         for p in ROOT.rglob("*.md")
-        if not any(part in {".git", ".dart_tool", "node_modules", "build"} for part in p.relative_to(ROOT).parts)
+        if not any(part in {".git", ".dart_tool", "node_modules", "build", ".superpowers"} for part in p.relative_to(ROOT).parts)
     }
     if authored != EXPECTED:
         errors.append(f"Inventory differs: unregistered={sorted(authored - EXPECTED)}, missing={sorted(EXPECTED - authored)}")

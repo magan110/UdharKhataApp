@@ -2,7 +2,7 @@ import {z} from 'zod';
 import {HttpError} from './errors';
 import {cursorSchema} from './schemas';
 const integer=z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
-const payloadSchema=z.object({v:z.literal(1),scope:z.string().max(600),after:z.union([integer,z.string().max(128)]),high:integer,snapshotAtMs:integer,expiresAtMs:integer}).strict();
+const payloadSchema=z.object({v:z.literal(1),scope:z.string().max(600),after:z.union([integer,z.string().max(128)]),high:integer,snapshotAtMs:integer,expiresAtMs:integer,syncStart:integer.optional()}).strict();
 export type ReadCursor=z.infer<typeof payloadSchema>;
 const invalid=()=>new HttpError(409,'CURSOR_INVALID','api.cursorInvalid');
 export function pageQuery(request:Request){

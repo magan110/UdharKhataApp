@@ -32,7 +32,7 @@ async function postCommand(db:D1Database,principal:Principal,shopId:string,comma
  const existing=await findReceipt(db,shopId,command.clientOperationId);
  if(existing)return recover(existing,true);
  const now=Date.now();
- if(command.occurredAtMs>now+CREDIT_LIMITS.maxFutureSkewMs || command.occurredAtMs<now-CREDIT_LIMITS.maxClockSkewMs)throw new HttpError(400,'VALIDATION_ERROR','credit.clockInvalid');
+ if(command.occurredAtMs>now+CREDIT_LIMITS.maxFutureSkewMs)throw new HttpError(400,'VALIDATION_ERROR','credit.clockInvalid');
  const id=crypto.randomUUID();
  const credit=command.kind==='credit';
  const statement=db.prepare(`INSERT INTO ledger_entries(id,shop_customer_id,shop_id,customer_user_id,kind,amount_paise,effect_paise,note,due_date,payment_method,created_by_user_id,client_operation_id,occurred_at_ms,created_at_ms)
