@@ -25,7 +25,8 @@ class SyncService {
     this.schedule,
     this.onChanged,
     this.onAuthLost,
-  }) : clock = clock ?? DateTime.now;
+  }) : clock = clock ?? DateTime.now,
+       _generation = repository.database.generation;
   final DeviceLedgerRepository repository;
   final DateTime Function() clock;
   final SyncSchedule? schedule;
@@ -34,8 +35,27 @@ class SyncService {
   DeviceSyncCoordinator? _coordinator;
   StreamSubscription<SyncRunState>? _subscription;
   Future<void>? _active;
-  bool _disposed = false;
-  SyncRunState get state => _coordinator?.state ?? const SyncRunState();
+  bool _disposed = false, _authNotified = false, _initialWake = false;
+  final int _generation;
+  SyncRunState? _terminal;
+  void Function()? _cancelInitial;
+  void _authLost() {
+    if (_disposed || _authNotified) return;
+    _authNotified = true;
+    _terminal = const SyncRunState(errorCode: 'AUTH_REQUIRED');
+    _cancelInitial?.call();
+    _states.add(_terminal!);
+    onAuthLost?.call();
+  }
+
+  void Function() _schedule(Duration delay, void Function() action) {
+    if (schedule != null) return schedule!(delay, action);
+    final timer = Timer(delay, action);
+    return timer.cancel;
+  }
+
+  SyncRunState get state =>
+      _terminal ?? _coordinator?.state ?? const SyncRunState();
   Stream<SyncRunState> get states => _states.stream;
   Future<void> _capabilities() async {
     Map<String, Object?> health;
@@ -62,10 +82,31 @@ class SyncService {
 
   Future<void> synchronize() {
     if (_disposed) return Future.value();
-    return _active ??= _run().whenComplete(() => _active = null);
+    if (_generation != repository.database.generation) {
+      _authLost();
+      return Future.value();
+    }
+    if (_active != null) {
+      if (!(_coordinator?.requestAnotherRun() ?? false)) _initialWake = true;
+      return _active!;
+    }
+    _cancelInitial?.call();
+    _cancelInitial = null;
+    return _active = _run().whenComplete(_finished);
   }
 
-  Future<void> _run() async {
+  void _finished() {
+    _active = null;
+    if (_initialWake && !_disposed && !_authNotified) {
+      _initialWake = false;
+      _cancelInitial = _schedule(
+        const Duration(seconds: 2),
+        () => unawaited(synchronize()),
+      );
+    }
+  }
+
+  Future<void> _run({String? refresh}) async {
     final generation = repository.database.generation;
     try {
       if (_coordinator == null) {
@@ -120,37 +161,46 @@ class SyncService {
           clock: clock,
           schedule: schedule,
           beforeRun: _capabilities,
+          scheduledRun: synchronize,
         );
         _subscription = _coordinator!.states.listen((state) {
           if (!_disposed) {
-            _states.add(state);
-            if (state.errorCode == 'AUTH_REQUIRED') onAuthLost?.call();
+            if (!_authNotified) _states.add(state);
+            if (state.errorCode == 'AUTH_REQUIRED') _authLost();
             if (!state.running) onChanged?.call();
           }
         });
       }
-      await _coordinator!.synchronize();
+      final run = refresh == null
+          ? _coordinator!.synchronize()
+          : _coordinator!.refreshLink(refresh);
+      if (_initialWake) {
+        _initialWake = !_coordinator!.requestAnotherRun();
+      }
+      await run;
     } on StateError catch (error) {
       if ([
         'Local access expired',
         'Account database locked',
       ].contains(error.message)) {
-        if (!_disposed) onAuthLost?.call();
+        _authLost();
       } else if (repository.database.generation == generation) {
         rethrow;
       }
     } finally {
       if (!_disposed && repository.database.generation != generation) {
-        onAuthLost?.call();
+        _authLost();
       }
     }
   }
 
   Future<void> refreshLink(OpaqueId shop, OpaqueId link) async {
-    if (_coordinator == null) {
-      await synchronize();
+    await _active;
+    if (_disposed) return;
+    if (_generation != repository.database.generation) {
+      _authLost();
     } else {
-      await _coordinator!.refreshLink(link.value);
+      await (_active = _run(refresh: link.value).whenComplete(_finished));
     }
     final error = state.errorCode;
     if (error != null) {
@@ -178,6 +228,7 @@ class SyncService {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _cancelInitial?.call();
     _coordinator?.dispose();
     unawaited(_subscription?.cancel());
     unawaited(_states.close());

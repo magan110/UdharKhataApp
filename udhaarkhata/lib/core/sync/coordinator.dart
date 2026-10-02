@@ -46,9 +46,10 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
     DateTime Function()? clock,
     SyncSchedule? schedule,
     this.beforeRun,
+    this.scheduledRun,
   }) : clock = clock ?? DateTime.now,
        schedule = schedule ?? _timer;
-  final Future<void> Function()? beforeRun;
+  final Future<void> Function()? beforeRun, scheduledRun;
   final AuthRepository auth;
   final SqliteAccountDatabase database;
   final OpaqueId accountId;
@@ -64,7 +65,7 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
   SyncRunState get state => _state;
   Stream<SyncRunState> get states => _states.stream;
   Future<void>? _active;
-  bool _disposed = false, _stop = false;
+  bool _disposed = false, _stop = false, _requested = false;
   void Function()? _cancel;
   int _offset = 0, _pages = 0;
   final _remaining = <String>{}, _blocked = <String>{};
@@ -232,16 +233,26 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
     await synchronize();
   }
 
+  bool requestAnotherRun() {
+    if (_active == null || _disposed) return false;
+    _requested = true;
+    return true;
+  }
+
   @override
   Future<void> synchronize() {
     if (_disposed) return Future.value();
-    if (_active != null) return _active!;
+    if (_active != null) {
+      requestAnotherRun();
+      return _active!;
+    }
     _cancel?.call();
     _cancel = null;
     return _active = _run().whenComplete(() => _active = null);
   }
 
   Future<void> _run() async {
+    _requested = false;
     _stop = false;
     _error = null;
     _wake = null;
@@ -321,7 +332,7 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
         if (_pages >= 20 || _stop) break;
         await _syncLink(link);
       }
-      if (!_stop && _remaining.isEmpty && _error == null) {
+      if (!_stop && !_requested && _remaining.isEmpty && _error == null) {
         _lastSuccess = clock().millisecondsSinceEpoch;
         await _dao.clearRetry(_runScope);
       }
@@ -352,11 +363,14 @@ final class DeviceSyncCoordinator implements SyncCoordinator {
         } on StateError {
           _wake = null;
         }
+        if (_requested && !_stop) {
+          _later(clock().add(const Duration(seconds: 2)));
+        }
         if (_wake != null) {
           final delay = _wake!.difference(clock());
           _cancel = schedule(delay.isNegative ? Duration.zero : delay, () {
             _cancel = null;
-            unawaited(synchronize());
+            unawaited((scheduledRun ?? synchronize)());
           });
         }
       }
