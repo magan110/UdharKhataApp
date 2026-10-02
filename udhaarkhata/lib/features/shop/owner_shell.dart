@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'customer_list.dart';
 import '../ledger/history_page.dart';
 import '../ledger/online_reads.dart';
+import '../ledger/local_ledger_view.dart';
+import '../ledger/ledger_repository.dart';
+import '../ledger/device_ledger_repository.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/sign_out_button.dart';
-import '../../app/status_page.dart';
 import '../../app/app_strings.dart';
 import '../../core/network/app_failure.dart';
 import 'shop_repository.dart';
@@ -34,12 +36,29 @@ class OwnerShell extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(semanticsLabel: 'Opening shop'),
         ),
-        error: (error, _) => StatusPage(
-          title: 'Could not open your shop',
-          message: errorMessage(
-            error is AppFailure ? error.messageKey : 'api.internalError',
+        error: (error, _) => SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Could not open your shop',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Text(
+                errorMessage(
+                  error is AppFailure ? error.messageKey : 'api.internalError',
+                ),
+              ),
+              TextButton(
+                onPressed: () => ref.invalidate(currentShopProvider),
+                child: const Text('Try again'),
+              ),
+              if (error is AppFailure &&
+                  (error.retryable || error.code == 'NETWORK_ERROR'))
+                const SavedCustomersView(),
+            ],
           ),
-          onRetry: () => ref.invalidate(currentShopProvider),
         ),
         data: (value) => value == null
             ? const ShopSetup()
@@ -53,6 +72,11 @@ class OwnerShell extends ConsumerWidget {
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 24),
+                    if (ref.watch(ledgerRepositoryProvider)
+                        is DeviceLedgerRepository)
+                      const Text(
+                        'Server totals include Synced entries only. Pending entries are only on this device.',
+                      ),
                     OnlineRecordsView(
                       path: '/v1/shops/${value.id.value}',
                       kind: OnlineReadKind.summary,
@@ -71,6 +95,7 @@ class OwnerShell extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     CustomerList(shopId: value.id),
+                    const SavedCustomersView(),
                   ],
                 ),
               ),

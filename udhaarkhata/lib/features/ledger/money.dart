@@ -1,3 +1,6 @@
+// Maximum acknowledged entries in an automatic D11 offline bootstrap.
+const maxOfflineCacheEntries = 10000;
+
 const maxCreditPaise = 10000000;
 const maxCreditNoteCharacters = 500;
 int parseCreditRupees(String input) {

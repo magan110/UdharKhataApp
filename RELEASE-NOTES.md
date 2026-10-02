@@ -106,3 +106,8 @@ Before posting release notes to an app store, website or users, the release owne
 - [ ] Product, QA/security and operations approve the final text and link it to the release packet.
 
 Publication is an external action and follows the release approval process in the [Deployment Runbook](DEPLOYMENT-RUNBOOK.md). The next document, **Monitoring & Logging**, will define how the deployed service's health, sync and quota claims are observed without collecting sensitive ledger content.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+Local D11 implementation adds durable owner entry/outbox commits, Pending/provisional history, complete authorized cache bootstrap and an additive local schema upgrade preserving existing operations. New entries remain device-only Pending until D12 sync is implemented. This is a local implementation checkpoint, not a production-release or phone-acceptance claim. Publication, stable-key APK audit and Android airplane-mode/force-stop checks remain pending. D10 staging deployment is unchanged.

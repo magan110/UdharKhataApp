@@ -12,8 +12,10 @@ final class LocalLedgerStore {
     Map<String, Object?> entry,
     String payload,
     String requestHash,
-    int createdAtMs,
-  ) => database.transaction(accountId, (tx) async {
+    int createdAtMs, {
+    bool requireSnapshot = false,
+    String? expectedShopId,
+  }) => database.transaction(accountId, (tx) async {
     final account = (await tx.query('local_account')).single;
     final link = await tx.query(
       'cached_links',
@@ -23,9 +25,49 @@ final class LocalLedgerStore {
     if (account['role'] != 'owner' || account['last_verified_at_ms'] == null) {
       throw StateError('Verified owner required');
     }
-    if (link.isEmpty) throw StateError('Verified active link required');
+    if (link.isEmpty ||
+        (expectedShopId != null && link.single['shop_id'] != expectedShopId)) {
+      throw StateError('Verified active link required');
+    }
     if (entry['sync_status'] != 'pending') {
       throw StateError('Pending entry required');
+    }
+    final existing = await tx.query(
+      'cached_entries',
+      where: 'client_operation_id=?',
+      whereArgs: [entry['client_operation_id']],
+    );
+    if (existing.isNotEmpty) {
+      final saved = await tx.query(
+        'outbox',
+        where: 'operation_id=?',
+        whereArgs: [entry['client_operation_id']],
+      );
+      if (saved.length != 1 ||
+          saved.single['payload'] != payload ||
+          saved.single['request_hash'] != requestHash ||
+          saved.single['created_at_ms'] != createdAtMs ||
+          entry.entries.any(
+            (field) => existing.single[field.key] != field.value,
+          )) {
+        throw StateError('Local operation identity reused');
+      }
+      return;
+    }
+    if (requireSnapshot) {
+      final ready = await tx.query(
+        'owner_ledger_snapshots',
+        where: 'link_id=?',
+        whereArgs: [entry['link_id']],
+      );
+      final blocked = await tx.query(
+        'outbox',
+        where: 'link_id=? AND state=?',
+        whereArgs: [entry['link_id'], 'needs_attention'],
+      );
+      if (ready.length != 1 || blocked.isNotEmpty) {
+        throw StateError('Verified complete ledger required');
+      }
     }
     await tx.insert('cached_entries', entry);
     await tx.insert('outbox', {

@@ -9,6 +9,7 @@ import '../auth/session_controller.dart';
 import '../qr/owner_link_repository.dart';
 import '../qr/owner_qr_model.dart';
 import 'entry_model.dart';
+import 'device_ledger_repository.dart';
 import 'ledger_repository.dart';
 import 'money.dart';
 
@@ -28,7 +29,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   LedgerBalanceSnapshot? _rejectionBalance;
   Object? _error;
   String _method = 'cash';
-  int? _reviewAmount;
+  int? _reviewAmount, _localBalance;
+  bool _savedLocal = false;
   bool _loading = true, _busy = false, _review = false;
   @override
   void initState() {
@@ -61,11 +63,15 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       _rejectionBalance = null;
     });
     try {
-      if (repo == null || links == null) {
+      if (repo == null || (links == null && repo is! DeviceLedgerRepository)) {
         throw const AppFailure('AUTH_REQUIRED', 'auth.required');
       }
-      final customer = await links.customer(widget.shopId, widget.linkId),
-          pending = await repo.pendingPayment(widget.shopId, widget.linkId);
+      final pending = await repo.pendingPayment(widget.shopId, widget.linkId);
+      final customer = repo is DeviceLedgerRepository
+          ? pending != null
+                ? await repo.recoveryCustomer(widget.shopId, widget.linkId)
+                : await repo.prepareCustomer(widget.shopId, widget.linkId)
+          : await links!.customer(widget.shopId, widget.linkId);
       if (_current(repo)) {
         setState(() {
           _customer = customer;
@@ -97,6 +103,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     final repo = _repo, customer = _customer;
     if (_busy ||
         _receipt != null ||
+        _savedLocal ||
         repo == null ||
         customer == null ||
         !_current(repo) ||
@@ -108,6 +115,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       _error = null;
     });
     try {
+      final isNew = _pending == null;
       final attempt =
           _pending?.attempt ??
           await repo.beginPayment(
@@ -119,6 +127,14 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           );
       if (!_current(repo)) return;
       setState(() => _pending = PendingPayment(attempt, false));
+      if (isNew && repo is DeviceLedgerRepository) {
+        setState(() => _savedLocal = true);
+        final snapshot = await repo.snapshot(widget.shopId, widget.linkId);
+        if (_current(repo)) {
+          setState(() => _localBalance = snapshot?.provisionalPaise);
+        }
+        return;
+      }
       final receipt = await repo.submitPayment(widget.shopId, attempt);
       if (_current(repo)) {
         ref.invalidate(customerLinksProvider(widget.shopId.value));
@@ -203,7 +219,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         method = attempt?.paymentMethod ?? _method;
     final snapshot = _rejectionBalance;
     final balanceText = snapshot == null
-        ? 'Customer owes you ${formatPaise(customer?.balance.value ?? 0)} (last server read).'
+        ? 'Customer owes you ${formatPaise(customer?.balance.value ?? 0)} ${_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).'}'
         : 'Customer owes you ${formatPaise(snapshot.balancePaise)} (server balance as of ${_displayTime(snapshot.asOfAtMs)}).';
     final message = errorMessage(
       _error is AppFailure
@@ -241,7 +257,23 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   'Cash/UPI is manually recorded by you. This app does not verify a bank transfer.',
                 ),
                 const SizedBox(height: 16),
-                if (receipt != null) ...[
+                if (_savedLocal) ...[
+                  const Text('Payment saved · Pending'),
+                  Text(
+                    '${method == 'cash' ? 'Cash' : 'UPI'} received on this device: ${formatPaise(attempt!.amountPaise)}',
+                  ),
+                  if (_localBalance != null)
+                    Text(
+                      'Customer owes you ${formatPaise(_localBalance!)} (provisional, including Pending).',
+                    ),
+                  const Text(
+                    'Pending entries are only on this device. They are not backed up to the cloud.',
+                  ),
+                  FilledButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Back to customer'),
+                  ),
+                ] else if (receipt != null) ...[
                   const Text('Payment acknowledged by server'),
                   Text(
                     '${method == 'cash' ? 'Cash' : 'UPI'} received: ${formatPaise(attempt!.amountPaise)}',
@@ -322,8 +354,10 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(balanceText),
-                        const Text(
-                          'Internet is needed. Review the customer, amount and method before confirming payment received. The server checks the latest balance.',
+                        Text(
+                          _repo is DeviceLedgerRepository
+                              ? 'Review the customer, amount and method before confirming. Saved entries are Pending and only on this device until synced. Payments cannot exceed the locally known balance.'
+                              : 'Internet is needed. Review the customer, amount and method before confirming payment received. The server checks the latest balance.',
                         ),
                         TextFormField(
                           controller: _amount,

@@ -247,3 +247,12 @@ Saved payment requests survive restart and retry with the original body/ID. An u
 ### D10 online history checkpoint (2 October 2026)
 
 D10 implements SRS-F-022 online: owner total owed and paginated customers, customer own-shop pagination, and both roles' dated immutable histories. Scoped reads reauthorize every page; the customer identity comes only from the session. Entry replay independently reconciles the fixed snapshot balance. History shows DD-MM-YYYY entry/recorded dates, credit notes/due dates, and manual Cash/UPI payment labels. Empty, loading, network, expired-cursor and permission-loss states are distinct. In-memory older pages are dated and explicitly marked after page failure; account replacement clears them. Device persistence/offline reading remains D11–D13. Local versus staging/phone evidence remains separate in implementation progress.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+D11 adds an owner device ledger on the existing account-private SQLite database. Opening a customer online first caches a complete authorized history snapshot only after all pages reconcile by entry sum, count and server high-water. Later opens use that dated local snapshot; explicit Refresh from server fetches a new one. Unknown links need internet. Automatic bootstrap is capped at 10,000 acknowledged entries; larger ledgers retain the paginated confirmed-server-history view.
+
+Owner credit/payment confirmation creates a UUID once and atomically saves the immutable provisional entry, canonical outbox payload, account/shop-bound local integrity hash and balance effect before reporting success. No new-command HTTP is issued in D11, even online. Synced balance is reconstructed from acknowledged entries; provisional balance adds Pending effects and excludes Needs attention. Payments cannot make the known local balance negative. Pending is only on this device and is not cloud-backed up; customer views remain acknowledged-only.
+
+Unresolved D08/D09 secure-storage commands retain their original Check same credit/payment recovery path and block new local replacements until resolved. General serial push/pull, server reconciliation, permanent-rejection handling and offline cold-start session restoration remain D12; offline QR lookup and replacement-phone recovery drills remain D13. D11 makes no server/API, Google configuration or signing-key change.

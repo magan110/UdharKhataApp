@@ -4,7 +4,7 @@
 > **Document map:** [Document map](DOCUMENT-MAP.md). **Read with:** [Repository instructions](AGENTS.md) · [Daily implementation plan](docs/implementation/README.md) · [Implementation progress](docs/implementation/PROGRESS.md) · [Flutter app README](udhaarkhata/README.md).
 <!-- DOC_NAV_END -->
 
-Android-first Flutter credit ledger with a Cloudflare Worker and D1 backend. D03 schemas are tested locally and in approved staging. D04 local Google verification, rotating sessions, secure credential storage and role/sign-out UI are implemented with synthetic tests; live Google OAuth and Worker deployment remain pending. User-facing ledger features follow in later phases. See implementation progress for evidence.
+Android-first Flutter credit ledger with a Cloudflare Worker and D1 backend. D01–D10 are implemented and have recorded local/cloud and user-reported phone checks. D11 adds a local durable owner ledger/outbox; new entries remain device-only Pending until D12 sync. See implementation progress for current evidence and remaining device/release gates.
 
 Start with [the document map](DOCUMENT-MAP.md), [the implementation plan](docs/implementation/README.md), and [progress](docs/implementation/PROGRESS.md). Product and engineering requirements are cataloged in [AGENTS.md](AGENTS.md). Run `python scripts/check_docs.py` after changing Markdown links.
 
@@ -41,4 +41,4 @@ For D02, `GET /health` returns a minimal success envelope; valid `POST /v1/auth/
 
 ## Configuration safety
 
-Use `services/api/.dev.vars.example` only as a list of future local variable names; never enter secrets in tracked files. `services/api/wrangler.jsonc` is local-only and uses a zero placeholder database ID with `remote:false`; no remote D1 database has been created. Remote environment names, IDs, OAuth clients, API URL, signing key and backup destination will be defined in later phases and require explicit approval before remote changes. Android package ID must be checked against publisher ownership and finalized before registering Google OAuth clients.
+Use `services/api/.dev.vars.example` only as a list of local variable names; never enter secrets in tracked files. Local and approved staging configurations remain separate. The existing registered Android package and persistent debug signing certificate must stay aligned with Google OAuth. D11 changes neither remote resources nor credentials; pushes, APK publication and remote deployment require explicit approval under [AGENTS.md](AGENTS.md).

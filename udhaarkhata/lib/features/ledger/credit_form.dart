@@ -9,6 +9,7 @@ import '../auth/session_controller.dart';
 import '../qr/owner_link_repository.dart';
 import '../qr/owner_qr_model.dart';
 import 'entry_model.dart';
+import 'device_ledger_repository.dart';
 import 'ledger_repository.dart';
 import 'money.dart';
 
@@ -30,7 +31,8 @@ class _CreditPageState extends ConsumerState<CreditPage> {
   CreditReceipt? _receipt;
   Object? _error;
   bool _loading = true, _busy = false, _review = false;
-  int? _reviewAmount;
+  int? _reviewAmount, _localBalance;
+  bool _savedLocal = false;
   @override
   void initState() {
     super.initState();
@@ -57,11 +59,15 @@ class _CreditPageState extends ConsumerState<CreditPage> {
       _customer = null;
     });
     try {
-      if (repo == null || links == null) {
+      if (repo == null || (links == null && repo is! DeviceLedgerRepository)) {
         throw const AppFailure('AUTH_REQUIRED', 'auth.required');
       }
-      final customer = await links.customer(widget.shopId, widget.linkId);
       final pending = await repo.pending(widget.shopId, widget.linkId);
+      final customer = repo is DeviceLedgerRepository
+          ? pending != null
+                ? await repo.recoveryCustomer(widget.shopId, widget.linkId)
+                : await repo.prepareCustomer(widget.shopId, widget.linkId)
+          : await links!.customer(widget.shopId, widget.linkId);
       if (_current(repo)) {
         setState(() {
           _customer = customer;
@@ -115,7 +121,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
   }
 
   Future<void> _submit() async {
-    if (_busy || _receipt != null) return;
+    if (_busy || _receipt != null || _savedLocal) return;
     final repo = _repo, customer = _customer;
     if (repo == null || customer == null || !_current(repo)) return;
     setState(() {
@@ -123,6 +129,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
       _error = null;
     });
     try {
+      final isNew = _attempt == null;
       final attempt =
           _attempt ??
           await repo.begin(
@@ -135,6 +142,14 @@ class _CreditPageState extends ConsumerState<CreditPage> {
           );
       if (!_current(repo)) return;
       setState(() => _attempt = attempt);
+      if (isNew && repo is DeviceLedgerRepository) {
+        setState(() => _savedLocal = true);
+        final snapshot = await repo.snapshot(widget.shopId, widget.linkId);
+        if (_current(repo)) {
+          setState(() => _localBalance = snapshot?.provisionalPaise);
+        }
+        return;
+      }
       final receipt = await repo.submit(widget.shopId, attempt);
       if (_current(repo)) {
         ref.invalidate(customerLinksProvider(widget.shopId.value));
@@ -195,7 +210,23 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                 if (customer.nickname != null)
                   Text('Shop nickname: ${customer.nickname}'),
                 const SizedBox(height: 16),
-                if (receipt != null) ...[
+                if (_savedLocal) ...[
+                  const Text('Credit saved · Pending'),
+                  Text(
+                    'Credit recorded on this device: ${formatPaise(_attempt!.amountPaise)}',
+                  ),
+                  if (_localBalance != null)
+                    Text(
+                      'Customer owes you ${formatPaise(_localBalance!)} (provisional, including Pending).',
+                    ),
+                  const Text(
+                    'Pending entries are only on this device. They are not backed up to the cloud.',
+                  ),
+                  FilledButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Back to customer'),
+                  ),
+                ] else if (receipt != null) ...[
                   const Text('Credit acknowledged by server'),
                   Text(
                     'Credit recorded: ${formatPaise(_attempt!.amountPaise)}',
@@ -213,7 +244,9 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                 ] else if (_review) ...[
                   Text('Credit amount: ${formatPaise(amount!)}'),
                   Text(
-                    'Customer owes you ${formatPaise(amount)} more after this credit is acknowledged.',
+                    _repo is DeviceLedgerRepository && _attempt == null
+                        ? 'Customer owes you ${formatPaise(amount)} more in the provisional balance after saving.'
+                        : 'Customer owes you ${formatPaise(amount)} more after this credit is acknowledged.',
                   ),
                   if (note != null) Text('Note: $note'),
                   if (due != null) Text('Due date: ${_displayDueDate(due)}'),
@@ -258,10 +291,12 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Customer owes you ${formatPaise(customer.balance.value)} (last server read).',
+                          'Customer owes you ${formatPaise(customer.balance.value)} ${_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).'}',
                         ),
-                        const Text(
-                          'Internet is needed. Review the customer and amount before confirming. No credit is posted until confirmation.',
+                        Text(
+                          _repo is DeviceLedgerRepository
+                              ? 'Review the customer and amount before confirming. Saved entries are Pending and only on this device until synced.'
+                              : 'Internet is needed. Review the customer and amount before confirming. No credit is posted until confirmation.',
                         ),
                         TextFormField(
                           controller: _amount,

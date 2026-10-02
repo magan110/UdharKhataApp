@@ -176,3 +176,10 @@ Do not publish the Hindi help or app labels until reviewed by speakers and teste
 - [ ] Link final help from the app and store listing only after product, QA, support and privacy sign-off.
 
 This manual is the last document in the requested planning set. Its procedures become user instructions only after the app has been implemented and verified against the [Test Cases / QA Checklist](TEST-CASES-QA-CHECKLIST.md). Until then, it is a reviewable product draft.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+For the current D11 checkpoint, open a customer online once to save a verified ledger. In that signed-in session, you can then open the saved customer, review a credit/payment and confirm without internet. The success message says Pending; it is only on this phone. View transaction history shows the provisional balance and each entry status. A payment cannot exceed the locally known balance. Refresh from server updates acknowledged records; View confirmed server history shows cloud records separately. New D11 entries wait locally even online: automatic upload/retry is the next D12 phase and is not yet implemented. After app restart, the queue remains stored, but this checkpoint still needs online session verification before opening it; offline cold-start access is D12. Never uninstall or clear app data to recover Pending entries. Existing uncertain online requests still offer Check same credit/payment; resolve that original before adding another local entry.
+
+D11 cache-limit recovery: an oversized uncached customer still offers View confirmed server history directly. An existing legacy credit/payment request can open Check same credit/payment after a minimal authorized customer read; complete offline bootstrap is required only for new local commands.

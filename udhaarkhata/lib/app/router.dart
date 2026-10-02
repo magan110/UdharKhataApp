@@ -76,6 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, state) => HistoryPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
               linkId: OpaqueId.fromJson(state.pathParameters['linkId']).value,
+              confirmedOnly: state.uri.queryParameters['source'] == 'server',
             ),
           ),
           GoRoute(

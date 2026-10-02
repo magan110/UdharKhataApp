@@ -11,6 +11,7 @@ import '../../core/network/app_failure.dart';
 import '../../core/network/contracts.dart';
 import '../auth/session_controller.dart';
 import 'entry_model.dart';
+import 'device_ledger_repository.dart';
 import 'money.dart';
 
 abstract interface class LedgerRepository {
@@ -46,15 +47,14 @@ final paymentRepositoryProvider = Provider<PaymentRepository?>((ref) {
 
 final ledgerRepositoryProvider = Provider<LedgerRepository?>((ref) {
   final account = ref.watch(sessionProvider).value;
-  return account == null || account.role != AccountRole.owner
-      ? null
-      : CloudLedgerRepository(
-          ref.watch(authRepositoryProvider),
-          account.id,
-          const FlutterSecureStorage(
-            aOptions: AndroidOptions(resetOnError: false),
-          ),
-        );
+  if (account == null || account.role != AccountRole.owner) return null;
+  final auth = ref.watch(authRepositoryProvider);
+  const storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(resetOnError: false),
+  );
+  return auth is GoogleAuthRepository
+      ? DeviceLedgerRepository(auth, account.id, storage, auth.database)
+      : CloudLedgerRepository(auth, account.id, storage);
 });
 
 class CloudLedgerRepository implements LedgerRepository, PaymentRepository {

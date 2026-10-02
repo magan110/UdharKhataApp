@@ -1,5 +1,8 @@
 // Stable message keys are shared with the API. Hindi resources arrive in D18.
 String errorMessage(String key) => switch (key) {
+  'ledger.cacheTooLarge' => 'This ledger is too large to save offline. View confirmed server history while online.',
+  'ledger.localOverpayment' => 'Payment exceeds the locally known balance. Review the amount before saving.',
+  'ledger.cacheRequired' => 'Open this customer online to verify and save their ledger before recording offline entries.',
   'api.cursorInvalid' =>
     'This snapshot has expired. Refresh to open the latest records.',
   'history.invalidResponse' =>

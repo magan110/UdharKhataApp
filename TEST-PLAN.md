@@ -148,3 +148,8 @@ The Flutter and Worker engineers own automated suites and repair. QA verifies in
 This plan depends on phase-0 choices for supported Android devices, package/runtime versions, input caps and environments; phase-3 choices for overdue allocation, export Pending behavior and retention/deletion policy; and a working backup destination before real users. Record an unresolved choice as a **blocked test condition** for its affected feature, not as an implicit pass. If pilot research changes the QR-first product scope, update BRD/PRD/SRS, then revise this plan and its test cases.
 
 The next [Test Cases / QA Checklist](TEST-CASES-QA-CHECKLIST.md) will turn this strategy into executable cases with IDs, prerequisites, steps, expected results and traceability. Before implementation, translate the planned CI commands and environment setup in [Coding Standards](CODING-STANDARDS-DEVELOPMENT-GUIDELINES.md) into repository scripts; until then, this plan records intent rather than completed test evidence.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+D11 verification uses real host SQLite for rollback, idempotent local replay, concurrent payments, complete-cache reconciliation, account locking and v1→v2 migration. A separate Flutter process commits a synthetic command, signals its PID and is SIGKILLed without closing SQLite; reopening verifies original UUID/body, Pending entry, balance and foreign keys. Widget tests use SQLite FFI without a separate isolate to work with Flutter simulated time; production storage is unchanged. Android airplane-mode/force-stop behavior and offline cold-start policy remain explicit device/D12 gates.

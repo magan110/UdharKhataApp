@@ -37,11 +37,7 @@ final class SqliteAccountDatabase implements AccountDatabase {
         singleInstance: false,
         onConfigure: (db) => db.execute('PRAGMA foreign_keys=ON'),
         onCreate: createLocalSchema,
-        onUpgrade: (db, oldVersion, newVersion) async {
-          throw StateError(
-            'Unsupported local schema upgrade: $oldVersion to $newVersion',
-          );
-        },
+        onUpgrade: upgradeLocalSchema,
         onDowngrade: (db, oldVersion, newVersion) async {
           throw StateError(
             'Unsupported local schema downgrade: $oldVersion to $newVersion',

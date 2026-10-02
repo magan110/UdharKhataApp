@@ -301,3 +301,16 @@ The Worker uses the existing immutable ledger triggers and atomic entry-plus-rec
 ### D10 online history checkpoint (2 October 2026)
 
 `http/cursors.ts` validates canonical page queries and creates/decrypts versioned AES-GCM cursors using a singleton D1 random key. `ledger/reads.ts` handles fixed-sequence history, rowid-bounded link lists and retained-account totals; `ledger/read-routes.ts` derives customer identity from session. Owner history uses `/v1/shops/{shopId}/customers/{linkId}/entries`, replacing the proposed query linkId route in the API contract. `OnlineReadRepository` validates scope, sequence/effect/type/date/page shapes; `OnlineRecordsView` guards async responses by repository identity and generation, rejects mixed/duplicate pages, and checks full-history sum/count before accepting the last page. History details are rendered as cards; single-entry correction/effective-revision routes remain later work.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+D11 adds an owner device ledger on the existing account-private SQLite database. Opening a customer online first caches a complete authorized history snapshot only after all pages reconcile by entry sum, count and server high-water. Later opens use that dated local snapshot; explicit Refresh from server fetches a new one. Unknown links need internet. Automatic bootstrap is capped at 10,000 acknowledged entries; larger ledgers retain the paginated confirmed-server-history view.
+
+Owner credit/payment confirmation creates a UUID once and atomically saves the immutable provisional entry, canonical outbox payload, account/shop-bound local integrity hash and balance effect before reporting success. No new-command HTTP is issued in D11, even online. Synced balance is reconstructed from acknowledged entries; provisional balance adds Pending effects and excludes Needs attention. Payments cannot make the known local balance negative. Pending is only on this device and is not cloud-backed up; customer views remain acknowledged-only.
+
+Unresolved D08/D09 secure-storage commands retain their original Check same credit/payment recovery path and block new local replacements until resolved. General serial push/pull, server reconciliation, permanent-rejection handling and offline cold-start session restoration remain D12; offline QR lookup and replacement-phone recovery drills remain D13. D11 makes no server/API, Google configuration or signing-key change.
+
+Implementation boundaries: `OwnerLedgerDao` admits/replays complete owner snapshots, `SaveLocal` maps confirmed bodies to immutable SQLite commands, and `OutboxDao` returns queue order by insertion rowid. `DeviceLedgerRepository` connects these to forms and retains the legacy cloud repository for preexisting uncertain requests. Provider/account and request-generation checks prevent completed reads from appearing under a replacement account. Local storage failures roll back entry/outbox/projection together and never produce a saved confirmation.
+
+D11 cache-limit recovery: an oversized uncached customer still offers View confirmed server history directly. An existing legacy credit/payment request can open Check same credit/payment after a minimal authorized customer read; complete offline bootstrap is required only for new local commands.

@@ -169,3 +169,8 @@ Automated D1/HTTP payment coverage proves ₹500 credit − ₹200 Cash = ₹300
 ### D10 online history checkpoint (2 October 2026)
 
 D10 local API tests cover ₹500 credit/₹200 payment/retry → ₹300 history for both roles, independent effects replay, new entries between pages, >100-customer traversal, list insertion exclusion, shared customer in two shops, account/route/link cursor reuse, tampering/expiry/key rotation, denied/deleted/removed access and invalid queries. Flutter tests cover dated entry cards/notes/due dates, both role routes, totals/Load more, empty versus failure, page retry, changed snapshot rejection, permission-loss hiding and stale in-flight account replacement. Phone acceptance still must exercise these screens on the approved deployed/stable-key APK; local tests do not supply device evidence.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+Automated D11 scenarios cover inert review, double-tap local confirmation, no new-command HTTP, Pending-only-device wording, local overpayment/concurrent-payment rollback, outbox insertion failure, queue/body persistence after reopen and forced process termination, account separation, active-link/shop/role guards, complete paged history reconciliation, denied access preserving pending money, cache-size bound, and v1 migration retaining original outbox bytes. Owner saved history labels Synced and Pending separately; customer acknowledged-only reads keep prior regressions. Phone airplane-mode/force-stop and D12 sync fault cases remain unchecked until their own evidence.

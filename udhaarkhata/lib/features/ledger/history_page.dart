@@ -8,6 +8,9 @@ import '../../core/network/app_failure.dart';
 import '../auth/session_controller.dart';
 import '../qr/owner_qr_model.dart';
 import 'money.dart';
+import 'ledger_repository.dart';
+import 'device_ledger_repository.dart';
+import 'local_ledger_view.dart';
 import 'online_reads.dart';
 
 String historyDate(int milliseconds) {
@@ -19,24 +22,35 @@ String historyDate(int milliseconds) {
 String dueDateText(String date) =>
     '${date.substring(8)}-${date.substring(5, 7)}-${date.substring(0, 4)}';
 
-class HistoryPage extends StatelessWidget {
-  const HistoryPage({super.key, required this.shopId, this.linkId});
+class HistoryPage extends ConsumerWidget {
+  const HistoryPage({
+    super.key,
+    required this.shopId,
+    this.linkId,
+    this.confirmedOnly = false,
+  });
   final String shopId;
   final String? linkId;
+  final bool confirmedOnly;
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
     appBar: AppBar(title: const Text('Transaction history')),
     body: SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: OnlineRecordsView(
-          kind: OnlineReadKind.history,
-          shopId: shopId,
-          linkId: linkId,
-          path: linkId == null
-              ? '/v1/me/ledgers/$shopId/entries'
-              : '/v1/shops/$shopId/customers/$linkId/entries',
-        ),
+        child:
+            !confirmedOnly &&
+                linkId != null &&
+                ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository
+            ? LocalLedgerView(shopId: shopId, linkId: linkId!)
+            : OnlineRecordsView(
+                kind: OnlineReadKind.history,
+                shopId: shopId,
+                linkId: linkId,
+                path: linkId == null
+                    ? '/v1/me/ledgers/$shopId/entries'
+                    : '/v1/shops/$shopId/customers/$linkId/entries',
+              ),
       ),
     ),
   );

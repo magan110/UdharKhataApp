@@ -204,3 +204,10 @@ An uncertain saved request offers Check same payment and cannot be edited or rep
 ### D10 online history checkpoint (2 October 2026)
 
 Online D10 screens show server snapshot dates and refresh controls. Owner home displays total owed (including retained ledgers) and Load more customers. View transaction history opens dated entry cards; My shops supports Load more and opens own-shop history. Dates use DD-MM-YYYY with device-local time; due dates keep their calendar date. Explicit Customer owes you / You owe shop text accompanies money. Cash/UPI payments are manual owner records, never bank verification. Loading and no-transactions states differ from network/access errors; failed page loads retain the dated older snapshot with Retry page, while removed access hides records. No Pending/offline cache is claimed.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+Owner customer forms use a previously verified saved ledger without waiting for HTTP. Review remains inert; Confirm shows Credit saved · Pending or Payment saved · Pending only after the SQLite commit succeeds. The screen labels the balance provisional, including Pending, and states that Pending entries are only on this device and are not backed up to the cloud. Owner history shows dated immutable rows with Synced/Pending/Needs attention, last server snapshot and a separate Synced balance. Refresh from server is explicit; View confirmed server history preserves D10 paginated online reads. Saved customer ledgers remain reachable after a transient shop-read failure in an already verified session. Home server totals are explicitly Synced-only. Cash/UPI retains the manual-receipt explanation. Customer history continues to show only server-acknowledged records. Fully offline startup remains D12.
+
+D11 cache-limit recovery: an oversized uncached customer still offers View confirmed server history directly. An existing legacy credit/payment request can open Check same credit/payment after a minimal authorized customer read; complete offline bootstrap is required only for new local commands.

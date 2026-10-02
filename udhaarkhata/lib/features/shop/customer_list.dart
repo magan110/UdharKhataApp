@@ -9,6 +9,8 @@ import '../auth/session_controller.dart';
 import '../qr/owner_link_repository.dart';
 import '../qr/owner_qr_model.dart';
 import '../ledger/money.dart';
+import '../ledger/ledger_repository.dart';
+import '../ledger/device_ledger_repository.dart';
 import '../ledger/history_page.dart';
 import '../ledger/online_reads.dart';
 
@@ -36,40 +38,79 @@ class OwnerCustomerPage extends ConsumerStatefulWidget {
 
 class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
   OwnerLinkRepository? _repository;
+  LedgerRepository? _ledger;
+  int _generation = 0;
   CustomerLink? _link;
   Object? _error;
-  bool _loading = true;
+  bool _loading = true, _legacyCredit = false, _legacyPayment = false;
   @override
   void initState() {
     super.initState();
     _load();
   }
 
-  Future<void> _load() async {
-    final repo = ref.read(ownerLinkRepositoryProvider);
+  Future<void> _load({bool refresh = false}) async {
+    final repo = ref.read(ownerLinkRepositoryProvider),
+        ledger = ref.read(ledgerRepositoryProvider);
+    final generation = ++_generation;
+    _ledger = ledger;
     _repository = repo;
     setState(() {
       _loading = true;
       _link = null;
       _error = null;
+      _legacyCredit = false;
+      _legacyPayment = false;
     });
     try {
-      if (repo == null) {
+      if (repo == null && ledger is! DeviceLedgerRepository) {
         throw const AppFailure('AUTH_REQUIRED', 'auth.required');
       }
-      final link = await repo.customer(widget.shopId, widget.linkId);
-      if (mounted && identical(repo, ref.read(ownerLinkRepositoryProvider))) {
+      final link = ledger is DeviceLedgerRepository
+          ? await ledger.prepareCustomer(
+              widget.shopId,
+              widget.linkId,
+              refresh: refresh,
+            )
+          : await repo!.customer(widget.shopId, widget.linkId);
+      if (mounted &&
+          generation == _generation &&
+          identical(repo, ref.read(ownerLinkRepositoryProvider)) &&
+          identical(ledger, ref.read(ledgerRepositoryProvider))) {
+        ref.invalidate(savedCustomersProvider);
         setState(() => _link = link);
       }
     } catch (error) {
-      if (mounted && identical(repo, ref.read(ownerLinkRepositoryProvider))) {
+      if (error is AppFailure &&
+          error.code == 'CACHE_TOO_LARGE' &&
+          ledger is DeviceLedgerRepository) {
+        final credit = await ledger.pending(widget.shopId, widget.linkId);
+        final payment = await ledger.pendingPayment(
+          widget.shopId,
+          widget.linkId,
+        );
+        if (mounted &&
+            generation == _generation &&
+            identical(ledger, ref.read(ledgerRepositoryProvider))) {
+          setState(() {
+            _legacyCredit = credit != null;
+            _legacyPayment = payment != null;
+          });
+        }
+      }
+      if (mounted &&
+          generation == _generation &&
+          identical(repo, ref.read(ownerLinkRepositoryProvider)) &&
+          identical(ledger, ref.read(ledgerRepositoryProvider))) {
         setState(() => _error = error);
         if (error is AppFailure && error.code == 'AUTH_REQUIRED') {
           ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
         }
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && generation == _generation) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -84,7 +125,8 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!identical(current, _repository))
+              if (!identical(current, _repository) ||
+                  !identical(_ledger, ref.watch(ledgerRepositoryProvider)))
                 const Text('Please sign in and open this customer again.')
               else if (_loading)
                 const Center(
@@ -101,6 +143,29 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   ),
                 ),
                 FilledButton(onPressed: _load, child: const Text('Try again')),
+                if (_error is AppFailure &&
+                    (_error as AppFailure).code == 'CACHE_TOO_LARGE') ...[
+                  TextButton(
+                    onPressed: () => context.push(
+                      '/owner/history/${widget.shopId.value}/${widget.linkId.value}?source=server',
+                    ),
+                    child: const Text('View confirmed server history'),
+                  ),
+                  if (_legacyCredit)
+                    TextButton(
+                      onPressed: () => context.push(
+                        '/owner/credit/${widget.shopId.value}/${widget.linkId.value}',
+                      ),
+                      child: const Text('Check saved credit'),
+                    ),
+                  if (_legacyPayment)
+                    TextButton(
+                      onPressed: () => context.push(
+                        '/owner/payment/${widget.shopId.value}/${widget.linkId.value}',
+                      ),
+                      child: const Text('Check saved payment'),
+                    ),
+                ],
               ] else ...[
                 Semantics(
                   header: true,
@@ -117,8 +182,13 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Customer owes you ${formatPaise(link.balance.value)} (last server read).',
+                  'Customer owes you ${formatPaise(link.balance.value)} ${ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).'}',
                 ),
+                if (ref.watch(ledgerRepositoryProvider)
+                    is DeviceLedgerRepository)
+                  const Text(
+                    'Pending entries are only on this device and are not backed up to the cloud.',
+                  ),
                 FilledButton(
                   onPressed: () async {
                     await context.push(
@@ -140,7 +210,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   child: const Text('Record payment received'),
                 ),
                 TextButton(
-                  onPressed: _load,
+                  onPressed: () => _load(refresh: true),
                   child: const Text('Refresh balance'),
                 ),
                 TextButton(

@@ -255,12 +255,12 @@ void main() {
           (db) => db.rawQuery('PRAGMA user_version'),
         ),
         [
-          {'user_version': 1},
+          {'user_version': 2},
         ],
       );
       await store.transaction(
         account,
-        (db) => db.execute('PRAGMA user_version=2'),
+        (db) => db.execute('PRAGMA user_version=3'),
       );
       await store.lock();
       await expectLater(store.openForAccount(account), throwsStateError);
@@ -307,6 +307,40 @@ void main() {
         ),
         throwsA(isA<DatabaseException>()),
       );
+    },
+  );
+  test(
+    'same local operation replays once; changed payload rolls back',
+    () async {
+      await seed();
+      final repository = LocalLedgerStore(store, account);
+      await repository.savePending(
+        pending,
+        '{"amountPaise":50000}',
+        'a' * 64,
+        1,
+      );
+      await repository.savePending(
+        pending,
+        '{"amountPaise":50000}',
+        'a' * 64,
+        1,
+      );
+      expect(await repository.entries('link'), [pending]);
+      expect(
+        await store.transaction(account, (db) => db.query('outbox')),
+        hasLength(1),
+      );
+      await expectLater(
+        repository.savePending(
+          {...pending, 'amount_paise': 40000, 'effect_paise': 40000},
+          '{"amountPaise":40000}',
+          'b' * 64,
+          1,
+        ),
+        throwsStateError,
+      );
+      expect((await repository.balance('link'))['pending_paise'], 50000);
     },
   );
   test('customers and unverified links cannot queue owner commands', () async {

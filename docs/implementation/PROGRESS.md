@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D10 complete; D11 is next and has not started. User confirmed the delivered D10 build is working on 2 October 2026 (“working”). D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. Detailed device/release matrices remain explicit below. **Last updated:** 2 October 2026.
+**Current phase:** D11 local implementation, verification and review complete; publication and Android acceptance are pending. D01–D10 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. **Last updated:** 2 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -18,7 +18,8 @@
 | D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
 | D09 | Done | 2026-10-02 | Recorded local/cloud checks and stable APK audit; user confirmed phone acceptance. Detailed device regression remains a release requirement. |
 | D10 | Done | 2026-10-02 | Recorded local/cloud verification, approved staging migration/deployment and persistent-key APK audit; user confirmed the delivered build is working. Detailed device regression remains a release requirement. |
-| D11-D24 | Not started | - | Follow the order in [README](README.md). |
+| D11 | Local checkpoint verified | Durable cache/outbox and owner UI; 118 Flutter tests, 90.91% coverage, clean analysis, independent review. | Publish/build and phone acceptance pending; D12 sync has not started. |
+| D12-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
 
@@ -336,3 +337,34 @@ D10 is deployed with phone acceptance pending. On the new APK: owner customer �
 After receiving the verified stable-key D10 APK and the request to check owner/customer dated history and matching balances, the user confirmed “working”. This closes D10 phone smoke acceptance by user report, together with its recorded local/cloud tests, scoped-read checks, approved staging migration/deployment and exact APK audit. It does not claim independent observation of every pagination, failure/retry, accessibility or device-matrix scenario; detailed release regression remains required.
 
 D11 local ledger/outbox transactions are the next phase in the existing implementation sequence. D11 has not started; this confirmation records D10 acceptance and does not infer approval for future remote changes.
+
+
+### D11 authorized local implementation (2 October 2026)
+
+The user requested start after confirming D10 working, then approved the bounded D11 design. This authorizes local coding/testing. D10 remote approval is not reused for D11 push/publication.
+
+D11 adds an owner device ledger on the existing account-private SQLite database. Opening a customer online first caches a complete authorized history snapshot only after all pages reconcile by entry sum, count and server high-water. Later opens use that dated local snapshot; explicit Refresh from server fetches a new one. Unknown links need internet. Automatic bootstrap is capped at 10,000 acknowledged entries; larger ledgers retain the paginated confirmed-server-history view.
+
+Owner credit/payment confirmation creates a UUID once and atomically saves the immutable provisional entry, canonical outbox payload, account/shop-bound local integrity hash and balance effect before reporting success. No new-command HTTP is issued in D11, even online. Synced balance is reconstructed from acknowledged entries; provisional balance adds Pending effects and excludes Needs attention. Payments cannot make the known local balance negative. Pending is only on this device and is not cloud-backed up; customer views remain acknowledged-only.
+
+Unresolved D08/D09 secure-storage commands retain their original Check same credit/payment recovery path and block new local replacements until resolved. General serial push/pull, server reconciliation, permanent-rejection handling and offline cold-start session restoration remain D12; offline QR lookup and replacement-phone recovery drills remain D13. D11 makes no server/API, Google configuration or signing-key change.
+
+Implementation: additive SQLite v2 cache metadata/snapshot migration, complete authorized owner history bootstrap, immutable local entry/outbox save, idempotent local replay and atomic known-balance guard, stable queue order, owner provisional/status UI and saved-customer navigation, and legacy uncertain-command protection. No new product dependency, Worker code or remote resource change.
+
+Local verification is complete. Physical Android airplane-mode/force-stop and exact APK delivery remain pending. Cold offline session restore is explicitly D12; the D11 queue survives process termination but a restarted app currently needs online account verification to reopen it.
+
+Independent review covered frozen patch `be39a209a1466f87f970ff8a63a84d275ad8555d918eabc995ebbb4fcc6921a7`. It identified an Important cache-limit navigation/recovery regression: a ledger above 10,000 entries could not reach confirmed online history or an existing legacy retry form. Three widget regressions reproduced the missing actions before the fix. The customer error state now exposes server history directly (`source=server` bypasses offline bootstrap) and existing legacy credit/payment forms first load the original command, then require only the authorized scoped customer read. New local commands still require complete verified cache. Review of frozen corrected patch `6b5b1bf27910d56d755d11e62c5868280dfb85a1fefc1ea8e1d5abf9ed22cb1d` confirmed the issue resolved with no confirmed Critical/Important delta issue. Later changes only add lint braces and make widget tests wait for the actual SQLite/UI outcome.
+
+The widget fixture uses SQLite FFI without an extra isolate and bounded waits for the actual saved/balance/error state rather than fixed sleeps. An intermediate final-suite attempt exposed two premature assertions (offline credit confirmation and offline payment error); both were corrected in test synchronization, with product storage behavior unchanged. Local APK build was attempted with the existing public staging defines and failed explicitly because this managed environment has no Android SDK. No APK-success claim is made from analysis/tests.
+
+Final local evidence (2 October 2026):
+
+- Flutter `test --no-pub --coverage`: **118 passed**, including separate-process SIGKILL recovery; coverage **2440/2684 lines = 90.91%**, repository 80% gate passed.
+- `flutter analyze --no-pub`: **No issues found**. `dart format --output=none --set-exit-if-changed lib test`: no changes.
+- Unchanged Worker `npm test`: **1 Node configuration test + 83 runtime tests passed**. Final run used app-private temporary Wrangler configuration/log paths to avoid the initial host-home log-write error; no Worker code was modified.
+- v1→v2 local migration, same-operation replay/conflict, entry/outbox rollback, queue order, complete-cache/page checks, wrong shop/role/account, unknown link, local overpayment/concurrent payments, denied cache preserving Pending and original legacy commands are exercised by real SQLite tests.
+- `python scripts/check_docs.py`, `python scripts/update_doc_navigation.py --check`, and `git diff --check`: passed.
+- Independent review Important finding reproduced by three failing widget tests, fixed, and confirmed resolved. Final widget synchronization uses bounded outcome-based waiting; all eight D11 widget tests pass in the full suite.
+- Local Android build blocked: **No Android SDK found**. No D11 push, APK publication, staging deployment, D1 migration, OAuth edit or signing-key change was performed. Existing D10 staging remains in place.
+
+Next authorized handoff: select integration/publication, build and audit the persistent-key APK after explicit approval, then record owner online-cache → airplane-mode credit/payment and restart checks on Android. Force-stop retains the queue; reopening in this checkpoint needs online account/session verification. Do not advance D12 or claim a complete offline phone journey from host tests alone. New D11 commands remain Pending even online until D12 adds serial upload/receipt reconciliation.

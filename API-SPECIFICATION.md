@@ -309,3 +309,8 @@ History follows increasing immutable server sequence. The first authorized balan
 `GET /v1/shops/{shopId}` adds `totalBalancePaise`, `customerCount`, `asOfAtMs`. Totals cover all retained shop ledger accounts, including access-removed customer relationships, because customer access removal does not erase owner money. Unsafe aggregate totals fail closed rather than round. This is total owed, never overdue. No due-date allocation is inferred.
 
 D10 requires applying migration 0003 before deploying its Worker. Previous Worker code can run with this additive table for rollback. Physical-phone history and approved staging migration/deployment/build are separate gates in implementation progress.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+D11 changes only mobile local storage and UI. Existing customer-link and D10 paginated-history reads bootstrap a complete cache; no new endpoint, D1 migration or financial request format is added. New local credit/payment commands retain their original `/v1/shops/{shopId}/entries` bodies and UUIDs in the outbox without issuing HTTP. Local hashes are distinct from Worker canonical receipt hashes. D12 must implement serial push/pull, receipt reconciliation, current permission/balance revalidation and an explicit policy for aged device occurrence timestamps; the current server first-post 24-hour/5-minute clock rule is unchanged in D11.

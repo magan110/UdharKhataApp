@@ -172,3 +172,8 @@ After upload, the workflow checks live HTTPS health and unauthenticated profile,
 ### D10 online history checkpoint (2 October 2026)
 
 D10 introduces additive D1 migration 0003 for the environment-local cursor key. Before approved D10 staging deployment, run local migration/repeat/foreign-key checks and the read regressions; the prepared staging workflow applies pending migrations to its previously checked exact staging target before deploying. User approval must explicitly include staging migration, deployment and stable-key APK delivery. No new Google OAuth/signing registration is required. Code rollback to D09 leaves the additive table intact; do not drop financial tables or receipts. Cursor-key rotation invalidates outstanding read pages and requires refresh; it does not modify ledger entries or saved device commands.
+
+
+### D11 local ledger/outbox checkpoint (2 October 2026)
+
+D11 requires no Worker deployment, D1 migration, OAuth edit or signing-key rotation. Mobile upgrade applies local SQLite v1→v2 additively, retaining original pending commands/outbox bytes. Keep the app installed when testing; uninstall/clear-data destroys device-only Pending entries. Any downloadable build must use the existing persistent signing key and exact-APK audit before distribution. New D11 entries remain Pending until D12 upload/reconciliation exists, so this checkpoint is not a real-shop release. Push/build/publication needs explicit authorization under AGENTS.md; no D11 remote change is inferred from D10 approval.

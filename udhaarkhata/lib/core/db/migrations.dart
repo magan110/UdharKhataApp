@@ -1,12 +1,41 @@
 import 'package:sqflite/sqflite.dart';
 
-const localSchemaVersion = 1;
+const localSchemaVersion = 2;
 
 Future<void> createLocalSchema(Database db, int version) async {
   for (final sql in localSchema) {
     await db.execute(sql);
   }
+  if (version >= 2) await upgradeLocalSchema(db, 1, version);
 }
+
+Future<void> upgradeLocalSchema(
+  Database db,
+  int oldVersion,
+  int newVersion,
+) async {
+  if (oldVersion != 1 || newVersion != 2) {
+    throw StateError(
+      'Unsupported local schema upgrade: $oldVersion to $newVersion',
+    );
+  }
+  for (final sql in localSchemaV2) {
+    await db.execute(sql);
+  }
+}
+
+const localSchemaV2 = <String>[
+  'ALTER TABLE cached_links ADD COLUMN display_name TEXT',
+  'ALTER TABLE cached_links ADD COLUMN nickname TEXT',
+  'ALTER TABLE cached_links ADD COLUMN linked_at_ms INTEGER',
+  '''CREATE TABLE owner_ledger_snapshots (
+    link_id TEXT PRIMARY KEY REFERENCES cached_links(id) ON DELETE RESTRICT,
+    balance_paise INTEGER NOT NULL CHECK(typeof(balance_paise)='integer' AND balance_paise BETWEEN 0 AND 9007199254740991),
+    ledger_version INTEGER NOT NULL CHECK(typeof(ledger_version)='integer' AND ledger_version BETWEEN 0 AND 9007199254740991),
+    server_seq INTEGER NOT NULL CHECK(typeof(server_seq)='integer' AND server_seq BETWEEN 0 AND 9007199254740991),
+    snapshot_at_ms INTEGER NOT NULL CHECK(typeof(snapshot_at_ms)='integer' AND snapshot_at_ms BETWEEN 0 AND 9007199254740991)
+  )''',
+];
 
 // Storage ceiling only; business entry limits are narrowed in D08.
 const localSchema = <String>[
