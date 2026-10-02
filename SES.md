@@ -234,3 +234,7 @@ The Worker uses the existing immutable ledger triggers and atomic entry-plus-rec
 ### D09 online payment checkpoint (2026-10-01)
 
 Online manually recorded Cash/UPI extends the D08 command/receipt path with positive integer amounts under the same pilot cap. Existing D1 guards serialize balance effects and reject overpayment; successful receipt replay returns the original balance/version. Mobile shares serialized credit/payment recovery, retains uncertain original payloads, and requires explicit review before archiving a confirmed rejected payment and opening a corrected draft. Scope remains online: history D10, offline ledger/outbox D11–D13, corrections D14. No new provider resource, dependency or schema migration is required.
+
+### D10 online history checkpoint (2 October 2026)
+
+D10 adds bounded online read modules and one additive D1 cursor-key migration. AES-GCM opaque cursors are bound to account/role/route/shop/link and expire in one hour. History reconstructs balances from immutable effects up to a captured server sequence; live authorization and each page read occur in a D1 batch. Lists traverse a rowid high-water by link ID and re-read active state/current balances. Flutter shares account-dependent read parsing, serialized page actions, stale-response generation checks and complete-history reconciliation. No new dependency or offline data store is introduced.

@@ -34,7 +34,7 @@ beforeEach(async () => {
   // This pinned pool keeps D1 storage between tests; rebuild only synthetic tables.
   await db.batch([
     db.prepare('PRAGMA defer_foreign_keys=ON'),
-    ...['spent_refresh_tokens','auth_rate_limits','access_sessions','disputes','sync_operations','entry_effective','ledger_entries','ledger_accounts','data_requests','refresh_sessions','shop_customers','customer_qr_ids','shops','users','d1_migrations'].map(table => db.prepare(`DROP TABLE IF EXISTS ${table}`)),
+    ...['cursor_keys','spent_refresh_tokens','auth_rate_limits','access_sessions','disputes','sync_operations','entry_effective','ledger_entries','ledger_accounts','data_requests','refresh_sessions','shop_customers','customer_qr_ids','shops','users','d1_migrations'].map(table => db.prepare(`DROP TABLE IF EXISTS ${table}`)),
   ]);
   await applyD1Migrations(db, env.MIGRATIONS);
   await run("INSERT INTO users(id,google_sub,account_role,display_name,created_at_ms) VALUES ('owner','sub_o','owner','Owner',1),('customer','sub_c','customer','Customer',1),('other','sub_x','customer','Other',1)");

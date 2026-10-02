@@ -23,10 +23,28 @@ class ProfileAuth extends AuthRepository {
     Map<String, Object?>? body,
   }) async {
     if (offline) throw const AppFailure('NETWORK_ERROR', 'api.networkError');
-    if (path != '/v1/me') {
+    if (!path.startsWith('/v1/me/ledgers')) {
       throw const AppFailure('FEATURE_UNAVAILABLE', 'api.featureUnavailable');
     }
-    return profile;
+    final row = profile as Map<String, Object?>;
+    final links = row['links'];
+    return {
+      'links': links is List
+          ? [
+              for (final link in links)
+                {
+                  'balancePaise': 0,
+                  'ledgerVersion': 0,
+                  ...link as Map<String, Object?>,
+                },
+            ]
+          : links,
+      'snapshotAtMs': 1,
+      'page': {
+        'hasMore': row['linksHasMore'],
+        'nextCursor': row['linksHasMore'] == true ? 'next_page' : null,
+      },
+    };
   }
 }
 
@@ -96,7 +114,7 @@ void main() {
     await tester.tap(find.text('My shops'));
     await tester.pumpAndSettle();
     expect(find.text('New Store'), findsOneWidget);
-    expect(find.text('Showing the first 100 linked shops.'), findsOneWidget);
+    expect(find.text('Load more'), findsOneWidget);
   });
   testWidgets('customer sees the server balance with explicit owed direction', (
     tester,

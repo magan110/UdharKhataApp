@@ -9,70 +9,18 @@ import '../auth/session_controller.dart';
 import '../qr/owner_link_repository.dart';
 import '../qr/owner_qr_model.dart';
 import '../ledger/money.dart';
+import '../ledger/history_page.dart';
+import '../ledger/online_reads.dart';
 
-class CustomerList extends ConsumerWidget {
+class CustomerList extends StatelessWidget {
   const CustomerList({super.key, required this.shopId});
   final OpaqueId shopId;
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = customerLinksProvider(shopId.value);
-    ref.listen(provider, (_, next) {
-      if (next.error case final AppFailure error
-          when error.code == 'AUTH_REQUIRED') {
-        ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
-      }
-    });
-    final customers = ref.watch(provider);
-    return customers.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(semanticsLabel: 'Loading customers'),
-      ),
-      error: (error, _) => Column(
-        children: [
-          Text(
-            errorMessage(
-              error is AppFailure ? error.messageKey : 'link.failed',
-            ),
-          ),
-          TextButton(
-            onPressed: () => ref.invalidate(provider),
-            child: const Text('Refresh customers'),
-          ),
-        ],
-      ),
-      data: (data) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (data.customers.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('No customers yet. Scan a customer QR to add them.'),
-            ),
-          for (final customer in data.customers)
-            ListTile(
-              title: Text(customer.nickname ?? customer.displayName),
-              subtitle: Text(
-                customer.nickname == null
-                    ? 'Customer owes you ${formatPaise(customer.balance.value)}'
-                    : '${customer.displayName} — Customer owes you ${formatPaise(customer.balance.value)}',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(
-                '/owner/customer/${shopId.value}/${customer.id.value}',
-              ),
-            ),
-          if (data.hasMore)
-            const Text(
-              'Showing the first 100 customers. Scan a customer QR to open a customer outside this list.',
-            ),
-          TextButton(
-            onPressed: () => ref.invalidate(provider),
-            child: const Text('Refresh customers'),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => OnlineRecordsView(
+    path: '/v1/shops/${shopId.value}/customers',
+    kind: OnlineReadKind.customers,
+    shopId: shopId.value,
+  );
 }
 
 class OwnerCustomerPage extends ConsumerStatefulWidget {
@@ -195,8 +143,11 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   onPressed: _load,
                   child: const Text('Refresh balance'),
                 ),
-                const Text(
-                  'Full transaction history will be available in D10.',
+                TextButton(
+                  onPressed: () => context.push(
+                    '/owner/history/${widget.shopId.value}/${widget.linkId.value}',
+                  ),
+                  child: const Text('View transaction history'),
                 ),
               ],
             ],

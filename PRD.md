@@ -222,3 +222,7 @@ Owner scanning accepts only the bounded exact `udhaar://customer/v1/{publicId}` 
 ### D09 payment implementation checkpoint (2026-10-01)
 
 The existing owner customer screen adds Record payment received, with positive amount, Cash/UPI, customer review and explicit confirmation. It states that the owner manually records receipt and the app does not verify a bank transfer. Successful receipts show the balance when recorded, with refresh for current balance. Overpayment shows a rejected saved request, current authorized balance snapshot and explicit amount/method correction; uncertain requests can only be checked using the same identity. Credit/payment pending confirmations block replacement for that customer. Full owner/customer transaction history remains D10. Deployment and phone acceptance are separate gates in implementation progress.
+
+### D10 online history checkpoint (2 October 2026)
+
+Owner home now shows total customers owe (all retained ledger accounts, not overdue), refresh and paginated active customers. Owner customer details open Transaction history; customer My shops is paginated and each shop opens its own history. Entries show DD-MM-YYYY with local time, explicit owed direction, notes/credit due dates and manually recorded Cash/UPI. History includes confirmed server records only and labels its snapshot time; Load more continues that snapshot and Refresh opens newer changes. Network page failure retains clearly marked older records; permission loss hides them. Corrections/disputes/export/offline persistence remain later phases.

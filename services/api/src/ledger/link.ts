@@ -5,17 +5,17 @@ import { requireOwnedShop } from '../policy/access';
 import { activeQrCustomer } from '../qr/service';
 
 export interface LinkCommand { clientOperationId:string; publicQrId:string; shopNickname:string|null }
-interface LinkRow {
+export interface LinkRow {
   id:string;shop_id:string;customer_user_id:string;display_name:string;shop_nickname:string|null;
   status:string;linked_at_ms:number;balance_paise:number;version:number;
 }
 interface Receipt { request_hash:string;operation_kind:string;shop_customer_id:string|null;response_version:number|null;response_balance_paise:number|null }
-const linkColumns = `SELECT l.*,u.display_name,a.balance_paise,a.version FROM shop_customers l
+export const linkColumns = `SELECT l.*,u.display_name,a.balance_paise,a.version FROM shop_customers l
  JOIN users u ON u.id=l.customer_user_id JOIN ledger_accounts a ON a.shop_customer_id=l.id
  JOIN shops s ON s.id=l.shop_id JOIN users o ON o.id=s.owner_user_id
  WHERE l.shop_id=? AND l.status='active' AND u.deleted_at_ms IS NULL AND u.account_role='customer'
  AND s.owner_user_id=? AND s.status='active' AND o.deleted_at_ms IS NULL AND o.account_role='owner'`;
-const linkJson = (row:LinkRow) => ({id:row.id,shopId:row.shop_id,customerUserId:row.customer_user_id,
+export const linkJson = (row:LinkRow) => ({id:row.id,shopId:row.shop_id,customerUserId:row.customer_user_id,
  customerDisplayName:row.display_name,shopNickname:row.shop_nickname,status:row.status,
  linkedAtMs:row.linked_at_ms,balancePaise:row.balance_paise,ledgerVersion:row.version});
 const missing=()=>new HttpError(404,'NOT_FOUND','api.notFound');

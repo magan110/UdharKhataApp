@@ -64,6 +64,7 @@ jobs:
             echo 'CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository Actions secrets are required.'
             exit 1
           fi
+          npx wrangler d1 migrations apply udhaarkhata-staging --env staging --remote
           npx wrangler deploy --env staging | tee "$RUNNER_TEMP/staging-deploy.log"
       - name: Verify staging HTTPS and authorization
         run: |
@@ -94,7 +95,7 @@ jobs:
           version = re.search(r'Current Version ID:\s*([0-9a-f-]{36})', log)
           report = {'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
                     'worker': 'udhaarkhata-api-staging', 'version_id': version[1] if version else None,
-                    'target': target, 'checks': results, 'migration_applied': False}
+                    'target': target, 'checks': results, 'migration_command_completed': True, 'migration_mode': 'apply_pending'}
           print('::notice title=Staging deployment verified::' + json.dumps(report))
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
               summary.write('## Staging deployment\n\n```json\n' + json.dumps(report, indent=2) + '\n```\n')

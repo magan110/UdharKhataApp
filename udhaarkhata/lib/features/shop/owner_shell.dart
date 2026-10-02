@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'customer_list.dart';
+import '../ledger/history_page.dart';
+import '../ledger/online_reads.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -49,6 +51,12 @@ class OwnerShell extends ConsumerWidget {
                     Text(
                       value.name,
                       style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 24),
+                    OnlineRecordsView(
+                      path: '/v1/shops/${value.id.value}',
+                      kind: OnlineReadKind.summary,
+                      shopId: value.id.value,
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(

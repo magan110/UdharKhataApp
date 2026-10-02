@@ -9,6 +9,7 @@ import '../features/auth/welcome_page.dart';
 import '../features/ledger/customer_shell.dart';
 import '../features/ledger/credit_form.dart';
 import '../features/ledger/payment_form.dart';
+import '../features/ledger/history_page.dart';
 import '../features/shop/owner_shell.dart';
 import '../features/shop/customer_list.dart';
 import '../features/qr/scanner_page.dart';
@@ -71,6 +72,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const OwnerShell(),
         routes: [
           GoRoute(
+            path: 'history/:shopId/:linkId',
+            builder: (_, state) => HistoryPage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
+              linkId: OpaqueId.fromJson(state.pathParameters['linkId']).value,
+            ),
+          ),
+          GoRoute(
             path: 'payment/:shopId/:linkId',
             builder: (_, state) => PaymentPage(
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']),
@@ -99,7 +107,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(path: '/customer', builder: (_, _) => const CustomerShell()),
+      GoRoute(
+        path: '/customer',
+        builder: (_, _) => const CustomerShell(),
+        routes: [
+          GoRoute(
+            path: 'history/:shopId',
+            builder: (_, state) => HistoryPage(
+              shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
+            ),
+          ),
+        ],
+      ),
     ],
     errorBuilder: (_, _) => const StatusPage(
       title: 'Page unavailable',

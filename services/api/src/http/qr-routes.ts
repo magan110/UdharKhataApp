@@ -3,7 +3,8 @@ import type { Authenticator } from '../auth/authenticator';
 import { SessionService } from '../auth/sessions';
 import { requireRole, requireOwnedShop } from '../policy/access';
 import { resolveCustomer } from '../qr/resolve';
-import { linkCustomer, readLink, listLinks } from '../ledger/link';
+import { linkCustomer, readLink } from '../ledger/link';
+import {pagedLinks} from '../ledger/reads';
 import { HttpError, jsonResponse } from './errors';
 import { idSchema, readJson } from './schemas';
 export const publicQrSchema=z.string().length(64).regex(/^[0-9a-f]{64}$/);
@@ -37,8 +38,7 @@ export function qrRoutes(options:Options) {
   }},
   {path:'/v1/shops/{shopId}/customers',method:'GET',handler:async(request:Request,requestId:string)=>{
     const principal=requireRole(await options.authenticate(request),'owner'),url=new URL(request.url);
-    if(url.search)throw new HttpError(400,'VALIDATION_ERROR','api.validationError');
-    return jsonResponse(await listLinks(dbRequired(options.db),principal,pathId(url.pathname.split('/')[3])),requestId);
+    return jsonResponse(await pagedLinks(dbRequired(options.db),principal,pathId(url.pathname.split('/')[3]),request),requestId);
   }},
   {path:'/v1/shops/{shopId}/customers/{linkId}',method:'GET',handler:async(request:Request,requestId:string)=>{
     const principal=requireRole(await options.authenticate(request),'owner'),parts=new URL(request.url).pathname.split('/');

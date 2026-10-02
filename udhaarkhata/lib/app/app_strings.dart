@@ -1,5 +1,13 @@
 // Stable message keys are shared with the API. Hindi resources arrive in D18.
 String errorMessage(String key) => switch (key) {
+  'api.cursorInvalid' =>
+    'This snapshot has expired. Refresh to open the latest records.',
+  'history.invalidResponse' =>
+    'The server records could not be verified. Refresh and try again.',
+  'history.failed' =>
+    'Could not load the records. Check your connection and try again.',
+  'api.capacityUnavailable' =>
+    'The server cannot provide this total right now. Please try again later.',
   'payment.pending' => 'Check the saved payment before entering another credit or payment for this customer.',
   'payment.creditPending' =>
     'Check the saved credit before recording a payment for this customer.',

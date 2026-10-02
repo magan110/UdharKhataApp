@@ -1,9 +1,11 @@
 import { ledgerRoutes } from './ledger-routes';
+import {readRoutes} from '../ledger/read-routes';
+import {totals} from '../ledger/reads';
 import { qrRoutes } from './qr-routes';
 import type { Authenticator } from '../auth/authenticator';
 import { unavailableAuthenticator } from '../auth/authenticator';
-import { requirePrincipal, requireRole, requireOwnedShop } from '../policy/access';
-import { createShop, shopJson, shopSummary } from '../shop/service';
+import { requirePrincipal, requireRole } from '../policy/access';
+import { createShop, shopSummary } from '../shop/service';
 import { ownQr, rotateQr } from '../qr/service';
 import { logRequest, type RequestLogger } from '../telemetry/request-event';
 import { errorResponse, HttpError, jsonResponse } from './errors';
@@ -25,6 +27,7 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
   const unavailable = () => { throw new HttpError(503, 'FEATURE_UNAVAILABLE', 'api.featureUnavailable', true); };
   const routes: Route[] = [
     ...ledgerRoutes({db:options.db,authenticate,sessions:options.sessions}),
+    ...readRoutes({db:options.db,authenticate}),
     ...qrRoutes({db:options.db,authenticate,sessions:options.sessions}),
     { path: '/health', method: 'GET', handler: async (_, requestId) => jsonResponse({ status: 'ok' }, requestId) },
     { path: '/v1/auth/google', method: 'POST', handler: async (request,requestId) => {
@@ -67,7 +70,7 @@ export function createApp(options: { db?:D1Database; authenticate?: Authenticato
       const parsed=idSchema.safeParse(new URL(request.url).pathname.split('/')[3]);
       if(!parsed.success) throw new HttpError(400,'VALIDATION_ERROR','api.validationError');
       if(!options.db) return unavailable();
-      return jsonResponse(shopJson(await requireOwnedShop(options.db,principal,parsed.data)),requestId);
+      return jsonResponse(await totals(options.db,principal,parsed.data),requestId);
     }},
     {path:'/v1/me/qr',method:'GET',handler:async(request,requestId)=>{
       const principal=requireRole(await authenticate(request),'customer');
