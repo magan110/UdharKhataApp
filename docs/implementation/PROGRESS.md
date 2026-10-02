@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** D10 — local implementation and verification; staging migration/deployment, stable-key APK and phone gate pending. User confirmed D09 phone acceptance on 2 October 2026 (“D09 passed start d10”). D01–D09 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. Detailed device/release matrices remain explicit below. **Last updated:** 2 October 2026.
+**Current phase:** D10 — approved staging deployment and stable-key APK verified; phone acceptance pending. User confirmed D09 phone acceptance on 2 October 2026 (“D09 passed start d10”). D01–D09 checkpoints are complete based on recorded local/cloud evidence and user-reported phone checks. Detailed device/release matrices remain explicit below. **Last updated:** 2 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -17,7 +17,7 @@
 | D07 | Done | 2026-10-01 | Scoped scan/confirm/link, staging and stable APK verified; user confirmed owner addition and repaired customer My shops visibility. Detailed camera/invalid QR release regression remains explicit below. |
 | D08 | Done | 2026-10-01 | Credit/recovery, staging and stable APK verified; user supplied matching owner/customer balance screenshots and confirmed signout/calendar fixes. Detailed retry/device matrix remains below. |
 | D09 | Done | 2026-10-02 | Recorded local/cloud checks and stable APK audit; user confirmed phone acceptance. Detailed device regression remains a release requirement. |
-| D10 | Local implementation; delivery/phone gate pending | 2026-10-02 | Scoped paginated reads, fixed ledger snapshots, owner totals, dated owner/customer screens and local tests implemented. Local/cloud/device boundaries and checks are recorded below. |
+| D10 | Deployed; phone gate pending | 2026-10-02 | Local verification/review, frozen-source cloud CI, staging migration/deployment/ten authorization smoke checks and exact persistent-key APK audit passed. |
 | D11-D24 | Not started | - | Follow the order in [README](README.md). |
 
 ### D04 evidence (2026-10-01)
@@ -305,3 +305,28 @@ Local Android compile was attempted with both existing public staging Dart defin
 Remaining delivery gate: explicit approval to push D10, apply additive staging migration 0003, deploy the reviewed Worker and run the existing persistent-key APK workflow (its token must include staging D1 Edit). No Google/OAuth/signing change is needed. D09 Worker `ea8507f5-d6cf-4c65-995e-10109ddd0566` is the code rollback candidate; retain the additive table. After cloud CI/build/smoke pass, phone acceptance must open both role histories, verify dated ₹500/₹200/₹300 and repeat receipt behavior, load multiple pages, refresh after newer entries, verify Cash/UPI/notes/due dates and error recovery, and retain signout/calendar behavior. D11 remains blocked until this online gate is evidenced.
 
 D10 final local verification: Worker 83 runtime tests plus one Node configuration test passed; typecheck/lint clean; coverage 431/435 lines (99.08%), 293/355 branches (82.53%), above the required 80%. Local D1 migrations applied and repeat/foreign-key checks passed (no violations). Worker dry-run bundle passed with XDG_CONFIG_HOME/WRANGLER_LOG_PATH under /tmp; npm audit found zero vulnerabilities. Flutter final full suite passed 95 tests, coverage 1957/2171 lines (90.14%); normal `flutter analyze --no-pub` reported no issues with the supported analyzer cache override, and formatter check is clean. Document links/navigation and `git diff --check` passed. New source and tests remain reviewable in the local working tree on branch `work`; no commit, push, remote change or distributable D10 APK is claimed.
+
+### D10 approved staging publication (2 October 2026)
+
+User explicitly approved pushing D10, applying its staging migration, deploying and building the existing stable-key APK. Source `bfcfa5976d60be6b6babd41b67b5b1b6e2364f3b` fast-forwarded remote main from D09 evidence commit `6b05f22a8e13c531e655cfcf59e12f770771cea9`; no force push or unrelated user changes. Local feature branch is `codex/d10-history`.
+
+Cloud CI [36988574048](https://github.com/magan110/UdharKhataApp/actions/runs/36988574048) passed Flutter locked dependencies/format/analyze/tests/coverage, Worker typecheck/lint/tests/coverage/local migrations/foreign keys/dry-run/audit and documentation checks against that exact source. Staging workflow [36988735050](https://github.com/magan110/UdharKhataApp/actions/runs/36988735050) verified the existing Worker/D1/Google target, applied `0003_cursor_keys.sql` successfully to existing staging D1 `a9e24716-d05a-46f7-8189-1bf2d8b05c46`, and deployed Worker version `4e4750d1-ffc1-44bc-9d3a-fde6520802be`. The migration result was confirmed in its public step log; report accurately records migration-command completion rather than an invented count. The existing token's permissions sufficed; no credential or Google configuration change was made.
+
+Deployment health/authorization checks passed. Independent read-only HTTPS smoke also passed ten checks: health 200/ok; unauthenticated profile, shop summary, paginated customers, owner history, own ledgers, customer history, owner/customer balances and synthetic credit POST all returned 401 AUTH_REQUIRED. Protected requests used denied synthetic IDs, made no authenticated financial effect and accessed no real customer data. These checks establish routing/authorization denial, not authenticated phone history behavior. D09 Worker `ea8507f5-d6cf-4c65-995e-10109ddd0566` remains the code rollback candidate; keep the additive table.
+
+APK workflow [36988634918](https://github.com/magan110/UdharKhataApp/actions/runs/36988634918) was started with frozen feature source and both original public staging Dart defines plus the unchanged registered certificate fingerprint. Delivery is not claimed until that exact APK's audit and artifact metadata pass. D10 phone acceptance remains pending; D11 has not begun.
+
+### D10 stable cloud APK delivery (2 October 2026)
+
+APK workflow [36988634918](https://github.com/magan110/UdharKhataApp/actions/runs/36988634918) succeeded against frozen feature source `bfcfa5976d60be6b6babd41b67b5b1b6e2364f3b`. The existing `ANDROID_DEBUG_KEYSTORE_B64` secret restored the persistent key; locked Flutter dependencies and both exact public staging Dart defines were used. The workflow verified the exact resulting APK using apksigner, aapt and kernel configuration inspection, then uploaded APK/public audit and removed the temporary signing key. Every build/audit/upload/cleanup step succeeded; its public audit annotation and artifact metadata were retrieved and checked separately.
+
+- Application ID: `com.udhaarkhata.app`.
+- Exact signing SHA-1: `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6`, unchanged from the user-verified persistent key. No Google OAuth change is needed.
+- Exact APK SHA-256: `113e3148d6c314550239ab8aa51d4f0a140c8bf33727bc649d0bdbfeef951492`.
+- Artifact: [11218775871 download ZIP](https://github.com/magan110/UdharKhataApp/actions/runs/36988634918/artifacts/11218775871), `Udhaar-Khata-debug-APK`, 104,443,549 bytes, unexpired when checked. Expires 16 October 2026 at 14:48:26 IST. GitHub sign-in may be required; extract `app-debug.apk` and install over the existing stable-key build.
+- Artifact ZIP digest (different from APK digest): `sha256:e2a38c79cdd692bf0507439746b8b4449a9507a4f20a02630fe843f2ecf8b34f`.
+- Public defines: `API_BASE_URL=https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev`; `GOOGLE_SERVER_CLIENT_ID=1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com`.
+
+The standard GitHub artifact redirect could not be downloaded into this workspace (403); no local exact-byte audit is claimed. Exact signing/package/configuration verification was performed successfully on the cloud runner, and its public audit, successful steps and artifact metadata were independently checked through GitHub API. The provided URL is the normal authenticated GitHub artifact ZIP, not an anonymous raw APK link. No signing key or credential was exposed or committed.
+
+D10 is deployed with phone acceptance pending. On the new APK: owner customer → View transaction history and customer My shops → shop should both show dated credit/payment entries and matching balance; verify notes, due-date DD-MM-YYYY, Cash/UPI labels, refresh and Load more where available, plus signout/calendar regression. Synthetic API tests establish paging/snapshot/retry/isolation invariants; these do not replace phone evidence. D11 has not started.
