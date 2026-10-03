@@ -272,7 +272,8 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
 }
 
 class SavedCustomersView extends ConsumerWidget {
-  const SavedCustomersView({super.key});
+  const SavedCustomersView({super.key, this.previewLimit});
+  final int? previewLimit;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final links = ref.watch(savedCustomersProvider).asData?.value ?? [];
@@ -281,7 +282,7 @@ class SavedCustomersView extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Saved customer ledgers',
+          AppStrings.of(context).translate('Saved customer ledgers'),
           style: Theme.of(context).textTheme.titleLarge,
         ),
         Text(
@@ -289,7 +290,7 @@ class SavedCustomersView extends ConsumerWidget {
             'Saved on this device. Balances may include Pending entries.',
           ),
         ),
-        for (final link in links)
+        for (final link in previewLimit == null ? links : links.take(previewLimit!))
           ListTile(
             title: Text(
               link['nickname'] as String? ?? link['display_name'] as String,

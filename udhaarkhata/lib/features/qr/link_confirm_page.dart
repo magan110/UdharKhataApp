@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_strings.dart';
+import '../../app/ui/identity_panel.dart';
 import '../../core/network/app_failure.dart';
 import 'resolve_controller.dart';
 
@@ -36,13 +37,7 @@ class _LinkConfirmationState extends State<LinkConfirmation> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           SizedBox(height: 16),
-          Semantics(
-            header: true,
-            child: Text(
-              state.attempt?.displayName ?? state.customer!.displayName,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
+          IdentityPanel(displayName: state.attempt?.displayName ?? state.customer!.displayName),
           SizedBox(height: 16),
           Text(
             AppStrings.of(context).translate(

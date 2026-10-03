@@ -77,7 +77,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/owner',
-        builder: (context, _) => OwnerShell(),
+        builder: (context, state) => OwnerShell(key: ValueKey(ref.read(sessionProvider).value?.id.value), tab: state.uri.queryParameters['tab'] ?? ''),
         routes: [
           GoRoute(
             path: 'statement/:shopId/:linkId',
@@ -132,7 +132,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/customer',
-        builder: (context, _) => CustomerShell(),
+        builder: (context, state) => CustomerShell(key: ValueKey(ref.read(sessionProvider).value?.id.value), tab: state.uri.queryParameters['tab'] ?? ''),
         routes: [
           GoRoute(
             path: 'disputes/:shopId',

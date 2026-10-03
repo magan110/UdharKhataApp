@@ -7,7 +7,9 @@ import '../../core/auth/account.dart';
 import '../../core/network/app_failure.dart';
 import '../auth/session_controller.dart';
 import '../qr/owner_qr_model.dart';
-import 'money.dart';
+import '../../app/ui/money_format.dart';
+import '../../app/ui/balance_panel.dart';
+import '../../app/ui/state_panel.dart';
 import 'ledger_repository.dart';
 import 'device_ledger_repository.dart';
 import 'local_ledger_view.dart';
@@ -75,7 +77,11 @@ class OnlineRecordsView extends ConsumerStatefulWidget {
     required this.kind,
     this.shopId,
     this.linkId,
+    this.previewLimit,
+    this.showControls = true,
   });
+  final int? previewLimit;
+  final bool showControls;
   final String path;
   final OnlineReadKind kind;
   final String? shopId, linkId;
@@ -263,10 +269,8 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
               '${AppStrings.of(context).translate('Last successful sync')}: ${historyDate(snapshot.snapshotAtMs)} · ${AppStrings.of(context).translate('Offline: newer owner changes may be missing.')}',
             ),
           if (widget.kind == OnlineReadKind.summary) ...[
-            Text(
-              '${AppStrings.of(context).translate('Total customers owe you')} ${formatPaise(snapshot.total!)}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            BalancePanel(amountPaise: snapshot.total!, directionLabel: AppStrings.of(context).translate('Total customers owe you'), source: BalanceSource.confirmed, snapshotAtMs: snapshot.snapshotAtMs, offline: snapshot.offline),
+            Text(AppStrings.of(context).translate('Excludes entries waiting to sync.')),
             Text(
               '${snapshot.customerCount} ${AppStrings.of(context).translate('customer ledgers, including retained ledgers.')}',
             ),
@@ -283,14 +287,14 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
                   ? AppStrings.of(context).text(
                       'owner.owes',
                       values: {
-                        'amount': formatPaise(snapshot.balance!.balancePaise),
+                        'amount': formatDisplayPaise(snapshot.balance!.balancePaise),
                       },
                     )
                   : AppStrings.of(context).text(
                       'customer.owes',
                       values: {
                         'shop': snapshot.shopName!,
-                        'amount': formatPaise(snapshot.balance!.balancePaise),
+                        'amount': formatDisplayPaise(snapshot.balance!.balancePaise),
                       },
                     ),
               style: Theme.of(context).textTheme.titleLarge,
@@ -322,8 +326,12 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
               child: Text(AppStrings.of(context).translate('View disputes')),
             ),
           ],
-          for (final record in _records) _record(context, record),
+          for (final record in widget.previewLimit == null ? _records : _records.take(widget.previewLimit!)) _record(context, record),
         ],
+        if (_error != null && widget.kind == OnlineReadKind.summary && snapshot == null)
+          StatePanel(title: AppStrings.of(context).translate('Confirmed total unavailable'), message: AppStrings.of(context).translate('Refresh for newer changes.')),
+        if (_error is AppFailure && widget.previewLimit != null && widget.kind == OnlineReadKind.customers && ((_error as AppFailure).retryable || (_error as AppFailure).code == 'NETWORK_ERROR'))
+          SavedCustomersView(previewLimit: widget.previewLimit),
         if (_error != null) ...[
           if (snapshot != null)
             Text(
@@ -354,12 +362,12 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
               ),
             ),
           ),
-        if (_cursor != null && _error == null)
+        if (widget.showControls && _cursor != null && _error == null)
           TextButton(
             onPressed: _loading ? null : () => _load(),
             child: Text(AppStrings.of(context).translate('Load more')),
           ),
-        TextButton(
+        if (widget.showControls) TextButton(
           onPressed: _loading ? null : () => _load(restart: true),
           child: Text(AppStrings.of(context).translate(_refresh)),
         ),
@@ -376,11 +384,11 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
           children: [
             Text(switch (e.kind) {
               'credit' =>
-                '${AppStrings.of(context).translate('Credit')} ${formatPaise(e.amount)}',
+                '${AppStrings.of(context).translate('Credit')} ${formatDisplayPaise(e.amount)}',
               'payment' =>
-                '${AppStrings.of(context).translate(e.method == 'cash' ? 'Cash' : 'UPI')} ${AppStrings.of(context).translate('Payment received').toLowerCase()} ${formatPaise(e.amount)}',
+                '${AppStrings.of(context).translate(e.method == 'cash' ? 'Cash' : 'UPI')} ${AppStrings.of(context).translate('Payment received').toLowerCase()} ${formatDisplayPaise(e.amount)}',
               _ =>
-                '${AppStrings.of(context).translate('Correction')} ${e.effect < 0 ? '-' : '+'}${formatPaise(e.effect.abs())}',
+                '${AppStrings.of(context).translate('Correction')} ${e.effect < 0 ? '-' : '+'}${formatDisplayPaise(e.effect.abs())}',
             }, style: Theme.of(context).textTheme.titleMedium),
             Text(
               '${AppStrings.of(context).translate('Entry date')}: ${historyDate(e.occurredAtMs)}',
@@ -415,7 +423,7 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
       subtitle: Text(
         AppStrings.of(
           context,
-        ).text('owner.owes', values: {'amount': formatPaise(c.balance.value)}),
+        ).text('owner.owes', values: {'amount': formatDisplayPaise(c.balance.value)}),
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
@@ -426,7 +434,7 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
     ShopLedger s => ListTile(
       title: Text(s.name),
       subtitle: Text(
-        '${AppStrings.of(context).text('customer.owes', values: {'shop': s.name, 'amount': formatPaise(s.balance)})} · ${AppStrings.of(context).translate('Last server read')}',
+        '${AppStrings.of(context).text('customer.owes', values: {'shop': s.name, 'amount': formatDisplayPaise(s.balance)})} · ${AppStrings.of(context).translate('Last server read')}',
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push('/customer/history/${s.shopId}'),

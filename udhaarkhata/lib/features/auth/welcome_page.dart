@@ -20,7 +20,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
     body: SafeArea(
       child: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 420),
             child: Column(
@@ -71,9 +71,9 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  ref.watch(authRepositoryProvider).canSignIn
+                  AppStrings.of(context).translate(ref.watch(authRepositoryProvider).canSignIn
                       ? 'Your account role is fixed when you first register.'
-                      : 'Sign-in needs the approved Google configuration.',
+                      : 'Sign-in needs the approved Google configuration.'),
                   textAlign: TextAlign.center,
                 ),
               ],

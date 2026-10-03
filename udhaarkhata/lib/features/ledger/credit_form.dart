@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_strings.dart';
+import '../../app/ui/identity_panel.dart';
+import '../../app/ui/financial_panels.dart';
+import '../../app/ui/money_format.dart';
 import '../../core/network/app_failure.dart';
 import '../../core/network/contracts.dart';
 import '../auth/session_controller.dart';
@@ -183,7 +186,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
       appBar: AppBar(title: Text(strings.translate('Record credit'))),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -213,83 +216,28 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                   child: Text(strings.translate('Try again')),
                 ),
               ] else ...[
-                Text(
-                  customer.displayName,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                if (customer.nickname != null)
-                  Text(
-                    strings.format(
-                      'Shop nickname: {name}',
-                      values: {'name': customer.nickname!},
-                    ),
-                  ),
+                IdentityPanel(displayName: customer.displayName, nickname: customer.nickname),
                 const SizedBox(height: 16),
                 if (_savedLocal) ...[
-                  Text(strings.translate('Credit saved · Pending')),
-                  Text(
-                    strings.format(
-                      'Credit recorded on this device: {amount}',
-                      values: {'amount': formatPaise(_attempt!.amountPaise)},
-                    ),
-                  ),
-                  if (_localBalance != null)
-                    Text(
-                      '${strings.text('owner.owes', values: {'amount': formatPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}',
-                    ),
-                  Text(
-                    strings.translate(
-                      'Pending entries are only on this device. They are not backed up to the cloud.',
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: () => context.pop(),
-                    child: Text(strings.translate('Back to customer')),
-                  ),
+                  SaveReceipt(title: strings.translate('Credit saved · Pending'), amountPaise: _attempt!.amountPaise, pending: true, details: [if (_localBalance != null) Text('${strings.text('owner.owes', values: {'amount': formatDisplayPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}')], onReturn: () => context.pop()),
                 ] else if (receipt != null) ...[
-                  Text(strings.translate('Credit acknowledged by server')),
-                  Text(
-                    strings.format(
-                      'Credit recorded: {amount}',
-                      values: {'amount': formatPaise(_attempt!.amountPaise)},
-                    ),
-                  ),
-                  Text(
-                    strings.format(
-                      'Balance when this credit was recorded: {balance}',
-                      values: {
-                        'balance': strings.text(
-                          'owner.owes',
-                          values: {'amount': formatPaise(receipt.balancePaise)},
-                        ),
-                      },
-                    ),
-                  ),
-                  Text(
-                    strings.translate(
-                      'Refresh the customer ledger to see the latest balance.',
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: () => context.pop(),
-                    child: Text(strings.translate('Back to customer')),
-                  ),
+                  SaveReceipt(title: strings.translate('Credit acknowledged by server'), amountPaise: _attempt!.amountPaise, pending: false, details: [Text(strings.format('Balance when this credit was recorded: {balance}', values: {'balance': strings.text('owner.owes', values: {'amount': formatDisplayPaise(receipt.balancePaise)})})), Text(strings.translate('Refresh the customer ledger to see the latest balance.'))], onReturn: () => context.pop()),
                 ] else if (_review) ...[
                   Text(
                     strings.format(
                       'Credit amount: {amount}',
-                      values: {'amount': formatPaise(amount!)},
+                      values: {'amount': formatDisplayPaise(amount!)},
                     ),
                   ),
                   Text(
                     _repo is DeviceLedgerRepository && _attempt == null
                         ? strings.format(
                             'Customer owes you {amount} more in the provisional balance after saving.',
-                            values: {'amount': formatPaise(amount)},
+                            values: {'amount': formatDisplayPaise(amount)},
                           )
                         : strings.format(
                             'Customer owes you {amount} more after this credit is acknowledged.',
-                            values: {'amount': formatPaise(amount)},
+                            values: {'amount': formatDisplayPaise(amount)},
                           ),
                   ),
                   if (note != null)
@@ -349,7 +297,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          '${strings.text('owner.owes', values: {'amount': formatPaise(customer.balance.value)})} ${strings.translate(_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
+                          '${strings.text('owner.owes', values: {'amount': formatDisplayPaise(customer.balance.value)})} ${strings.translate(_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
                         ),
                         Text(
                           strings.translate(

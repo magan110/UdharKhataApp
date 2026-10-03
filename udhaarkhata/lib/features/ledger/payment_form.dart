@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_strings.dart';
+import '../../app/ui/identity_panel.dart';
+import '../../app/ui/financial_panels.dart';
+import '../../app/ui/money_format.dart';
 import '../../core/network/app_failure.dart';
 import '../../core/network/contracts.dart';
 import '../auth/session_controller.dart';
@@ -220,8 +223,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         method = attempt?.paymentMethod ?? _method;
     final snapshot = _rejectionBalance;
     final balanceText = snapshot == null
-        ? '${strings.text('owner.owes', values: {'amount': formatPaise(customer?.balance.value ?? 0)})} ${strings.translate(_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}'
-        : '${strings.text('owner.owes', values: {'amount': formatPaise(snapshot.balancePaise)})} ${strings.format('(server balance as of {time}).', values: {'time': _displayTime(snapshot.asOfAtMs)})}';
+        ? '${strings.text('owner.owes', values: {'amount': formatDisplayPaise(customer?.balance.value ?? 0)})} ${strings.translate(_repo is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}'
+        : '${strings.text('owner.owes', values: {'amount': formatDisplayPaise(snapshot.balancePaise)})} ${strings.format('(server balance as of {time}).', values: {'time': _displayTime(snapshot.asOfAtMs)})}';
     final message = errorMessage(
       _error is AppFailure
           ? (_error as AppFailure).messageKey
@@ -236,7 +239,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -260,17 +263,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   child: Text(AppStrings.of(context).translate('Try again')),
                 ),
               ] else ...[
-                Text(
-                  customer.displayName,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                if (customer.nickname != null)
-                  Text(
-                    strings.format(
-                      'Shop nickname: {name}',
-                      values: {'name': customer.nickname!},
-                    ),
-                  ),
+                IdentityPanel(displayName: customer.displayName, nickname: customer.nickname),
                 SizedBox(height: 16),
                 Text(
                   AppStrings.of(context).translate(
@@ -279,68 +272,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 ),
                 SizedBox(height: 16),
                 if (_savedLocal) ...[
-                  Text(
-                    AppStrings.of(context).translate('Payment saved · Pending'),
-                  ),
-                  Text(
-                    strings.format(
-                      '{method} received on this device: {amount}',
-                      values: {
-                        'method': strings.translate(
-                          method == 'cash' ? 'Cash' : 'UPI',
-                        ),
-                        'amount': formatPaise(attempt!.amountPaise),
-                      },
-                    ),
-                  ),
-                  if (_localBalance != null)
-                    Text(
-                      '${strings.text('owner.owes', values: {'amount': formatPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}',
-                    ),
-                  Text(
-                    AppStrings.of(context).translate(
-                      'Pending entries are only on this device. They are not backed up to the cloud.',
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: () => context.pop(),
-                    child: Text(
-                      AppStrings.of(context).translate('Back to customer'),
-                    ),
-                  ),
+                  SaveReceipt(title: strings.translate('Payment saved · Pending'), amountPaise: attempt!.amountPaise, pending: true, details: [Text(strings.format('{method} received on this device: {amount}', values: {'method': strings.translate(method == 'cash' ? 'Cash' : 'UPI'), 'amount': formatDisplayPaise(attempt.amountPaise)})), if (_localBalance != null) Text('${strings.text('owner.owes', values: {'amount': formatDisplayPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}')], onReturn: () => context.pop()),
                 ] else if (receipt != null) ...[
-                  Text(
-                    AppStrings.of(context)
-                        .translate('Payment acknowledged by server'),
-                  ),
-                  Text(
-                    strings.format(
-                      '{method} received: {amount}',
-                      values: {
-                        'method': strings.translate(
-                          method == 'cash' ? 'Cash' : 'UPI',
-                        ),
-                        'amount': formatPaise(attempt!.amountPaise),
-                      },
-                    ),
-                  ),
-                  Text(
-                    strings.format(
-                      'Balance when this payment was recorded: Customer owes you {amount}',
-                      values: {'amount': formatPaise(receipt.balancePaise)},
-                    ),
-                  ),
-                  Text(
-                    AppStrings.of(context).translate(
-                      'Refresh the customer ledger to see the latest balance.',
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: () => context.pop(),
-                    child: Text(
-                      AppStrings.of(context).translate('Back to customer'),
-                    ),
-                  ),
+                  SaveReceipt(title: strings.translate('Payment acknowledged by server'), amountPaise: attempt!.amountPaise, pending: false, details: [Text(strings.format('{method} received: {amount}', values: {'method': strings.translate(method == 'cash' ? 'Cash' : 'UPI'), 'amount': formatDisplayPaise(attempt.amountPaise)})), Text(strings.format('Balance when this payment was recorded: Customer owes you {amount}', values: {'amount': formatDisplayPaise(receipt.balancePaise)})), Text(strings.translate('Refresh the customer ledger to see the latest balance.'))], onReturn: () => context.pop()),
                 ] else if (_review) ...[
                   Text(
                     strings.format(
@@ -349,7 +283,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                         'method': strings.translate(
                           method == 'cash' ? 'Cash' : 'UPI',
                         ),
-                        'amount': formatPaise(amount!),
+                        'amount': formatDisplayPaise(amount!),
                       },
                     ),
                   ),
