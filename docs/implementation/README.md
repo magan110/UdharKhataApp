@@ -76,3 +76,7 @@ The selected tooling aligns with [Flutter architecture](https://docs.flutter.dev
 ## D13–D21 continuous delivery
 
 The user authorized one continuous synthetic staging candidate and final APK. See [design](../superpowers/specs/2026-10-02-d13-d21-design.md), [plan](../superpowers/plans/2026-10-02-d13-d21.md), [operations](../ops/private-test-operations.md) and [evidence/device gates](../verification/d21-evidence.md). Mandatory unperformed device, policy and real-backup gates remain explicit; D22–D24 are outside scope.
+
+## UX01 — Separate complete app UI/UX redesign
+
+User-requested workstream after the D21 candidate: [UX01 phase](06-ui-ux-redesign.md) and [dedicated agent brief](../agents/ui-ux-redesign-agent.md). Scope covers every shipped screen and state, design system, navigation, English/Hindi, accessibility and a redesigned phone-test APK. Design discovery is started; product implementation awaits a concrete reviewed design and implementation plan. UX01 is separate from D22–D24 and does not replace their pilot/release gates.

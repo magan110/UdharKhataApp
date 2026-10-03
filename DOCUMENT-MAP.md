@@ -69,3 +69,10 @@ When a decision changes, update its owning document and downstream contract/test
 | [D13–D21 implementation plan](docs/superpowers/plans/2026-10-02-d13-d21.md) | D13–D21 implementation plan; source-backed candidate scope and evidence. |
 | [Private-test operations](docs/ops/private-test-operations.md) | Private-test operations; source-backed candidate scope and evidence. |
 | [D21 candidate evidence](docs/verification/d21-evidence.md) | D21 candidate evidence; source-backed candidate scope and evidence. |
+
+## UX01 complete app redesign
+
+| Document | Purpose |
+|---|---|
+| [UX01 UI/UX redesign](docs/implementation/06-ui-ux-redesign.md) | Separate full-app redesign phase, complete screen/state coverage, design review and verification gates. |
+| [UI/UX agent brief](docs/agents/ui-ux-redesign-agent.md) | Persistent mission, scope, ownership and handoff instructions for the dedicated redesign agent. |

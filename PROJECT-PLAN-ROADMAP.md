@@ -173,3 +173,7 @@ A request to add an excluded feature, new role/platform, automated payment/messa
 ## 9. Planning assumptions and next update
 
 The schedule starts when the team, environments and research participants are available. Re-estimate after discovery and at each phase gate using actual velocity. Do not treat vendor free-tier limits as a permanent operating budget; verify current terms before pilot and launch. The next roadmap revision should name the actual owners, start date, supported Android devices, budget ceiling and pilot locations when those are known.
+
+## UX01 — Complete app UI/UX redesign (added 3 October 2026)
+
+The user requested a dedicated UI/UX agent and separate phase after D21. [UX01](docs/implementation/06-ui-ux-redesign.md) covers the complete Android owner/customer experience, with design exploration, shared visual system, all screens/states, English/Hindi accessibility and verified APK delivery. It changes presentation and interaction structure while preserving financial and access invariants. This workstream is separate from D22–D24 and introduces no claim of pilot, public-release or physical acceptance.

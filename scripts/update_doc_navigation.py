@@ -10,6 +10,8 @@ START = "<!-- DOC_NAV_START -->"
 END = "<!-- DOC_NAV_END -->"
 
 LABELS = {
+    "docs/implementation/06-ui-ux-redesign.md": "UX01 UI/UX redesign",
+    "docs/agents/ui-ux-redesign-agent.md": "UI/UX agent brief",
     'docs/superpowers/specs/2026-10-02-d13-d21-design.md': 'D13–D21 design',
     'docs/superpowers/plans/2026-10-02-d13-d21.md': 'D13–D21 implementation plan',
     'docs/ops/private-test-operations.md': 'Private-test operations',
@@ -59,6 +61,8 @@ LABELS = {
 
 # Each list is intentionally short and topical. DOCUMENT-MAP.md connects all files.
 RELATED = {
+    "docs/implementation/06-ui-ux-redesign.md": ["docs/agents/ui-ux-redesign-agent.md", "UI-UX-DESIGN-SPEC.md", "WIREFRAMES.md", "docs/implementation/PROGRESS.md"],
+    "docs/agents/ui-ux-redesign-agent.md": ["docs/implementation/06-ui-ux-redesign.md", "AGENTS.md", "USER-PERSONAS.md"],
     'docs/superpowers/specs/2026-10-02-d13-d21-design.md': ['SRS.md', 'SECURITY-REQUIREMENTS.md', 'docs/implementation/PROGRESS.md'],
     'docs/superpowers/plans/2026-10-02-d13-d21.md': ['docs/superpowers/specs/2026-10-02-d13-d21-design.md', 'docs/verification/d21-evidence.md'],
     'docs/ops/private-test-operations.md': ['DEPLOYMENT-RUNBOOK.md', 'MONITORING-LOGGING.md', 'SECURITY-REQUIREMENTS.md', 'docs/verification/d21-evidence.md'],
