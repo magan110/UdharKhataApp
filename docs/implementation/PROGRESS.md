@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** UX01 — Complete app UI/UX redesign, option 1 visual direction selected; full written design approved; implementation plan approved; implementation starting. D13–D21 private staging APK delivery is complete; physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 3 October 2026.
+**Current phase:** UX01 — Complete app UI/UX redesign, option 1 visual direction selected; full written design approved; implementation plan approved; shared UI foundation implemented; remaining tasks in progress. D13–D21 private staging APK delivery is complete; physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 3 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -29,7 +29,7 @@
 | D19 | Private-test implementation complete | 2026-10-02 | Non-destructive privacy requests/access removal and synthetic encrypted restore; actual backup infrastructure and reviewed retention/relink policy pending before real use. |
 | D20 | Implemented | 2026-10-02 | Central rate policies, export limits, redacted request events, compatibility guard and operations guidance. |
 | D21 | Private-test candidate delivered; phone acceptance pending | 2026-10-02 | [Candidate evidence](../verification/d21-evidence.md); verified source, staging deployment and stable-key APK provenance recorded. Physical acceptance pending. |
-| UX01 | Design and plan approved; implementation starting | 2026-10-03 | [Separate redesign phase](06-ui-ux-redesign.md); dedicated `ui_ux_redesign` agent and persistent brief created. No redesigned product screen implemented yet. |
+| UX01 | Implementation in progress | 2026-10-03 | [Separate redesign phase](06-ui-ux-redesign.md); shared UI foundation checkpoint `3f8f65d`, six focused tests passing. Full journeys, captures, final review and APK remain pending. |
 | D22-D24 | Not started | - | Outside this requested private-test candidate. |
 
 ### D04 evidence (2026-10-01)
@@ -509,3 +509,7 @@ UX01 plan handoff: the dedicated agent completed and self-reviewed the [ten-task
 ### UX01 implementation authorization (3 October 2026)
 
 The user replied “Approved” to the completed implementation-plan handoff. The dedicated UI/UX agent will execute all ten tasks continuously in an isolated checkout, preserving the financial/data boundaries and recording task evidence. No repeat per-task approval is required. External publication remains within existing explicit authorization and the plan's boundary; physical/public-use gates remain separate.
+
+### UX01 shared presentation foundation (3 October 2026)
+
+Implementation is isolated on `codex/ux01-redesign` in `/workspace/ux01-redesign`, with unchanged baseline `d75788a` preserved in a separate checkout. Root set candidate version `0.3.0+3`. Dedicated-agent checkpoint `3f8f65d` adds the Clear Counter theme and shared identity, balance, status, state, ledger-row, review and receipt widgets, with integer-only Indian grouping confined to UI presentation. The original money parser/export formatter is unchanged. Six focused tests pass, including large Hindi text/full amounts at 320 logical pixels and 200% scale, measured token contrast and resource parity. Existing static analysis and 236 original Flutter tests passed; the baseline test invocation also picked up one intentional new RED test, so it is not recorded as a clean full-suite baseline. Remaining navigation/journeys/captures/full regression/final review/APK and physical acceptance are pending.
