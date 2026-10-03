@@ -363,5 +363,18 @@
   "final361": "QR checked online.",
   "final362": "Customer identification QR. Show this to the shopkeeper. It does not authorize a payment.",
   "final363": "Refresh QR",
-  "final364": "Sign in again"
+  "final364": "Sign in again",
+  "ux.confirmed": "Confirmed balance",
+  "ux.details": "Details",
+  "ux.edit": "Edit",
+  "ux.home": "Home",
+  "ux.more": "More",
+  "ux.viewAll": "View all",
+  "ux.unavailable": "Confirmed total unavailable",
+  "ux.excludes": "Excludes entries waiting to sync.",
+  "ux.syncDetails": "Sync and saved entries",
+  "ux.savedCustomers": "Saved customers on this phone",
+  "ux.createShop": "Create shop",
+  "ux.creatingShop": "Creating shop…",
+  "ux.enterShop": "Enter your shop name."
 }

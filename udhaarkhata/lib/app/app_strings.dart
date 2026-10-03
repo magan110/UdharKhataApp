@@ -51,6 +51,20 @@ final Map<String, String> _reverse = {
   for (final e in _en.entries) e.value: e.key,
 };
 final Map<String, String> _en = {
+  "ux.confirmed": "Confirmed balance",
+  "ux.details": "Details",
+  "ux.edit": "Edit",
+  "ux.home": "Home",
+  "ux.more": "More",
+  "ux.viewAll": "View all",
+  "ux.unavailable": "Confirmed total unavailable",
+  "ux.excludes": "Excludes entries waiting to sync.",
+  "ux.syncDetails": "Sync and saved entries",
+  "ux.savedCustomers": "Saved customers on this phone",
+  "ux.createShop": "Create shop",
+  "ux.creatingShop": "Creating shop…",
+  "ux.enterShop": "Enter your shop name.",
+
   "ui0": "Cancel",
   "ui1": "Try again",
   "ui2": "Customer",
@@ -441,6 +455,20 @@ final Map<String, String> _en = {
   "final364": "Sign in again",
 };
 final Map<String, String> _hi = {
+  "ux.confirmed": "पुष्ट बकाया",
+  "ux.details": "विवरण",
+  "ux.edit": "बदलें",
+  "ux.home": "होम",
+  "ux.more": "और",
+  "ux.viewAll": "सभी देखें",
+  "ux.unavailable": "पुष्ट कुल बकाया उपलब्ध नहीं है",
+  "ux.excludes": "सिंक होने वाले रिकॉर्ड इसमें शामिल नहीं हैं।",
+  "ux.syncDetails": "सिंक और सहेजे गए रिकॉर्ड",
+  "ux.savedCustomers": "इस फोन पर सहेजे गए ग्राहक",
+  "ux.createShop": "दुकान बनाएँ",
+  "ux.creatingShop": "दुकान बन रही है…",
+  "ux.enterShop": "दुकान का नाम लिखें।",
+
   "ui0": "रद्द करें",
   "ui1": "फिर कोशिश करें",
   "ui2": "ग्राहक",
