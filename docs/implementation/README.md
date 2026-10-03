@@ -79,6 +79,6 @@ The user authorized one continuous synthetic staging candidate and final APK. Se
 
 ## UX01 — Separate complete app UI/UX redesign
 
-User-requested workstream after the D21 candidate: [UX01 phase](06-ui-ux-redesign.md) and [dedicated agent brief](../agents/ui-ux-redesign-agent.md). Scope covers every shipped screen and state, design system, navigation, English/Hindi, accessibility and a redesigned phone-test APK. The user-selected option 1 full-app design is approved; the dedicated agent completed the implementation plan for review before product changes. UX01 is separate from D22–D24 and does not replace their pilot/release gates.
+User-requested workstream after the D21 candidate: [UX01 phase](06-ui-ux-redesign.md) and [dedicated agent brief](../agents/ui-ux-redesign-agent.md). Scope covers every shipped screen and state, design system, navigation, English/Hindi, accessibility and a redesigned phone-test APK. The user-selected option 1 full-app design is approved; the user approved the implementation plan and the dedicated agent is implementing it in an isolated checkout. UX01 is separate from D22–D24 and does not replace their pilot/release gates.
 
-The full written design is approved. The [UX01 implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md) defines concrete task interfaces, ownership, risk checks and final evidence. Dedicated UI/UX agent execution remains selected; plan review precedes product changes.
+The full written design is approved. The [UX01 implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md) defines concrete task interfaces, ownership, risk checks and final evidence. Dedicated UI/UX agent execution remains selected; the user approved the plan on 3 October 2026.

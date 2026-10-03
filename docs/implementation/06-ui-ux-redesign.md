@@ -125,7 +125,7 @@ Recommended navigation proposal: owner Home, Customers and More, with consistent
 
 ## Selected full-app design handoff
 
-The dedicated agent completed the [complete UX01 design specification](../superpowers/specs/2026-10-03-ux01-redesign-design.md) from option 1. The user approved the completed written design on 3 October 2026. The next gate is review of the implementation plan; the selected style and full design do not need reconfirmation.
+The dedicated agent completed the [complete UX01 design specification](../superpowers/specs/2026-10-03-ux01-redesign-design.md) from option 1. The user approved the completed written design on 3 October 2026. The user also approved the implementation plan; the dedicated agent is executing it in the isolated UX01 checkout.
 
 ## Implementation plan
 
