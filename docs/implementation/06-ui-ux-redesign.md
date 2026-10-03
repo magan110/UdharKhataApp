@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [UI/UX agent brief](../agents/ui-ux-redesign-agent.md) · [UI/UX spec](../../UI-UX-DESIGN-SPEC.md) · [Wireframes](../../WIREFRAMES.md) · [Implementation progress](PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification approved; implementation plan complete and awaiting review; product implementation has not begun.
+Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification approved; implementation plan approved; isolated product implementation starting.
 
 ## Mandate and ownership
 
@@ -85,7 +85,7 @@ The app-wide theme/navigation change is architectural: establish the design brie
 - [ ] Capture and inspect current-screen visual evidence.
 - [x] Select visual direction: user chose displayed option 1.
 - [x] Review complete written app design specification: user approved on 3 October 2026.
-- [ ] Review completed implementation plan.
+- [x] Review completed implementation plan: user approved on 3 October 2026.
 - [ ] Execute redesigned UI and record task evidence.
 - [ ] Complete screen/state coverage and regression/visual verification.
 - [ ] Deliver redesigned APK and record phone acceptance.
@@ -129,4 +129,4 @@ The dedicated agent completed the [complete UX01 design specification](../superp
 
 ## Implementation plan
 
-[UX01 implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md) translates the approved design into sequenced presentation tasks and verification. The dedicated UI/UX agent remains the selected executor; the plan must be reviewed before product changes.
+[UX01 implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md) translates the approved design into sequenced presentation tasks and verification. The dedicated UI/UX agent remains the selected executor; the user approved the plan on 3 October 2026 and product implementation is starting.

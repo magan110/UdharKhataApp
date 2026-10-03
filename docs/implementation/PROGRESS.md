@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** UX01 — Complete app UI/UX redesign, option 1 visual direction selected; full written design approved; implementation plan complete and awaiting review. D13–D21 private staging APK delivery is complete; physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 3 October 2026.
+**Current phase:** UX01 — Complete app UI/UX redesign, option 1 visual direction selected; full written design approved; implementation plan approved; implementation starting. D13–D21 private staging APK delivery is complete; physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 3 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -29,7 +29,7 @@
 | D19 | Private-test implementation complete | 2026-10-02 | Non-destructive privacy requests/access removal and synthetic encrypted restore; actual backup infrastructure and reviewed retention/relink policy pending before real use. |
 | D20 | Implemented | 2026-10-02 | Central rate policies, export limits, redacted request events, compatibility guard and operations guidance. |
 | D21 | Private-test candidate delivered; phone acceptance pending | 2026-10-02 | [Candidate evidence](../verification/d21-evidence.md); verified source, staging deployment and stable-key APK provenance recorded. Physical acceptance pending. |
-| UX01 | Full design approved; implementation plan awaiting review | 2026-10-03 | [Separate redesign phase](06-ui-ux-redesign.md); dedicated `ui_ux_redesign` agent and persistent brief created. No redesigned product screen implemented yet. |
+| UX01 | Design and plan approved; implementation starting | 2026-10-03 | [Separate redesign phase](06-ui-ux-redesign.md); dedicated `ui_ux_redesign` agent and persistent brief created. No redesigned product screen implemented yet. |
 | D22-D24 | Not started | - | Outside this requested private-test candidate. |
 
 ### D04 evidence (2026-10-01)
@@ -505,3 +505,7 @@ UX01 full written design handoff: dedicated agent completed the [Clear Counter s
 The user replied “approve” to the full-specification review. This accepts the [complete Clear Counter design](../superpowers/specs/2026-10-03-ux01-redesign-design.md), not only its home-screen visual. The dedicated `ui_ux_redesign` agent is preparing exact presentation file ownership, typed interfaces, meaningful risk tests, full screen/state coverage and final verification. User-requested dedicated-agent execution remains selected; concrete implementation plan review is next. No product code, dependencies, remote changes or redesigned APK have been made in this planning checkpoint.
 
 UX01 plan handoff: the dedicated agent completed and self-reviewed the [ten-task implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md). Primary review verified current source interfaces and corrected resource parity, exact CLI commands, role-tab/Back behavior, settings-body composition and integer-only UI money grouping. Full source/financial boundaries, all screen/modal/state families and synthetic/physical evidence limits are explicit. Documentation/navigation checks pass. Product execution awaits user review of this concrete plan; the requested dedicated-agent execution method is preserved.
+
+### UX01 implementation authorization (3 October 2026)
+
+The user replied “Approved” to the completed implementation-plan handoff. The dedicated UI/UX agent will execute all ten tasks continuously in an isolated checkout, preserving the financial/data boundaries and recording task evidence. No repeat per-task approval is required. External publication remains within existing explicit authorization and the plan's boundary; physical/public-use gates remain separate.
