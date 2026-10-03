@@ -51,6 +51,40 @@ final Map<String, String> _reverse = {
   for (final e in _en.entries) e.value: e.key,
 };
 final Map<String, String> _en = {
+  "ux.correctionConflict": "Correction could not be saved. Refresh the ledger and review the original entry.",
+  "ux.reasonValidation": "Enter a reason of 1–240 characters.",
+  "ux.shop": "Shop",
+  "ux.checkLink": "Check customer link",
+  "ux.confirmCustomer": "Confirm customer",
+  "ux.previousLink": "Your previous confirmation may have succeeded. Connect to the internet and check the same request.",
+  "ux.verifyPerson": "Check that this is the customer in front of you. A copied QR does not prove identity. Adding a customer records no credit or payment.",
+  "ux.checkingLink": "Checking customer link…",
+  "ux.previousRequest": "Check previous request",
+  "ux.addCustomer": "Add customer",
+  "ux.noShops": "No shops are linked to this account.",
+  "ux.noCustomers": "No customers yet. Scan a customer QR to add them.",
+
+  "ux.revision": "Revision",
+  "ux.loadingRecords": "Loading server records",
+
+  "ux.open": "Open",
+  "ux.resolved": "Resolved",
+  "ux.openDisputes": "Open disputes",
+  "ux.resolvedDisputes": "Resolved disputes",
+  "ux.export": "Data export",
+  "ux.shopDeletion": "Shop deletion",
+  "ux.accountDeletion": "Account deletion",
+  "ux.accessRemoval": "Shop access removal",
+  "ux.submitted": "Submitted",
+  "ux.underReview": "Under review",
+  "ux.completed": "Completed",
+  "ux.denied": "Denied",
+
+  "ux.refreshTotals": "Refresh totals",
+  "ux.refreshCustomers": "Refresh customers",
+  "ux.refreshShops": "Refresh shops",
+  "ux.refreshHistory": "Refresh history",
+
   "ux.resolve": "Resolve",
   "ux.resolveDispute": "Resolve dispute",
   "ux.noDisputes": "No disputes yet.",
@@ -463,6 +497,43 @@ final Map<String, String> _en = {
   "final364": "Sign in again",
 };
 final Map<String, String> _hi = {
+  "ux.correctionConflict":
+      "सुधार सहेजा नहीं जा सका। खाता ताज़ा करें और मूल रिकॉर्ड जाँचें।",
+  "ux.reasonValidation": "1 से 240 अक्षरों में कारण लिखें।",
+  "ux.shop": "दुकान",
+  "ux.checkLink": "ग्राहक का जुड़ाव जाँचें",
+  "ux.confirmCustomer": "ग्राहक की पुष्टि करें",
+  "ux.previousLink":
+      "पिछली पुष्टि सफल हो सकती है। इंटरनेट से जुड़कर उसी अनुरोध की जाँच करें।",
+  "ux.verifyPerson": "जाँचें कि यही ग्राहक आपके सामने है। QR की कॉपी पहचान का प्रमाण नहीं है। ग्राहक जोड़ने से उधार या भुगतान दर्ज नहीं होता।",
+  "ux.checkingLink": "ग्राहक का जुड़ाव जाँच रहे हैं…",
+  "ux.previousRequest": "पिछला अनुरोध जाँचें",
+  "ux.addCustomer": "ग्राहक जोड़ें",
+  "ux.noShops": "इस खाते से कोई दुकान जुड़ी नहीं है।",
+  "ux.noCustomers":
+      "अभी कोई ग्राहक नहीं है। जोड़ने के लिए ग्राहक का QR स्कैन करें।",
+
+  "ux.revision": "संशोधन",
+  "ux.loadingRecords": "सर्वर के रिकॉर्ड खुल रहे हैं",
+
+  "ux.open": "खुला",
+  "ux.resolved": "समाधान हो गया",
+  "ux.openDisputes": "खुले विवाद",
+  "ux.resolvedDisputes": "समाधान किए गए विवाद",
+  "ux.export": "डेटा निर्यात",
+  "ux.shopDeletion": "दुकान मिटाना",
+  "ux.accountDeletion": "खाता मिटाना",
+  "ux.accessRemoval": "दुकान की पहुँच हटाना",
+  "ux.submitted": "अनुरोध जमा हुआ",
+  "ux.underReview": "समीक्षा चल रही है",
+  "ux.completed": "पूरा हुआ",
+  "ux.denied": "अस्वीकृत",
+
+  "ux.refreshTotals": "कुल बकाया रीफ़्रेश करें",
+  "ux.refreshCustomers": "ग्राहक सूची रीफ़्रेश करें",
+  "ux.refreshShops": "दुकान सूची रीफ़्रेश करें",
+  "ux.refreshHistory": "इतिहास रीफ़्रेश करें",
+
   "ux.resolve": "समाधान करें",
   "ux.resolveDispute": "विवाद का समाधान करें",
   "ux.noDisputes": "अभी कोई विवाद नहीं है।",

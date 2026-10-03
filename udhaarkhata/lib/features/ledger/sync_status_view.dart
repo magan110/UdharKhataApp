@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'local_changes.dart';
 import 'sync_service.dart';
 import 'history_page.dart' show historyDate;
-import 'money.dart';
+import '../../app/ui/money_format.dart';
 
 String syncExplanation(String? code) => switch (code) {
   'NOT_FOUND' || 'FORBIDDEN' => 'Access is no longer available. Original entries are retained on this device.',
@@ -157,7 +157,7 @@ class SyncStatusView extends ConsumerWidget {
                         ? 'Credit'
                         : entry['kind'] == 'correction'
                         ? 'Correction'
-                        : 'Payment')} ${formatPaise((entry['amount_paise'] ?? entry['target_amount_paise']) as int)} · ${AppStrings.of(context).translate('Needs attention')}',
+                        : 'Payment')} ${formatDisplayPaise((entry['amount_paise'] ?? entry['target_amount_paise']) as int)} · ${AppStrings.of(context).translate('Needs attention')}',
                   ),
                   Text(
                     AppStrings.of(context).format(

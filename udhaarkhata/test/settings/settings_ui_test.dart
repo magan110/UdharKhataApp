@@ -135,7 +135,7 @@ void main() {
       expect(auth.posts, [
         {'kind': 'account_deletion'},
       ]);
-      expect(find.textContaining('submitted'), findsOneWidget);
+      expect(find.textContaining('Submitted'), findsOneWidget);
     },
   );
   testWidgets(

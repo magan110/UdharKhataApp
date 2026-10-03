@@ -83,8 +83,9 @@ class _DisputePageState extends ConsumerState<DisputePage> {
       } else {
         await repo.resolve(widget.shopId, dispute.id, _text.text);
       }
-      if (!mounted || !identical(repo, ref.read(disputeRepositoryProvider)))
+      if (!mounted || !identical(repo, ref.read(disputeRepositoryProvider))) {
         return;
+      }
       _text.clear();
       await _load();
     } catch (_) {
@@ -147,11 +148,12 @@ class _DisputePageState extends ConsumerState<DisputePage> {
   @override
   Widget build(BuildContext context) {
     ref.listen(disputeRepositoryProvider, (_, _) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _snapshot = null;
           _contextValid = false;
         });
+      }
     });
     final snapshot = _snapshot;
     final accountId = ref.watch(sessionProvider).value?.id.value;
@@ -197,45 +199,63 @@ class _DisputePageState extends ConsumerState<DisputePage> {
               if (snapshot.items.isEmpty)
                 Text(AppStrings.of(context).translate('No disputes yet.')),
 
-              for (final d
-                  in [
-                    for (final status in DisputeStatus.values)
-                      ...snapshot.items.where((d) => d.status == status),
-                  ].where(
-                    (d) =>
-                        d.shopId == widget.shopId &&
-                        (widget.entryId == null || d.entryId == widget.entryId),
-                  ))
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          '${AppStrings.of(context).translate(d.status.name)} · ${AppStrings.of(context).translate('Entry')} ${d.entryId}',
-                        ),
-                        Text(d.reason),
-                        Text(
-                          '${AppStrings.of(context).translate('Created')}: ${historyDate(d.createdAtMs)}',
-                        ),
-                        if (d.resolutionNote != null)
-                          Text(
-                            '${AppStrings.of(context).translate('Resolution')}: ${d.resolutionNote} · ${historyDate(d.resolvedAtMs!)}',
-                          ),
-                        if (!widget.customer &&
-                            !snapshot.offline &&
-                            d.status == DisputeStatus.open)
-                          FilledButton(
-                            onPressed: _busy ? null : () => _resolveSelected(d),
-                            child: Text(
-                              AppStrings.of(context).translate('Resolve'),
-                            ),
-                          ),
-                      ],
+              for (final status in DisputeStatus.values) ...[
+                if (snapshot.items.any(
+                  (d) =>
+                      d.status == status &&
+                      d.shopId == widget.shopId &&
+                      (widget.entryId == null || d.entryId == widget.entryId),
+                ))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 8),
+                    child: Text(
+                      AppStrings.of(context).translate(
+                        status == DisputeStatus.open
+                            ? 'Open disputes'
+                            : 'Resolved disputes',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                ),
+                for (final d in snapshot.items.where(
+                  (d) =>
+                      d.status == status &&
+                      d.shopId == widget.shopId &&
+                      (widget.entryId == null || d.entryId == widget.entryId),
+                ))
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '${AppStrings.of(context).translate(d.status == DisputeStatus.open ? 'Open' : 'Resolved')} · ${AppStrings.of(context).translate('Entry')} ${d.entryId}',
+                          ),
+                          Text(d.reason),
+                          Text(
+                            '${AppStrings.of(context).translate('Created')}: ${historyDate(d.createdAtMs)}',
+                          ),
+                          if (d.resolutionNote != null)
+                            Text(
+                              '${AppStrings.of(context).translate('Resolution')}: ${d.resolutionNote} · ${historyDate(d.resolvedAtMs!)}',
+                            ),
+                          if (!widget.customer &&
+                              !snapshot.offline &&
+                              d.status == DisputeStatus.open)
+                            FilledButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _resolveSelected(d),
+                              child: Text(
+                                AppStrings.of(context).translate('Resolve'),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
               if (widget.customer &&
                   widget.entryId != null &&
                   !snapshot.offline)

@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [UI/UX agent brief](../agents/ui-ux-redesign-agent.md) · [UI/UX spec](../../UI-UX-DESIGN-SPEC.md) · [Wireframes](../../WIREFRAMES.md) · [Implementation progress](PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification approved; implementation plan approved; isolated product implementation starting.
+Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification approved; implementation plan approved; isolated presentation implementation and local verification complete; independent review and signed APK pending.
 
 ## Mandate and ownership
 
@@ -82,12 +82,12 @@ The app-wide theme/navigation change is architectural: establish the design brie
 
 - [x] Create separate UX01 phase and dedicated agent assignment.
 - [x] Finish initial source inventory and label source-backed findings.
-- [ ] Capture and inspect current-screen visual evidence.
+- [x] Capture and inspect current-screen visual evidence (70 immutable-baseline synthetic renders).
 - [x] Select visual direction: user chose displayed option 1.
 - [x] Review complete written app design specification: user approved on 3 October 2026.
 - [x] Review completed implementation plan: user approved on 3 October 2026.
-- [ ] Execute redesigned UI and record task evidence.
-- [ ] Complete screen/state coverage and regression/visual verification.
+- [x] Execute redesigned UI and record task evidence.
+- [ ] Complete screen/state coverage and regression/visual verification: local checks and 292 redesigned synthetic renders complete; independent review/native phone variants pending.
 - [ ] Deliver redesigned APK and record phone acceptance.
 
 ## Initial dedicated-agent discovery (3 October 2026)

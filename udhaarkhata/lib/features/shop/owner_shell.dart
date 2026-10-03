@@ -20,8 +20,9 @@ class OwnerShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(currentShopProvider, (_, next) {
       final error = next.error;
-      if (error is AppFailure && error.code == 'AUTH_REQUIRED')
+      if (error is AppFailure && error.code == 'AUTH_REQUIRED') {
         ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
+      }
     });
     final shop = ref.watch(currentShopProvider);
     final selected = tab == 'customers'

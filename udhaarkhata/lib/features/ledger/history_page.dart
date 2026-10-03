@@ -322,9 +322,11 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
               ),
             ),
           ],
-          Text(
-            '${AppStrings.of(context).translate('Server snapshot')}: ${historyDate(snapshot.snapshotAtMs)} · ${AppStrings.of(context).translate('Refresh for newer changes.')}',
-          ),
+          if (widget.kind != OnlineReadKind.summary &&
+              widget.previewLimit == null)
+            Text(
+              '${AppStrings.of(context).translate('Server snapshot')}: ${historyDate(snapshot.snapshotAtMs)} · ${AppStrings.of(context).translate('Refresh for newer changes.')}',
+            ),
           if (_records.isEmpty && widget.kind != OnlineReadKind.summary)
             Text(
               AppStrings.of(context).translate(switch (widget.kind) {
@@ -392,11 +394,12 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
             ),
         ],
         if (_loading)
-          const Padding(
-            padding: EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Center(
               child: CircularProgressIndicator(
-                semanticsLabel: 'Loading server records',
+                semanticsLabel: AppStrings.of(context)
+                    .translate('Loading server records'),
               ),
             ),
           ),
@@ -458,7 +461,7 @@ class _OnlineRecordsViewState extends ConsumerState<OnlineRecordsView>
             ),
           if (e.reason != null)
             Text(
-              '${AppStrings.of(context).translate('Reason')}: ${e.reason} · Original entry: ${e.targetId}',
+              '${AppStrings.of(context).translate('Reason')}: ${e.reason} · ${AppStrings.of(context).translate('Original entry')}: ${e.targetId}',
             ),
         ],
       ),

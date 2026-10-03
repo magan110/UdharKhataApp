@@ -79,6 +79,7 @@ ThemeData clearCounterTheme() {
       style: OutlinedButton.styleFrom(minimumSize: const Size(48, 56)),
     ),
     inputDecorationTheme: InputDecorationTheme(
+      errorMaxLines: 6,
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.all(16),

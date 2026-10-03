@@ -287,12 +287,24 @@ class _SettingsBodyState extends ConsumerState<SettingsBody> {
           ),
         for (final item in _requests)
           ListTile(
-            title: Text(strings.translate(item.kind)),
+            title: Text(
+              strings.translate(switch (item.kind) {
+                'export' => 'Data export',
+                'shop_deletion' => 'Shop deletion',
+                'account_deletion' => 'Account deletion',
+                _ => 'Shop access removal',
+              }),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${strings.translate(item.status)} · ${historyDate(item.createdAtMs)}',
+                  '${strings.translate(switch (item.status) {
+                    'submitted' => 'Submitted',
+                    'in_review' => 'Under review',
+                    'completed' => 'Completed',
+                    _ => 'Denied',
+                  })} · ${historyDate(item.createdAtMs)}',
                 ),
                 Text(strings.translate('Request ID')),
                 SelectableText(item.id),

@@ -435,6 +435,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                                 : 'Internet is needed. Review the customer, amount and method before confirming payment received. The server checks the latest balance.',
                           ),
                         ),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _amount,
                           keyboardType: TextInputType.numberWithOptions(
@@ -449,10 +450,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                               parseCreditRupees(value ?? '');
                               return null;
                             } on FormatException catch (error) {
-                              return error.message;
+                              return AppStrings.of(context)
+                                  .translate(error.message);
                             }
                           },
                         ),
+                        const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           initialValue: _method,
                           decoration: InputDecoration(

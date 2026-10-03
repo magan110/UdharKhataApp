@@ -347,6 +347,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                                 : 'Internet is needed. Review the customer and amount before confirming. No credit is posted until confirmation.',
                           ),
                         ),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _amount,
                           keyboardType: const TextInputType.numberWithOptions(
@@ -364,6 +365,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                             }
                           },
                         ),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _note,
                           maxLength: maxCreditNoteCharacters,
@@ -375,6 +377,7 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                               ? strings.translate('Use at most 500 characters.')
                               : null,
                         ),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _date,
                           readOnly: true,

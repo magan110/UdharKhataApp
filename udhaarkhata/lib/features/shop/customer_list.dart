@@ -10,6 +10,8 @@ import '../qr/owner_link_repository.dart';
 import '../qr/owner_qr_model.dart';
 import '../../app/ui/money_format.dart';
 import '../../app/ui/identity_panel.dart';
+import '../../app/ui/balance_panel.dart';
+import '../../core/db/ledger_dao.dart' show CachedOwnerLedger;
 import '../ledger/ledger_repository.dart';
 import '../ledger/device_ledger_repository.dart';
 import '../ledger/sync_status_view.dart';
@@ -44,6 +46,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
   LedgerRepository? _ledger;
   int _generation = 0;
   CustomerLink? _link;
+  CachedOwnerLedger? _snapshot;
   Object? _error;
   bool _loading = true, _legacyCredit = false, _legacyPayment = false;
   @override
@@ -62,6 +65,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
     setState(() {
       _loading = true;
       _link = null;
+      _snapshot = null;
       _error = null;
       _legacyCredit = false;
       _legacyPayment = false;
@@ -77,12 +81,18 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
               refresh: refresh,
             )
           : await repo!.customer(widget.shopId, widget.linkId);
+      final snapshot = ledger is DeviceLedgerRepository
+          ? await ledger.snapshot(widget.shopId, widget.linkId)
+          : null;
       if (mounted &&
           generation == _generation &&
           identical(repo, ref.read(ownerLinkRepositoryProvider)) &&
           identical(ledger, ref.read(ledgerRepositoryProvider))) {
         ref.invalidate(savedCustomersProvider);
-        setState(() => _link = link);
+        setState(() {
+          _link = link;
+          _snapshot = snapshot;
+        });
       }
     } catch (error) {
       if (error is AppFailure &&
@@ -131,7 +141,6 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SyncStatusView(),
               if (!identical(current, _repository) ||
                   !identical(_ledger, ref.watch(ledgerRepositoryProvider)))
                 Text(
@@ -201,9 +210,26 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   ),
                 ),
                 SizedBox(height: 16),
-                Text(
-                  '${AppStrings.of(context).text('owner.owes', values: {'amount': formatDisplayPaise(link.balance.value)})} ${AppStrings.of(context).translate(ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
-                ),
+                if (_snapshot case final snapshot?)
+                  BalancePanel(
+                    amountPaise: snapshot.provisionalPaise,
+                    directionLabel: AppStrings.of(context)
+                        .translate('Customer owes you'),
+                    source: BalanceSource.provisional,
+                    syncedPaise: snapshot.syncedPaise,
+                    snapshotAtMs: snapshot.snapshotAtMs,
+                    partialSyncAtMs: snapshot.partialSyncAtMs,
+                  )
+                else
+                  Text(
+                    '${AppStrings.of(context).text('owner.owes', values: {'amount': formatDisplayPaise(link.balance.value)})} ${AppStrings.of(context).translate(ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
+                  ),
+                if ((_snapshot?.provisionalPaise ?? 0) < 0)
+                  Text(
+                    AppStrings.of(context).translate(
+                      'The server balance changed. Review Pending entries before recording another entry.',
+                    ),
+                  ),
                 if (ref.watch(ledgerRepositoryProvider)
                     is DeviceLedgerRepository)
                   Text(
@@ -259,6 +285,8 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                   ),
                 ),
               ],
+              const SizedBox(height: 24),
+              const SyncStatusView(),
             ],
           ),
         ),

@@ -23,12 +23,13 @@ class SummaryAuth extends HistoryAuth {
     Map<String, Object?>? body,
   }) async {
     if (path == '/v1/shops/shop') {
-      if (unavailable)
+      if (unavailable) {
         throw const AppFailure(
           'NETWORK_ERROR',
           'api.internalError',
           retryable: true,
         );
+      }
       return {
         'id': 'shop',
         'name': 'Store',
@@ -39,7 +40,7 @@ class SummaryAuth extends HistoryAuth {
         'asOfAtMs': 1790985600000,
       };
     }
-    if (path.contains('/customers'))
+    if (path.contains('/customers')) {
       return {
         'customers': [
           for (var i = 0; i < 4; i++)
@@ -58,6 +59,7 @@ class SummaryAuth extends HistoryAuth {
         'page': {'hasMore': false, 'nextCursor': null},
         'snapshotAtMs': 1790985600000,
       };
+    }
     return super.cloudRequest(accountId, path, body: body);
   }
 }

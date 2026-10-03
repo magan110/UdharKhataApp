@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,6 +42,12 @@ class RecordingDisputes extends CloudDisputeRepository {
     resolvedId = id;
     note = text;
   }
+}
+
+class DelayedDisputes extends RecordingDisputes {
+  final response = Completer<DisputeSnapshot>();
+  @override
+  Future<DisputeSnapshot> load(String shopId, bool customer) => response.future;
 }
 
 void main() {
@@ -85,6 +93,95 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.resolvedId, 'dispute2');
       expect(repo.note, 'Checked second entry');
+    },
+  );
+  testWidgets(
+    'direct dispute route without entry context never invents amount',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(
+              HistoryAuth(AccountRole.customer),
+            ),
+            disputeRepositoryProvider.overrideWithValue(RecordingDisputes()),
+          ],
+          child: const MaterialApp(
+            home: DisputePage(
+              shopId: 'shop',
+              customer: true,
+              entryId: 'entry1',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('entry1'), findsWidgets);
+      expect(find.textContaining('₹'), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'replaced repository clears context and ignores old account result',
+    (tester) async {
+      final old = DelayedDisputes();
+      final auth = HistoryAuth(AccountRole.owner);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          disputeRepositoryProvider.overrideWithValue(old),
+        ],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DisputePage(
+              shopId: 'shop',
+              customer: false,
+              entryContext: DisputeEntryContext(
+                accountId: 'usr_synthetic',
+                shopId: 'shop',
+                entryId: 'entry1',
+                kind: 'credit',
+                amountPaise: 1245000,
+                occurredAtMs: 1,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.textContaining('₹12,450.00'), findsOneWidget);
+      container.updateOverrides([
+        authRepositoryProvider.overrideWithValue(
+          HistoryAuth(AccountRole.owner),
+        ),
+        disputeRepositoryProvider.overrideWithValue(RecordingDisputes()),
+      ]);
+      await tester.pump();
+      await tester.pump();
+      old.response.complete(
+        DisputeSnapshot([
+          Dispute({
+            'id': 'old-dispute',
+            'shopId': 'shop',
+            'entryId': 'entry1',
+            'customerUserId': 'customer',
+            'reason': 'OLD ACCOUNT PRIVATE REASON',
+            'status': 'open',
+            'createdAtMs': 1,
+            'resolvedAtMs': null,
+            'resolutionNote': null,
+          }),
+        ], false),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('₹12,450.00'), findsNothing);
+      expect(find.text('OLD ACCOUNT PRIVATE REASON'), findsNothing);
+      expect(find.text('Refresh disputes'), findsOneWidget);
     },
   );
   test('context exact scope matching', () {

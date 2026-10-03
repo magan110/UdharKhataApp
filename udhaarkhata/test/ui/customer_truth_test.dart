@@ -16,12 +16,13 @@ class EmptyShopsAuth extends HistoryAuth {
     String path, {
     Map<String, Object?>? body,
   }) async {
-    if (path.startsWith('/v1/me/ledgers?'))
+    if (path.startsWith('/v1/me/ledgers?')) {
       return {
         'links': [],
         'snapshotAtMs': 1790985600000,
         'page': {'hasMore': false, 'nextCursor': null},
       };
+    }
     return super.cloudRequest(id, path, body: body);
   }
 }

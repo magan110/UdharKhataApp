@@ -11,6 +11,7 @@ import '../auth/session_controller.dart';
 import '../../app/ui/money_format.dart';
 import '../../app/ui/identity_panel.dart';
 import '../ledger/online_reads.dart';
+import '../ledger/history_page.dart' show historyDate;
 import 'statement_service.dart';
 import 'statement_pdf.dart';
 import 'export_csv.dart';
@@ -149,18 +150,21 @@ class _StatementSharePageState extends ConsumerState<StatementSharePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(l.text('statement.bounds')),
+              const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: busy ? null : () => pick(true),
                 child: Text(
                   '${l.text('statement.from')}: ${from.toIso8601String().substring(0, 10)}',
                 ),
               ),
+              const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: busy ? null : () => pick(false),
                 child: Text(
                   '${l.text('statement.to')}: ${to.toIso8601String().substring(0, 10)}',
                 ),
               ),
+              const SizedBox(height: 16),
               FilledButton(
                 onPressed: busy ? null : prepare,
                 child: Text(l.text('statement.load')),
@@ -169,10 +173,9 @@ class _StatementSharePageState extends ConsumerState<StatementSharePage> {
               if (failure != null)
                 Semantics(liveRegion: true, child: Text(l.text(failure!))),
               if (s != null) ...[
-                IdentityPanel(
-                  displayName: s.customerName,
-                  nickname: s.shopName,
-                ),
+                IdentityPanel(displayName: s.customerName),
+                const SizedBox(height: 12),
+                Text('${l.translate('Shop')}: ${s.shopName}'),
                 Text(
                   l.text(
                     'statement.period',
@@ -200,7 +203,13 @@ class _StatementSharePageState extends ConsumerState<StatementSharePage> {
                     values: {'amount': formatDisplayPaise(s.cloudBalance)},
                   ),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  '${l.translate('Server snapshot')}: ${historyDate(s.snapshotAtMs)}',
+                ),
+                const SizedBox(height: 12),
                 Text(l.text('statement.sensitive')),
+                const SizedBox(height: 16),
                 TextField(
                   controller: reminder,
                   minLines: 4,
@@ -214,10 +223,12 @@ class _StatementSharePageState extends ConsumerState<StatementSharePage> {
                   onPressed: busy ? null : () => share('reminder'),
                   child: Text(l.text('reminder.share')),
                 ),
+                const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: busy ? null : () => share('csv'),
                   child: Text(l.text('statement.shareCsv')),
                 ),
+                const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: busy ? null : () => share('pdf'),
                   child: Text(l.text('statement.sharePdf')),

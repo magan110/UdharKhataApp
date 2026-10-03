@@ -130,9 +130,13 @@ void main() {
     await tester.runAsync(service.synchronize);
     await open(tester);
     expect(find.textContaining('Needs attention'), findsWidgets);
-    expect(find.text('Credit ₹500.00'), findsWidgets);
+    expect(find.textContaining('Credit ₹500.00'), findsWidgets);
+    await tester.ensureVisible(find.text('Details').last);
+    await tester.tap(find.text('Details').last);
+    await tester.pumpAndSettle();
     expect(find.textContaining('Blocked by an earlier entry'), findsWidgets);
-    expect(find.textContaining('Customer owes you ₹0.01'), findsOneWidget);
+    expect(find.text('Customer owes you'), findsOneWidget);
+    expect(find.text('₹0.01'), findsOneWidget);
     expect(find.textContaining('Synced balance: ₹0.00'), findsOneWidget);
     expect(find.textContaining('Original entry is retained'), findsWidgets);
   });

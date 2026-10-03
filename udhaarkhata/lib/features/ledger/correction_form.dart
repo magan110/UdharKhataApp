@@ -115,7 +115,7 @@ class _CorrectionPageState extends ConsumerState<CorrectionPage> {
             '${AppStrings.of(context).translate('Current acknowledged amount')}: ${formatDisplayPaise(widget.effectiveAmountPaise)}',
           ),
           Text(
-            '${AppStrings.of(context).translate('Original entry')}: ${widget.entryId} · Revision ${widget.revision}',
+            '${AppStrings.of(context).translate('Original entry')}: ${widget.entryId} · ${AppStrings.of(context).translate('Revision')} ${widget.revision}',
           ),
           Text(
             AppStrings.of(context).translate(
@@ -150,6 +150,7 @@ class _CorrectionPageState extends ConsumerState<CorrectionPage> {
               child: Text(AppStrings.of(context).translate('Edit correction')),
             ),
           ] else ...[
+            const SizedBox(height: 16),
             TextField(
               controller: _amount,
               keyboardType: const TextInputType.numberWithOptions(
@@ -160,6 +161,7 @@ class _CorrectionPageState extends ConsumerState<CorrectionPage> {
                     .translate('Corrected amount (₹, zero allowed)'),
               ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _reason,
               maxLength: 240,
