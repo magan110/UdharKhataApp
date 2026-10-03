@@ -78,3 +78,5 @@ When a decision changes, update its owning document and downstream contract/test
 | [UI/UX agent brief](docs/agents/ui-ux-redesign-agent.md) | Persistent mission, scope, ownership and handoff instructions for the dedicated redesign agent. |
 | [UX01 selected design](docs/superpowers/specs/2026-10-03-ux01-redesign-design.md) | Approved full-app specification extending the user-selected first visual concept; governs UX01 implementation. |
 | [UX01 implementation plan](docs/superpowers/plans/2026-10-03-ux01-redesign.md) | Exact presentation file ownership, interfaces, task checks and complete UI/UX verification for the approved option 1 design. |
+
+| [UX01 evidence](docs/verification/ux01-evidence.md) | Synthetic redesign captures, regression evidence, stable-build preparation and outstanding physical acceptance. |

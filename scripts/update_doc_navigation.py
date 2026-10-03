@@ -10,6 +10,7 @@ START = "<!-- DOC_NAV_START -->"
 END = "<!-- DOC_NAV_END -->"
 
 LABELS = {
+    "docs/verification/ux01-evidence.md": "UX01 evidence",
     "docs/superpowers/plans/2026-10-03-ux01-redesign.md": "UX01 implementation plan",
     "docs/superpowers/specs/2026-10-03-ux01-redesign-design.md": "UX01 selected design",
     "docs/implementation/06-ui-ux-redesign.md": "UX01 UI/UX redesign",
@@ -63,6 +64,7 @@ LABELS = {
 
 # Each list is intentionally short and topical. DOCUMENT-MAP.md connects all files.
 RELATED = {
+    "docs/verification/ux01-evidence.md": ["docs/superpowers/specs/2026-10-03-ux01-redesign-design.md", "docs/superpowers/plans/2026-10-03-ux01-redesign.md", "docs/implementation/PROGRESS.md"],
     "docs/superpowers/plans/2026-10-03-ux01-redesign.md": ["docs/superpowers/specs/2026-10-03-ux01-redesign-design.md", "docs/implementation/06-ui-ux-redesign.md", "docs/agents/ui-ux-redesign-agent.md", "docs/implementation/PROGRESS.md"],
     "docs/superpowers/specs/2026-10-03-ux01-redesign-design.md": ["docs/implementation/06-ui-ux-redesign.md", "docs/agents/ui-ux-redesign-agent.md", "UI-UX-DESIGN-SPEC.md", "docs/implementation/PROGRESS.md"],
     "docs/implementation/06-ui-ux-redesign.md": ["docs/agents/ui-ux-redesign-agent.md", "UI-UX-DESIGN-SPEC.md", "WIREFRAMES.md", "docs/implementation/PROGRESS.md"],
