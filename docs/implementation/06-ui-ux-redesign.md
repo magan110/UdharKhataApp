@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [UI/UX agent brief](../agents/ui-ux-redesign-agent.md) · [UI/UX spec](../../UI-UX-DESIGN-SPEC.md) · [Wireframes](../../WIREFRAMES.md) · [Implementation progress](PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification written and awaiting review; product implementation has not begun.
+Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification approved; implementation plan complete and awaiting review; product implementation has not begun.
 
 ## Mandate and ownership
 
@@ -84,8 +84,9 @@ The app-wide theme/navigation change is architectural: establish the design brie
 - [x] Finish initial source inventory and label source-backed findings.
 - [ ] Capture and inspect current-screen visual evidence.
 - [x] Select visual direction: user chose displayed option 1.
-- [ ] Review complete written app design specification.
-- [ ] Review implementation plan and execute redesigned UI.
+- [x] Review complete written app design specification: user approved on 3 October 2026.
+- [ ] Review completed implementation plan.
+- [ ] Execute redesigned UI and record task evidence.
 - [ ] Complete screen/state coverage and regression/visual verification.
 - [ ] Deliver redesigned APK and record phone acceptance.
 
@@ -124,4 +125,8 @@ Recommended navigation proposal: owner Home, Customers and More, with consistent
 
 ## Selected full-app design handoff
 
-The dedicated agent completed the [complete UX01 design specification](../superpowers/specs/2026-10-03-ux01-redesign-design.md) from option 1. Review of this written design is the next gate before implementation planning; the selected color/layout direction does not need reconfirmation.
+The dedicated agent completed the [complete UX01 design specification](../superpowers/specs/2026-10-03-ux01-redesign-design.md) from option 1. The user approved the completed written design on 3 October 2026. The next gate is review of the implementation plan; the selected style and full design do not need reconfirmation.
+
+## Implementation plan
+
+[UX01 implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md) translates the approved design into sequenced presentation tasks and verification. The dedicated UI/UX agent remains the selected executor; the plan must be reviewed before product changes.
