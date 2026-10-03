@@ -71,9 +71,11 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  AppStrings.of(context).translate(ref.watch(authRepositoryProvider).canSignIn
-                      ? 'Your account role is fixed when you first register.'
-                      : 'Sign-in needs the approved Google configuration.'),
+                  AppStrings.of(context).translate(
+                    ref.watch(authRepositoryProvider).canSignIn
+                        ? 'Your account role is fixed when you first register.'
+                        : 'Sign-in needs the approved Google configuration.',
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],

@@ -111,7 +111,35 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
                         ),
                         SizedBox(
                           height: constraints.maxHeight * .6,
-                          child: Padding(padding: const EdgeInsets.all(16), child: ClipRRect(borderRadius: BorderRadius.circular(16), child: Stack(fit: StackFit.expand, children: [_Camera(onScan: state.scan), IgnorePointer(child: Center(child: Container(width: 220, height: 220, decoration: BoxDecoration(border: Border.all(color: Colors.white, width: 3), borderRadius: BorderRadius.circular(16)))))]))),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  _Camera(onScan: state.scan),
+                                  IgnorePointer(
+                                    child: Center(
+                                      child: Container(
+                                        width: 220,
+                                        height: 220,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),

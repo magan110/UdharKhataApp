@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../app/app_strings.dart';
 import '../../core/auth/account.dart';
 import '../../core/network/app_failure.dart';
@@ -19,20 +20,107 @@ class OwnerShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(currentShopProvider, (_, next) {
       final error = next.error;
-      if (error is AppFailure && error.code == 'AUTH_REQUIRED') ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
+      if (error is AppFailure && error.code == 'AUTH_REQUIRED')
+        ref.read(sessionProvider.notifier).refreshAfterAuthFailure();
     });
     final shop = ref.watch(currentShopProvider);
-    final selected = tab == 'customers' ? 1 : tab == 'more' ? 2 : 0;
+    final selected = tab == 'customers'
+        ? 1
+        : tab == 'more'
+        ? 2
+        : 0;
     final l = AppStrings.of(context);
-    return PopScope(canPop: selected == 0, onPopInvokedWithResult: (didPop, result) { if (!didPop && selected != 0) context.go('/owner'); }, child: Scaffold(
-      appBar: AppBar(title: Text(selected == 0 ? 'Udhaar Khata' : l.translate(selected == 1 ? 'Customers' : 'More')), actions: [IconButton(tooltip: l.translate('Settings and data controls'), onPressed: () => context.push('/settings'), icon: const Icon(Icons.settings_outlined))]),
-      body: SafeArea(child: shop.when(
-        loading: () => Center(child: CircularProgressIndicator(semanticsLabel: l.translate('Opening shop'))),
-        error: (error, _) => ListView(padding: const EdgeInsets.all(16), children: [const SyncStatusView(), Text(l.translate('Could not open your shop'), style: Theme.of(context).textTheme.titleLarge), Text(errorMessage(error is AppFailure ? error.messageKey : 'api.internalError', languageCode: l.languageCode)), TextButton(onPressed: () => ref.invalidate(currentShopProvider), child: Text(l.translate('Try again'))), if (error is AppFailure && (error.retryable || error.code == 'NETWORK_ERROR')) const SavedCustomersView()]),
-        data: (value) => value == null ? const ShopSetup() : switch (selected) { 1 => OwnerCustomersView(shop: value), 2 => MorePage(role: AccountRole.owner, shopId: value.id.value), _ => OwnerHomeView(shop: value, onViewAll: () => context.go('/owner?tab=customers'), onSyncDetails: () => context.go('/owner?tab=more')) },
-      )),
-      bottomNavigationBar: NavigationBar(selectedIndex: selected, onDestinationSelected: (i) => context.go(i == 0 ? '/owner' : '/owner?tab=${i == 1 ? 'customers' : 'more'}'), destinations: [NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: l.translate('Home')), NavigationDestination(icon: const Icon(Icons.people_outline), label: l.translate('Customers')), NavigationDestination(icon: const Icon(Icons.more_horiz), label: l.translate('More'))]),
-    ));
+    return PopScope(
+      canPop: selected == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && selected != 0) context.go('/owner');
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            selected == 0
+                ? 'Udhaar Khata'
+                : l.translate(selected == 1 ? 'Customers' : 'More'),
+          ),
+          actions: [
+            IconButton(
+              tooltip: l.translate('Settings and data controls'),
+              onPressed: () => context.push('/settings'),
+              icon: const Icon(Icons.settings_outlined),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: shop.when(
+            loading: () => Center(
+              child: CircularProgressIndicator(
+                semanticsLabel: l.translate('Opening shop'),
+              ),
+            ),
+            error: (error, _) => ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const SyncStatusView(),
+                Text(
+                  l.translate('Could not open your shop'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                Text(
+                  errorMessage(
+                    error is AppFailure
+                        ? error.messageKey
+                        : 'api.internalError',
+                    languageCode: l.languageCode,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => ref.invalidate(currentShopProvider),
+                  child: Text(l.translate('Try again')),
+                ),
+                if (error is AppFailure &&
+                    (error.retryable || error.code == 'NETWORK_ERROR'))
+                  const SavedCustomersView(),
+              ],
+            ),
+            data: (value) => value == null
+                ? const ShopSetup()
+                : switch (selected) {
+                    1 => OwnerCustomersView(shop: value),
+                    2 => MorePage(
+                      role: AccountRole.owner,
+                      shopId: value.id.value,
+                    ),
+                    _ => OwnerHomeView(
+                      shop: value,
+                      onViewAll: () => context.go('/owner?tab=customers'),
+                      onSyncDetails: () => context.go('/owner?tab=more'),
+                    ),
+                  },
+          ),
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: selected,
+          onDestinationSelected: (i) => context.go(
+            i == 0 ? '/owner' : '/owner?tab=${i == 1 ? 'customers' : 'more'}',
+          ),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home),
+              label: l.translate('Home'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.people_outline),
+              label: l.translate('Customers'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.more_horiz),
+              label: l.translate('More'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -120,7 +208,10 @@ class _ShopSetupState extends ConsumerState<ShopSetup> {
               ),
             FilledButton(
               onPressed: _saving ? null : _create,
-              child: Text(AppStrings.of(context).translate(_saving ? 'Creating shop…' : 'Create shop')),
+              child: Text(
+                AppStrings.of(context)
+                    .translate(_saving ? 'Creating shop…' : 'Create shop'),
+              ),
             ),
           ],
         ),

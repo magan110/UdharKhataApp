@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'correction_form.dart';
 import 'history_page.dart' show historyDate;
-import 'money.dart';
+import '../../app/ui/money_format.dart';
 
 class EntryDetail extends StatelessWidget {
   const EntryDetail({
@@ -48,10 +48,10 @@ class EntryDetail extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          '${AppStrings.of(context).translate('Original amount')}: ${formatPaise(entry['amount_paise'] as int)}',
+          '${AppStrings.of(context).translate('Original amount')}: ${formatDisplayPaise(entry['amount_paise'] as int)}',
         ),
         Text(
-          '${AppStrings.of(context).translate('Effective acknowledged amount')}: ${formatPaise(amount)}',
+          '${AppStrings.of(context).translate('Effective acknowledged amount')}: ${formatDisplayPaise(amount)}',
         ),
         for (final correction in corrections)
           Text(

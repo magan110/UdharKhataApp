@@ -124,7 +124,7 @@ void main() {
           }
         }
         expect(
-          find.textContaining('ग्राहक को आपको ₹500.00 देना है'),
+          find.text(const AppStrings('hi').translate('Customer owes you')),
           findsOneWidget,
         );
         expect(find.text(const AppStrings('hi').text('ui104')), findsOneWidget);

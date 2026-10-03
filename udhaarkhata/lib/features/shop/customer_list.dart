@@ -8,7 +8,8 @@ import '../../core/network/contracts.dart';
 import '../auth/session_controller.dart';
 import '../qr/owner_link_repository.dart';
 import '../qr/owner_qr_model.dart';
-import '../ledger/money.dart';
+import '../../app/ui/money_format.dart';
+import '../../app/ui/identity_panel.dart';
 import '../ledger/ledger_repository.dart';
 import '../ledger/device_ledger_repository.dart';
 import '../ledger/sync_status_view.dart';
@@ -126,7 +127,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -189,20 +190,10 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                     ),
                 ],
               ] else ...[
-                Semantics(
-                  header: true,
-                  child: Text(
-                    link.displayName,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+                IdentityPanel(
+                  displayName: link.displayName,
+                  nickname: link.nickname,
                 ),
-                if (link.nickname != null)
-                  Text(
-                    AppStrings.of(context).format(
-                      'Shop nickname: {name}',
-                      values: {'name': link.nickname!},
-                    ),
-                  ),
                 SizedBox(height: 16),
                 Text(
                   AppStrings.of(context).translate(
@@ -211,7 +202,7 @@ class _OwnerCustomerPageState extends ConsumerState<OwnerCustomerPage> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  '${AppStrings.of(context).text('owner.owes', values: {'amount': formatPaise(link.balance.value)})} ${AppStrings.of(context).translate(ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
+                  '${AppStrings.of(context).text('owner.owes', values: {'amount': formatDisplayPaise(link.balance.value)})} ${AppStrings.of(context).translate(ref.watch(ledgerRepositoryProvider) is DeviceLedgerRepository ? '(provisional, including Pending).' : '(last server read).')}',
                 ),
                 if (ref.watch(ledgerRepositoryProvider)
                     is DeviceLedgerRepository)

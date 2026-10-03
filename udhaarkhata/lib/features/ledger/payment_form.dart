@@ -263,7 +263,10 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   child: Text(AppStrings.of(context).translate('Try again')),
                 ),
               ] else ...[
-                IdentityPanel(displayName: customer.displayName, nickname: customer.nickname),
+                IdentityPanel(
+                  displayName: customer.displayName,
+                  nickname: customer.nickname,
+                ),
                 SizedBox(height: 16),
                 Text(
                   AppStrings.of(context).translate(
@@ -272,9 +275,62 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 ),
                 SizedBox(height: 16),
                 if (_savedLocal) ...[
-                  SaveReceipt(title: strings.translate('Payment saved · Pending'), amountPaise: attempt!.amountPaise, pending: true, details: [Text(strings.format('{method} received on this device: {amount}', values: {'method': strings.translate(method == 'cash' ? 'Cash' : 'UPI'), 'amount': formatDisplayPaise(attempt.amountPaise)})), if (_localBalance != null) Text('${strings.text('owner.owes', values: {'amount': formatDisplayPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}')], onReturn: () => context.pop()),
+                  SaveReceipt(
+                    title: strings.translate('Payment saved · Pending'),
+                    amountPaise: attempt!.amountPaise,
+                    pending: true,
+                    details: [
+                      Text(
+                        strings.format(
+                          '{method} received on this device: {amount}',
+                          values: {
+                            'method': strings.translate(
+                              method == 'cash' ? 'Cash' : 'UPI',
+                            ),
+                            'amount': formatDisplayPaise(attempt.amountPaise),
+                          },
+                        ),
+                      ),
+                      if (_localBalance != null)
+                        Text(
+                          '${strings.text('owner.owes', values: {'amount': formatDisplayPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}',
+                        ),
+                    ],
+                    onReturn: () => context.pop(),
+                  ),
                 ] else if (receipt != null) ...[
-                  SaveReceipt(title: strings.translate('Payment acknowledged by server'), amountPaise: attempt!.amountPaise, pending: false, details: [Text(strings.format('{method} received: {amount}', values: {'method': strings.translate(method == 'cash' ? 'Cash' : 'UPI'), 'amount': formatDisplayPaise(attempt.amountPaise)})), Text(strings.format('Balance when this payment was recorded: Customer owes you {amount}', values: {'amount': formatDisplayPaise(receipt.balancePaise)})), Text(strings.translate('Refresh the customer ledger to see the latest balance.'))], onReturn: () => context.pop()),
+                  SaveReceipt(
+                    title: strings.translate('Payment acknowledged by server'),
+                    amountPaise: attempt!.amountPaise,
+                    pending: false,
+                    details: [
+                      Text(
+                        strings.format(
+                          '{method} received: {amount}',
+                          values: {
+                            'method': strings.translate(
+                              method == 'cash' ? 'Cash' : 'UPI',
+                            ),
+                            'amount': formatDisplayPaise(attempt.amountPaise),
+                          },
+                        ),
+                      ),
+                      Text(
+                        strings.format(
+                          'Balance when this payment was recorded: Customer owes you {amount}',
+                          values: {
+                            'amount': formatDisplayPaise(receipt.balancePaise),
+                          },
+                        ),
+                      ),
+                      Text(
+                        strings.translate(
+                          'Refresh the customer ledger to see the latest balance.',
+                        ),
+                      ),
+                    ],
+                    onReturn: () => context.pop(),
+                  ),
                 ] else if (_review) ...[
                   Text(
                     strings.format(

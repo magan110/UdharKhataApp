@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/contracts.dart';
 import 'ledger_repository.dart';
-import 'money.dart';
+import '../../app/ui/money_format.dart';
+import 'money.dart' show parseCreditRupees;
 
 abstract interface class CorrectionRepository {
   Future<void> saveCorrection(
@@ -106,12 +107,12 @@ class _CorrectionPageState extends ConsumerState<CorrectionPage> {
       title: Text(AppStrings.of(context).translate('Correct entry')),
     ),
     body: SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '${AppStrings.of(context).translate('Current acknowledged amount')}: ${formatPaise(widget.effectiveAmountPaise)}',
+            '${AppStrings.of(context).translate('Current acknowledged amount')}: ${formatDisplayPaise(widget.effectiveAmountPaise)}',
           ),
           Text(
             '${AppStrings.of(context).translate('Original entry')}: ${widget.entryId} · Revision ${widget.revision}',
@@ -133,7 +134,7 @@ class _CorrectionPageState extends ConsumerState<CorrectionPage> {
             ),
           ] else if (_target != null) ...[
             Text(
-              '${AppStrings.of(context).translate('Corrected amount')}: ${formatPaise(_target!)}',
+              '${AppStrings.of(context).translate('Corrected amount')}: ${formatDisplayPaise(_target!)}',
             ),
             Text(
               '${AppStrings.of(context).translate('Reason')}: ${_reason.text.trim()}',

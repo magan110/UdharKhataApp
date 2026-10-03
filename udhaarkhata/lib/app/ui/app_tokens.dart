@@ -19,24 +19,78 @@ abstract final class AppTokens {
 }
 
 ThemeData clearCounterTheme() {
-  final base = ThemeData(useMaterial3: true, colorScheme: ColorScheme.fromSeed(seedColor: AppTokens.primary, primary: AppTokens.primary, surface: Colors.white));
+  final base = ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: AppTokens.primary,
+      primary: AppTokens.primary,
+      surface: Colors.white,
+    ),
+  );
   return base.copyWith(
     scaffoldBackgroundColor: Colors.white,
     textTheme: base.textTheme.copyWith(
-      headlineSmall: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppTokens.text),
-      titleLarge: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppTokens.text),
-      titleMedium: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.text),
+      headlineSmall: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        color: AppTokens.text,
+      ),
+      titleLarge: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: AppTokens.text,
+      ),
+      titleMedium: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppTokens.text,
+      ),
       bodyLarge: const TextStyle(fontSize: 16, color: AppTokens.text),
       bodyMedium: const TextStyle(fontSize: 16, color: AppTokens.text),
       bodySmall: const TextStyle(fontSize: 14, color: AppTokens.secondary),
     ),
-    appBarTheme: const AppBarTheme(backgroundColor: Colors.white, foregroundColor: AppTokens.text, surfaceTintColor: Colors.transparent, centerTitle: false),
-    cardTheme: CardThemeData(color: AppTokens.muted, elevation: 0, margin: const EdgeInsets.symmetric(vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-    filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(minimumSize: const Size(48, 56), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
-    textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(minimumSize: const Size(48, 48), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12))),
-    outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(minimumSize: const Size(48, 56))),
-    inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: Colors.white, contentPadding: const EdgeInsets.all(16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTokens.outline))),
-    navigationBarTheme: const NavigationBarThemeData(backgroundColor: Colors.white, indicatorColor: AppTokens.tint),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      foregroundColor: AppTokens.text,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: false,
+    ),
+    cardTheme: CardThemeData(
+      color: AppTokens.muted,
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(48, 56),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(minimumSize: const Size(48, 56)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.all(16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTokens.outline),
+      ),
+    ),
+    navigationBarTheme: const NavigationBarThemeData(
+      backgroundColor: Colors.white,
+      indicatorColor: AppTokens.tint,
+    ),
     dividerTheme: const DividerThemeData(color: AppTokens.divider),
   );
 }

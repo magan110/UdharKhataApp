@@ -9,7 +9,7 @@ import '../../core/network/contracts.dart';
 import '../auth/session_controller.dart';
 import 'device_ledger_repository.dart';
 import 'ledger_repository.dart';
-import 'money.dart';
+import '../../app/ui/money_format.dart';
 import 'history_page.dart' show historyDate;
 import 'local_changes.dart';
 
@@ -161,10 +161,10 @@ class _DueSummaryState extends ConsumerState<DueSummary> {
       children: [
         if (summary != null) ...[
           Text(
-            '${AppStrings.of(context).translate('Outstanding')}: ${formatPaise(summary.balancePaise)}',
+            '${AppStrings.of(context).translate('Outstanding')}: ${formatDisplayPaise(summary.balancePaise)}',
           ),
           Text(
-            '${AppStrings.of(context).translate('Overdue')}: ${formatPaise(summary.overduePaise)}',
+            '${AppStrings.of(context).translate('Overdue')}: ${formatDisplayPaise(summary.overduePaise)}',
           ),
           Text(
             '${AppStrings.of(context).translate('Acknowledged server summary')}: ${historyDate(summary.asOfMs)}',

@@ -18,13 +18,31 @@ import '../sharing/share_controller.dart';
 import 'privacy_repository.dart';
 import '../disputes/dispute_repository.dart';
 
-class SettingsPage extends ConsumerStatefulWidget {
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
   @override
-  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(
+        AppStrings.of(context).translate('Settings and data controls'),
+      ),
+    ),
+    body: const SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: SettingsBody(),
+      ),
+    ),
+  );
 }
 
-class _SettingsPageState extends ConsumerState<SettingsPage> {
+class SettingsBody extends ConsumerStatefulWidget {
+  const SettingsBody({super.key});
+  @override
+  ConsumerState<SettingsBody> createState() => _SettingsBodyState();
+}
+
+class _SettingsBodyState extends ConsumerState<SettingsBody> {
   List<DataRequest> _requests = [];
   Object? _error;
   bool _busy = false;
@@ -71,6 +89,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(strings.translate('Submit data request?')),
         content: Text(
           strings.translate(
@@ -121,6 +140,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final accept = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(strings.translate('Share device-only entries?')),
         content: Text(
           strings.translate(
@@ -182,109 +202,104 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final shop = account?.role == AccountRole.owner
         ? ref.watch(currentShopProvider).asData?.value
         : null;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(strings.translate('Settings and data controls')),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Text(
-              strings.text('language'),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            DropdownButtonFormField<String>(
-              initialValue: strings.languageCode,
-              items: const [
-                DropdownMenuItem(value: 'en', child: Text('English')),
-                DropdownMenuItem(value: 'hi', child: Text('हिन्दी')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(localeProvider.notifier).setLanguageCode(value);
-                }
-              },
-            ),
-            TextButton(
-              onPressed: () => context.push('/recovery'),
-              child: Text(strings.text('help')),
-            ),
-            Text(
-              strings.translate(
-                'Pending entries are only on this device and are not backed up to the cloud.',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          strings.text('language'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        DropdownButtonFormField<String>(
+          initialValue: strings.languageCode,
+          items: const [
+            DropdownMenuItem(value: 'en', child: Text('English')),
+            DropdownMenuItem(value: 'hi', child: Text('हिन्दी')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(localeProvider.notifier).setLanguageCode(value);
+            }
+          },
+        ),
+        TextButton(
+          onPressed: () => context.push('/recovery'),
+          child: Text(strings.text('help')),
+        ),
+        Text(
+          strings.translate(
+            'Pending entries are only on this device and are not backed up to the cloud.',
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          strings.translate('Data requests'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        Text(
+          strings.translate(
+            'Requests are reviewed. Historical financial records are retained until the approved privacy policy and operator process permit deletion. This test version does not perform destructive deletion.',
+          ),
+        ),
+        if (account?.role == AccountRole.owner && shop != null) ...[
+          TextButton(
+            onPressed: _busy
+                ? null
+                : () => _submit('export', shopId: shop.id.value),
+            child: Text(strings.translate('Request shop data export')),
+          ),
+          TextButton(
+            onPressed: _busy
+                ? null
+                : () => _submit('shop_deletion', shopId: shop.id.value),
+            child: Text(strings.translate('Request shop deletion')),
+          ),
+          TextButton(
+            onPressed: _busy ? null : _shareDeviceCopy,
+            child: Text(strings.translate('Export device-only requests')),
+          ),
+        ],
+        TextButton(
+          onPressed: _busy ? null : () => _submit('account_deletion'),
+          child: Text(strings.translate('Request account deletion')),
+        ),
+        TextButton(
+          onPressed: _busy ? null : _load,
+          child: Text(strings.translate('Refresh request status')),
+        ),
+        if (_busy) const LinearProgressIndicator(),
+        if (_error != null)
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              errorMessage(
+                _error is AppFailure
+                    ? (_error as AppFailure).messageKey
+                    : 'api.internalError',
+                languageCode: strings.languageCode,
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              strings.translate('Data requests'),
-              style: Theme.of(context).textTheme.titleLarge,
+          ),
+        if (ref.watch(privacyRepositoryProvider)?.latestListIncomplete == true)
+          Text(
+            strings.translate(
+              'More requests exist. This list shows the latest 100.',
             ),
-            Text(
-              strings.translate(
-                'Requests are reviewed. Historical financial records are retained until the approved privacy policy and operator process permit deletion. This test version does not perform destructive deletion.',
-              ),
-            ),
-            if (account?.role == AccountRole.owner && shop != null) ...[
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => _submit('export', shopId: shop.id.value),
-                child: Text(strings.translate('Request shop data export')),
-              ),
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => _submit('shop_deletion', shopId: shop.id.value),
-                child: Text(strings.translate('Request shop deletion')),
-              ),
-              TextButton(
-                onPressed: _busy ? null : _shareDeviceCopy,
-                child: Text(strings.translate('Export device-only requests')),
-              ),
-            ],
-            TextButton(
-              onPressed: _busy ? null : () => _submit('account_deletion'),
-              child: Text(strings.translate('Request account deletion')),
-            ),
-            TextButton(
-              onPressed: _busy ? null : _load,
-              child: Text(strings.translate('Refresh request status')),
-            ),
-            if (_busy) const LinearProgressIndicator(),
-            if (_error != null)
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  errorMessage(
-                    _error is AppFailure
-                        ? (_error as AppFailure).messageKey
-                        : 'api.internalError',
-                    languageCode: strings.languageCode,
-                  ),
-                ),
-              ),
-            if (ref.watch(privacyRepositoryProvider)?.latestListIncomplete ==
-                true)
-              Text(
-                strings.translate(
-                  'More requests exist. This list shows the latest 100.',
-                ),
-              ),
-            for (final item in _requests)
-              ListTile(
-                title: Text(strings.translate(item.kind)),
-                subtitle: Text(
+          ),
+        for (final item in _requests)
+          ListTile(
+            title: Text(strings.translate(item.kind)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   '${strings.translate(item.status)} · ${historyDate(item.createdAtMs)}',
                 ),
-                trailing: Tooltip(
-                  message: strings.translate('Request ID'),
-                  child: SelectableText(item.id),
-                ),
-              ),
-          ],
-        ),
-      ),
+                Text(strings.translate('Request ID')),
+                SelectableText(item.id),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -312,6 +327,7 @@ class _AccessRemovalState extends ConsumerState<AccessRemovalButton> {
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(strings.translate('Remove shop access?')),
         content: Text(
           strings.translate(

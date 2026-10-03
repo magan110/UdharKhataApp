@@ -223,6 +223,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Scan customer QR'), findsOneWidget);
-    expect(find.descendant(of: find.byType(NavigationBar), matching: find.text('Customers')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Customers'),
+      ),
+      findsOneWidget,
+    );
   });
 }

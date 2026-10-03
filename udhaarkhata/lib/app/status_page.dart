@@ -18,7 +18,23 @@ class StatusPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(AppStrings.of(context).translate('Udhaar Khata'))),
-    body: SafeArea(child: Center(child: SingleChildScrollView(child: StatePanel(title: title, message: message, loading: loading, actionLabel: onRetry == null ? null : AppStrings.of(context).translate('Try again'), onAction: onRetry)))),
+    appBar: AppBar(
+      title: Text(AppStrings.of(context).translate('Udhaar Khata')),
+    ),
+    body: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          child: StatePanel(
+            title: title,
+            message: message,
+            loading: loading,
+            actionLabel: onRetry == null
+                ? null
+                : AppStrings.of(context).translate('Try again'),
+            onAction: onRetry,
+          ),
+        ),
+      ),
+    ),
   );
 }

@@ -7,7 +7,7 @@ class CustomerShopsPage extends StatelessWidget {
   const CustomerShopsPage({super.key});
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    padding: EdgeInsets.all(24),
+    padding: EdgeInsets.all(16),
     child: OnlineRecordsView(
       path: '/v1/me/ledgers',
       kind: OnlineReadKind.shops,

@@ -55,6 +55,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('More').last);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Sign out'));
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
@@ -81,8 +82,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('My QR'), findsNWidgets(2));
       await tester.tap(find.text('More').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Sign out'));
+      await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
       expect(find.textContaining('2 pending entries'), findsOneWidget);
       await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));

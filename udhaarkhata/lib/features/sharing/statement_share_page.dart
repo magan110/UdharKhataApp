@@ -8,7 +8,8 @@ import '../../app/app_strings.dart';
 import '../../core/auth/account.dart';
 import '../../core/network/app_failure.dart';
 import '../auth/session_controller.dart';
-import '../ledger/money.dart';
+import '../../app/ui/money_format.dart';
+import '../../app/ui/identity_panel.dart';
 import '../ledger/online_reads.dart';
 import 'statement_service.dart';
 import 'statement_pdf.dart';
@@ -143,7 +144,7 @@ class _StatementSharePageState extends ConsumerState<StatementSharePage> {
       appBar: AppBar(title: Text(l.text('statement.title'))),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -168,9 +169,9 @@ class _StatementSharePageState extends ConsumerState<StatementSharePage> {
               if (failure != null)
                 Semantics(liveRegion: true, child: Text(l.text(failure!))),
               if (s != null) ...[
-                Text(
-                  '${s.shopName}\n${s.customerName}',
-                  style: Theme.of(context).textTheme.titleLarge,
+                IdentityPanel(
+                  displayName: s.customerName,
+                  nickname: s.shopName,
                 ),
                 Text(
                   l.text(
@@ -184,19 +185,19 @@ class _StatementSharePageState extends ConsumerState<StatementSharePage> {
                 Text(
                   l.text(
                     'statement.opening',
-                    values: {'amount': formatPaise(s.opening)},
+                    values: {'amount': formatDisplayPaise(s.opening)},
                   ),
                 ),
                 Text(
                   l.text(
                     'statement.closing',
-                    values: {'amount': formatPaise(s.closing)},
+                    values: {'amount': formatDisplayPaise(s.closing)},
                   ),
                 ),
                 Text(
                   l.text(
                     'owner.owes',
-                    values: {'amount': formatPaise(s.cloudBalance)},
+                    values: {'amount': formatDisplayPaise(s.cloudBalance)},
                   ),
                 ),
                 Text(l.text('statement.sensitive')),

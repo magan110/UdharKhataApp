@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:udhaarkhata/core/auth/account.dart';
@@ -6,7 +5,7 @@ import 'package:udhaarkhata/core/auth/auth_repository.dart';
 import 'package:udhaarkhata/core/network/app_failure.dart';
 import 'package:udhaarkhata/core/network/contracts.dart';
 import 'package:udhaarkhata/features/auth/session_controller.dart';
-import 'package:udhaarkhata/features/ledger/customer_shell.dart';
+import 'package:udhaarkhata/app/app.dart';
 
 import 'router_test.dart' show syntheticAccount;
 
@@ -52,7 +51,7 @@ Future<void> openShops(WidgetTester tester, ProfileAuth auth) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [authRepositoryProvider.overrideWithValue(auth)],
-      child: const MaterialApp(home: CustomerShell()),
+      child: const MainApp(),
     ),
   );
   await tester.pumpAndSettle();

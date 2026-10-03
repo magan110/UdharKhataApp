@@ -20,6 +20,7 @@ import '../features/settings/settings_page.dart';
 import '../features/settings/recovery_help.dart';
 import '../features/sharing/statement_share_page.dart';
 import '../features/disputes/dispute_page.dart';
+import '../features/disputes/dispute_entry_context.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   void refresh() => notifyListeners();
@@ -77,7 +78,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/owner',
-        builder: (context, state) => OwnerShell(key: ValueKey(ref.read(sessionProvider).value?.id.value), tab: state.uri.queryParameters['tab'] ?? ''),
+        builder: (context, state) => OwnerShell(
+          key: ValueKey(ref.read(sessionProvider).value?.id.value),
+          tab: state.uri.queryParameters['tab'] ?? '',
+        ),
         routes: [
           GoRoute(
             path: 'statement/:shopId/:linkId',
@@ -132,7 +136,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/customer',
-        builder: (context, state) => CustomerShell(key: ValueKey(ref.read(sessionProvider).value?.id.value), tab: state.uri.queryParameters['tab'] ?? ''),
+        builder: (context, state) => CustomerShell(
+          key: ValueKey(ref.read(sessionProvider).value?.id.value),
+          tab: state.uri.queryParameters['tab'] ?? '',
+        ),
         routes: [
           GoRoute(
             path: 'disputes/:shopId',
@@ -140,6 +147,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               shopId: OpaqueId.fromJson(state.pathParameters['shopId']).value,
               customer: true,
               entryId: state.uri.queryParameters['entry'],
+              entryContext: state.extra is DisputeEntryContext
+                  ? state.extra as DisputeEntryContext
+                  : null,
             ),
           ),
           GoRoute(

@@ -213,6 +213,9 @@ void main() {
       await tester.ensureVisible(find.text('Load more'));
       await tester.tap(find.text('Load more'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Details').first);
+      await tester.tap(find.text('Details').first);
+      await tester.pumpAndSettle();
       expect(find.textContaining('Rice'), findsOneWidget);
       expect(find.textContaining('earlier server snapshot'), findsOneWidget);
       auth.failure = null;
@@ -310,6 +313,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Customer owes you ₹300.00'), findsOneWidget);
       expect(find.textContaining('02-10-2026'), findsWidgets);
+      await tester.ensureVisible(find.text('Details').first);
+      await tester.tap(find.text('Details').first);
+      await tester.pumpAndSettle();
       expect(find.textContaining('Rice'), findsOneWidget);
       await tester.ensureVisible(find.text('Load more'));
       await tester.tap(find.text('Load more'));
@@ -342,10 +348,12 @@ void main() {
     (tester) async {
       final auth = HistoryAuth(AccountRole.owner)..more = true;
       await open(tester, auth);
-      expect(
-        find.textContaining('Total customers owe you ₹300.00'),
-        findsOneWidget,
-      );
+      expect(find.text('₹300.00'), findsOneWidget);
+      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('View all'));
+      await tester.tap(find.text('View all'));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Load more'));
       await tester.tap(find.text('Load more'));
       await tester.pumpAndSettle();

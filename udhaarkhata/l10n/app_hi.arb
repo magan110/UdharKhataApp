@@ -376,5 +376,12 @@
   "ux.savedCustomers": "इस फोन पर सहेजे गए ग्राहक",
   "ux.createShop": "दुकान बनाएँ",
   "ux.creatingShop": "दुकान बन रही है…",
-  "ux.enterShop": "दुकान का नाम लिखें।"
+  "ux.enterShop": "दुकान का नाम लिखें।",
+  "ux.showQr": "मेरा QR दिखाएँ",
+  "ux.resolve": "समाधान करें",
+  "ux.resolveDispute": "विवाद का समाधान करें",
+  "ux.noDisputes": "अभी कोई विवाद नहीं है।",
+  "ux.cashReceived": "नकद भुगतान मिला",
+  "ux.upiReceived": "UPI भुगतान मिला",
+  "ux.owes": "ग्राहक को आपको देना है"
 }

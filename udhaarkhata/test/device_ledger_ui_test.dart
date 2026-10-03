@@ -231,8 +231,11 @@ void main() {
       expect(find.textContaining('₹600.00'), findsOneWidget);
       expect(find.textContaining('Synced'), findsWidgets);
       expect(find.textContaining('Pending'), findsWidgets);
+      await tester.ensureVisible(find.text('Details').at(1));
+      await tester.tap(find.text('Details').at(1));
+      await tester.pumpAndSettle();
       expect(find.textContaining('Salt'), findsOneWidget);
-      expect(find.text('UPI payment received ₹100.00'), findsOneWidget);
+      expect(find.text('UPI payment received'), findsOneWidget);
       expect(find.textContaining('only on this device'), findsWidgets);
     },
   );

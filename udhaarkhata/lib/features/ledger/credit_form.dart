@@ -216,12 +216,53 @@ class _CreditPageState extends ConsumerState<CreditPage> {
                   child: Text(strings.translate('Try again')),
                 ),
               ] else ...[
-                IdentityPanel(displayName: customer.displayName, nickname: customer.nickname),
+                IdentityPanel(
+                  displayName: customer.displayName,
+                  nickname: customer.nickname,
+                ),
                 const SizedBox(height: 16),
                 if (_savedLocal) ...[
-                  SaveReceipt(title: strings.translate('Credit saved · Pending'), amountPaise: _attempt!.amountPaise, pending: true, details: [if (_localBalance != null) Text('${strings.text('owner.owes', values: {'amount': formatDisplayPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}')], onReturn: () => context.pop()),
+                  SaveReceipt(
+                    title: strings.translate('Credit saved · Pending'),
+                    amountPaise: _attempt!.amountPaise,
+                    pending: true,
+                    details: [
+                      if (_localBalance != null)
+                        Text(
+                          '${strings.text('owner.owes', values: {'amount': formatDisplayPaise(_localBalance!)})} ${strings.translate('(provisional, including Pending).')}',
+                        ),
+                    ],
+                    onReturn: () => context.pop(),
+                  ),
                 ] else if (receipt != null) ...[
-                  SaveReceipt(title: strings.translate('Credit acknowledged by server'), amountPaise: _attempt!.amountPaise, pending: false, details: [Text(strings.format('Balance when this credit was recorded: {balance}', values: {'balance': strings.text('owner.owes', values: {'amount': formatDisplayPaise(receipt.balancePaise)})})), Text(strings.translate('Refresh the customer ledger to see the latest balance.'))], onReturn: () => context.pop()),
+                  SaveReceipt(
+                    title: strings.translate('Credit acknowledged by server'),
+                    amountPaise: _attempt!.amountPaise,
+                    pending: false,
+                    details: [
+                      Text(
+                        strings.format(
+                          'Balance when this credit was recorded: {balance}',
+                          values: {
+                            'balance': strings.text(
+                              'owner.owes',
+                              values: {
+                                'amount': formatDisplayPaise(
+                                  receipt.balancePaise,
+                                ),
+                              },
+                            ),
+                          },
+                        ),
+                      ),
+                      Text(
+                        strings.translate(
+                          'Refresh the customer ledger to see the latest balance.',
+                        ),
+                      ),
+                    ],
+                    onReturn: () => context.pop(),
+                  ),
                 ] else if (_review) ...[
                   Text(
                     strings.format(

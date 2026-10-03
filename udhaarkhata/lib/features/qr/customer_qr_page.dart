@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../app/app_strings.dart';
+import '../../app/ui/identity_panel.dart';
 import '../../core/network/app_failure.dart';
 import '../auth/session_controller.dart';
 import 'qr_repository.dart';
@@ -21,7 +22,7 @@ class CustomerQrPage extends ConsumerWidget {
     final account = ref.watch(sessionProvider).value;
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -29,7 +30,13 @@ class CustomerQrPage extends ConsumerWidget {
               AppStrings.of(context).translate('Show this to the shopkeeper'),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 16),
+            IdentityPanel(
+              displayName:
+                  account?.displayName ??
+                  AppStrings.of(context).translate('Your customer account'),
+            ),
+            const SizedBox(height: 16),
             state.when(
               skipLoadingOnRefresh: false,
               loading: () => Center(
@@ -52,11 +59,15 @@ class CustomerQrPage extends ConsumerWidget {
                       'Customer identification QR. Show this to the shopkeeper. It does not authorize a payment.',
                     ),
                     child: ExcludeSemantics(
-                      child: QrImageView(
-                        data: value.record.qr.payload,
-                        size: 256,
-                        padding: EdgeInsets.all(32),
-                        backgroundColor: Colors.white,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => Center(
+                          child: QrImageView(
+                            data: value.record.qr.payload,
+                            size: constraints.maxWidth.clamp(0, 256),
+                            padding: EdgeInsets.all(32),
+                            backgroundColor: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -78,12 +89,6 @@ class CustomerQrPage extends ConsumerWidget {
                           : '${AppStrings.of(context).translate('QR replacement failed.')} ${errorMessage(value.record.noticeKey!, languageCode: AppStrings.of(context).languageCode)}',
                       textAlign: TextAlign.center,
                     ),
-                  Text(
-                    account?.displayName ??
-                        AppStrings.of(context)
-                            .translate('Your customer account'),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
                   SizedBox(height: 12),
                   Text(
                     AppStrings.of(context).translate(

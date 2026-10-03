@@ -66,7 +66,28 @@ class SyncStatusView extends ConsumerWidget {
     final details = ref.watch(_syncDetailsProvider).asData?.value;
     if (compact) {
       final attention = state.needsAttentionCount > 0;
-      return Card(color: attention ? const Color(0xFFFEF2F2) : const Color(0xFFFFF4D6), child: ListTile(onTap: onOpenDetails, leading: Icon(attention ? Icons.error_outline : Icons.schedule), title: Text(AppStrings.of(context).format('{pending} Pending · {attention} Needs attention', values: {'pending': '${state.pendingCount}', 'attention': '${state.needsAttentionCount}'})), subtitle: Text(AppStrings.of(context).translate('Pending entries are only on this device and are not backed up to the cloud.')), trailing: const Icon(Icons.chevron_right)));
+      return Card(
+        color: attention ? const Color(0xFFFEF2F2) : const Color(0xFFFFF4D6),
+        child: ListTile(
+          onTap: onOpenDetails,
+          leading: Icon(attention ? Icons.error_outline : Icons.schedule),
+          title: Text(
+            AppStrings.of(context).format(
+              '{pending} Pending · {attention} Needs attention',
+              values: {
+                'pending': '${state.pendingCount}',
+                'attention': '${state.needsAttentionCount}',
+              },
+            ),
+          ),
+          subtitle: Text(
+            AppStrings.of(context).translate(
+              'Pending entries are only on this device and are not backed up to the cloud.',
+            ),
+          ),
+          trailing: const Icon(Icons.chevron_right),
+        ),
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

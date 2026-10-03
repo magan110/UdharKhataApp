@@ -12,7 +12,7 @@ class RecoveryHelpPage extends StatelessWidget {
     ),
     body: SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

@@ -1,4 +1,7 @@
 import '../../app/app_strings.dart';
+import '../../app/ui/money_format.dart';
+import '../auth/session_controller.dart';
+import 'dispute_entry_context.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,10 +16,12 @@ class DisputePage extends ConsumerStatefulWidget {
     required this.shopId,
     required this.customer,
     this.entryId,
+    this.entryContext,
   });
   final String shopId;
   final bool customer;
   final String? entryId;
+  final DisputeEntryContext? entryContext;
   @override
   ConsumerState<DisputePage> createState() => _DisputePageState();
 }
@@ -25,7 +30,7 @@ class _DisputePageState extends ConsumerState<DisputePage> {
   final _text = TextEditingController();
   DisputeSnapshot? _snapshot;
   String? _error;
-  bool _busy = false;
+  bool _busy = false, _contextValid = true;
   @override
   void initState() {
     super.initState();
@@ -78,6 +83,8 @@ class _DisputePageState extends ConsumerState<DisputePage> {
       } else {
         await repo.resolve(widget.shopId, dispute.id, _text.text);
       }
+      if (!mounted || !identical(repo, ref.read(disputeRepositoryProvider)))
+        return;
       _text.clear();
       await _load();
     } catch (_) {
@@ -91,16 +98,78 @@ class _DisputePageState extends ConsumerState<DisputePage> {
     }
   }
 
+  Future<void> _resolveSelected(Dispute dispute) async {
+    final repo = ref.read(disputeRepositoryProvider);
+    var value = '';
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        title: Text(AppStrings.of(context).translate('Resolve dispute')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${AppStrings.of(context).translate('Entry')} ${dispute.entryId}',
+            ),
+            Text(dispute.reason),
+            const SizedBox(height: 16),
+            TextField(
+              onChanged: (text) => value = text,
+              maxLength: 240,
+              decoration: InputDecoration(
+                labelText: AppStrings.of(context).translate('Resolution note'),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(AppStrings.of(context).translate('Cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(AppStrings.of(context).translate('Resolve dispute')),
+          ),
+        ],
+      ),
+    );
+    if (accepted == true &&
+        mounted &&
+        identical(repo, ref.read(disputeRepositoryProvider))) {
+      _text.text = value;
+      await _act(dispute);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(disputeRepositoryProvider, (_, _) {
-      if (mounted) setState(() => _snapshot = null);
+      if (mounted)
+        setState(() {
+          _snapshot = null;
+          _contextValid = false;
+        });
     });
     final snapshot = _snapshot;
+    final accountId = ref.watch(sessionProvider).value?.id.value;
+    final contextEntry = widget.entryContext;
+    final matchingContext =
+        _contextValid &&
+        contextEntry != null &&
+        accountId != null &&
+        contextEntry.matches(
+          accountId: accountId,
+          shopId: widget.shopId,
+          entryId: widget.entryId ?? contextEntry.entryId,
+        );
+
     return Scaffold(
       appBar: AppBar(title: Text(AppStrings.of(context).translate('Disputes'))),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -115,12 +184,28 @@ class _DisputePageState extends ConsumerState<DisputePage> {
                   'Offline · Cached status · Read only. Refresh online for newer changes.',
                 ),
               ),
+            if (matchingContext)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    '${AppStrings.of(context).translate(contextEntry.kind == 'credit' ? 'Credit' : 'Payment received')} ${formatDisplayPaise(contextEntry.amountPaise)} · ${historyDate(contextEntry.occurredAtMs)}',
+                  ),
+                ),
+              ),
             if (snapshot != null) ...[
-              for (final d in snapshot.items.where(
-                (d) =>
-                    d.shopId == widget.shopId &&
-                    (widget.entryId == null || d.entryId == widget.entryId),
-              ))
+              if (snapshot.items.isEmpty)
+                Text(AppStrings.of(context).translate('No disputes yet.')),
+
+              for (final d
+                  in [
+                    for (final status in DisputeStatus.values)
+                      ...snapshot.items.where((d) => d.status == status),
+                  ].where(
+                    (d) =>
+                        d.shopId == widget.shopId &&
+                        (widget.entryId == null || d.entryId == widget.entryId),
+                  ))
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -142,17 +227,18 @@ class _DisputePageState extends ConsumerState<DisputePage> {
                             !snapshot.offline &&
                             d.status == DisputeStatus.open)
                           FilledButton(
-                            onPressed: _busy ? null : () => _act(d),
+                            onPressed: _busy ? null : () => _resolveSelected(d),
                             child: Text(
-                              AppStrings.of(context)
-                                  .translate('Resolve with note below'),
+                              AppStrings.of(context).translate('Resolve'),
                             ),
                           ),
                       ],
                     ),
                   ),
                 ),
-              if (!snapshot.offline)
+              if (widget.customer &&
+                  widget.entryId != null &&
+                  !snapshot.offline)
                 TextField(
                   controller: _text,
                   maxLength: 240,

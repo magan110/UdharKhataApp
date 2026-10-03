@@ -37,7 +37,10 @@ class _LinkConfirmationState extends State<LinkConfirmation> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           SizedBox(height: 16),
-          IdentityPanel(displayName: state.attempt?.displayName ?? state.customer!.displayName),
+          IdentityPanel(
+            displayName:
+                state.attempt?.displayName ?? state.customer!.displayName,
+          ),
           SizedBox(height: 16),
           Text(
             AppStrings.of(context).translate(

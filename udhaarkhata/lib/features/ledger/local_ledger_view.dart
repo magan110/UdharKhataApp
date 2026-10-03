@@ -11,7 +11,9 @@ import 'device_ledger_repository.dart';
 import 'history_page.dart' show historyDate, dueDateText, OnlineRecordsView;
 import 'online_reads.dart';
 import 'ledger_repository.dart';
-import 'money.dart';
+import '../../app/ui/balance_panel.dart';
+import '../../app/ui/ledger_row.dart';
+import '../../app/ui/status_chip.dart';
 import 'local_changes.dart';
 import 'entry_detail.dart';
 import 'due_summary.dart';
@@ -139,18 +141,15 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
             snapshot.link['display_name'] as String,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          Text(
-            '${AppStrings.of(context).text('owner.owes', values: {'amount': formatPaise(snapshot.provisionalPaise)})} ${AppStrings.of(context).translate('(provisional, including Pending).')}',
-            style: Theme.of(context).textTheme.titleLarge,
+          BalancePanel(
+            amountPaise: snapshot.provisionalPaise,
+            directionLabel: AppStrings.of(context)
+                .translate('Customer owes you'),
+            source: BalanceSource.provisional,
+            syncedPaise: snapshot.syncedPaise,
+            snapshotAtMs: snapshot.snapshotAtMs,
+            partialSyncAtMs: snapshot.partialSyncAtMs,
           ),
-          Text(
-            '${AppStrings.of(context).translate('Synced balance')}: ${formatPaise(snapshot.syncedPaise)} · ${AppStrings.of(context).translate('Last server snapshot')}: ${historyDate(snapshot.snapshotAtMs)}',
-          ),
-          if (snapshot.partialSyncAtMs != null &&
-              snapshot.partialSyncAtMs != snapshot.snapshotAtMs)
-            Text(
-              '${AppStrings.of(context).translate('Partial refresh')}: ${historyDate(snapshot.partialSyncAtMs!)} · ${AppStrings.of(context).translate('Complete snapshot remains dated above.')}',
-            ),
           if (snapshot.syncBlockedCode != null)
             Text(
               AppStrings.of(context)
@@ -176,72 +175,65 @@ class _LocalLedgerViewState extends ConsumerState<LocalLedgerView> {
           if (snapshot.entries.isEmpty)
             Text(AppStrings.of(context).translate('No transactions yet.')),
           for (final entry in snapshot.entries)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(switch (entry['kind']) {
-                      'credit' =>
-                        '${AppStrings.of(context).translate('Credit')} ${formatPaise(entry['amount_paise'] as int)}',
-                      'payment' =>
-                        '${AppStrings.of(context).translate(entry['payment_method'] == 'cash' ? 'Cash' : 'UPI')} ${AppStrings.of(context).translate('Payment received').toLowerCase()} ${formatPaise(entry['amount_paise'] as int)}',
-                      _ =>
-                        '${AppStrings.of(context).translate('Correction')} ${formatPaise(entry['effect_paise'] as int)}',
-                    }),
+            LedgerRow(
+              typeLabel: AppStrings.of(context).translate(
+                entry['kind'] == 'credit'
+                    ? 'Credit'
+                    : entry['kind'] == 'payment'
+                    ? (entry['payment_method'] == 'cash'
+                          ? 'Cash payment received'
+                          : 'UPI payment received')
+                    : 'Correction',
+              ),
+              effectPaise: entry['effect_paise'] as int,
+              occurredAtMs: entry['occurred_at_ms'] as int,
+              status: entry['sync_status'] == 'synced'
+                  ? EntryDisplayStatus.synced
+                  : entry['sync_status'] == 'pending'
+                  ? EntryDisplayStatus.pending
+                  : EntryDisplayStatus.attention,
+              details: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (entry['created_at_ms'] != null)
                     Text(
-                      '${AppStrings.of(context).translate('Entry date')}: ${historyDate(entry['occurred_at_ms'] as int)}',
+                      '${AppStrings.of(context).translate('Recorded')}: ${historyDate(entry['created_at_ms'] as int)} · ${AppStrings.of(context).translate('Created by shop owner')}',
                     ),
+                  if (entry['sync_status'] == 'needs_attention')
                     Text(
-                      AppStrings.of(context)
-                          .translate(switch (entry['sync_status']) {
-                            'synced' => 'Synced',
-                            'pending' =>
-                              'Pending · Waiting to sync · Only on this device',
-                            _ => 'Needs attention',
-                          }),
+                      AppStrings.of(context).translate(
+                        'Original entry is retained. Review it before recording another entry.',
+                      ),
                     ),
-                    if (entry['created_at_ms'] != null)
-                      Text(
-                        '${AppStrings.of(context).translate('Recorded')}: ${historyDate(entry['created_at_ms'] as int)} · ${AppStrings.of(context).translate('Created by shop owner')}',
+                  if (entry['blocked_by_earlier'] == 1)
+                    Text(
+                      AppStrings.of(context).translate(
+                        'Blocked by an earlier entry. Review the original entry first.',
                       ),
-                    if (entry['sync_status'] == 'needs_attention')
-                      Text(
-                        AppStrings.of(context).translate(
-                          'Original entry is retained. Review it before recording another entry.',
-                        ),
+                    ),
+                  if (entry['error_code'] != null)
+                    Text(
+                      AppStrings.of(context).translate(
+                        syncExplanation(entry['error_code'] as String),
                       ),
-                    if (entry['blocked_by_earlier'] == 1)
-                      Text(
-                        AppStrings.of(context).translate(
-                          'Blocked by an earlier entry. Review the original entry first.',
-                        ),
-                      ),
-                    if (entry['error_code'] != null)
-                      Text(
-                        AppStrings.of(context).translate(
-                          syncExplanation(entry['error_code'] as String),
-                        ),
-                      ),
-                    if (entry['note'] != null) Text(entry['note'] as String),
-                    if (entry['due_date'] != null)
-                      Text(
-                        '${AppStrings.of(context).translate('Due')}: ${dueDateText(entry['due_date'] as String)}',
-                      ),
-                    if (['credit', 'payment'].contains(entry['kind']))
-                      EntryDetail(
-                        shopId: widget.shopId,
-                        linkId: widget.linkId,
-                        entry: entry,
-                        entries: snapshot.entries,
-                      ),
-                    if (entry['correction_reason'] != null)
-                      Text(
-                        '${AppStrings.of(context).translate('Reason')}: ${entry['correction_reason']}',
-                      ),
-                  ],
-                ),
+                    ),
+                  if (entry['note'] != null) Text(entry['note'] as String),
+                  if (entry['due_date'] != null)
+                    Text(
+                      '${AppStrings.of(context).translate('Due')}: ${dueDateText(entry['due_date'] as String)}',
+                    ),
+                  if (['credit', 'payment'].contains(entry['kind']))
+                    EntryDetail(
+                      shopId: widget.shopId,
+                      linkId: widget.linkId,
+                      entry: entry,
+                      entries: snapshot.entries,
+                    ),
+                  if (entry['correction_reason'] != null)
+                    Text(
+                      '${AppStrings.of(context).translate('Reason')}: ${entry['correction_reason']}',
+                    ),
+                ],
               ),
             ),
         ],
@@ -290,7 +282,8 @@ class SavedCustomersView extends ConsumerWidget {
             'Saved on this device. Balances may include Pending entries.',
           ),
         ),
-        for (final link in previewLimit == null ? links : links.take(previewLimit!))
+        for (final link
+            in previewLimit == null ? links : links.take(previewLimit!))
           ListTile(
             title: Text(
               link['nickname'] as String? ?? link['display_name'] as String,

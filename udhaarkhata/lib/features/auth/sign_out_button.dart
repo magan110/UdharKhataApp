@@ -21,6 +21,7 @@ class _SignOutButtonState extends ConsumerState<SignOutButton> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+          scrollable: true,
           title: Text(AppStrings.of(context).translate('Sign out?')),
           content: Text(
             AppStrings.of(context).format(

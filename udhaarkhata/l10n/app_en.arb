@@ -376,5 +376,12 @@
   "ux.savedCustomers": "Saved customers on this phone",
   "ux.createShop": "Create shop",
   "ux.creatingShop": "Creating shop…",
-  "ux.enterShop": "Enter your shop name."
+  "ux.enterShop": "Enter your shop name.",
+  "ux.showQr": "Show my QR",
+  "ux.resolve": "Resolve",
+  "ux.resolveDispute": "Resolve dispute",
+  "ux.noDisputes": "No disputes yet.",
+  "ux.cashReceived": "Cash payment received",
+  "ux.upiReceived": "UPI payment received",
+  "ux.owes": "Customer owes you"
 }

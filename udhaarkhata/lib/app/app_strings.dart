@@ -51,6 +51,14 @@ final Map<String, String> _reverse = {
   for (final e in _en.entries) e.value: e.key,
 };
 final Map<String, String> _en = {
+  "ux.resolve": "Resolve",
+  "ux.resolveDispute": "Resolve dispute",
+  "ux.noDisputes": "No disputes yet.",
+  "ux.cashReceived": "Cash payment received",
+  "ux.upiReceived": "UPI payment received",
+  "ux.owes": "Customer owes you",
+
+  "ux.showQr": "Show my QR",
   "ux.confirmed": "Confirmed balance",
   "ux.details": "Details",
   "ux.edit": "Edit",
@@ -455,6 +463,14 @@ final Map<String, String> _en = {
   "final364": "Sign in again",
 };
 final Map<String, String> _hi = {
+  "ux.resolve": "समाधान करें",
+  "ux.resolveDispute": "विवाद का समाधान करें",
+  "ux.noDisputes": "अभी कोई विवाद नहीं है।",
+  "ux.cashReceived": "नकद भुगतान मिला",
+  "ux.upiReceived": "UPI भुगतान मिला",
+  "ux.owes": "ग्राहक को आपको देना है",
+
+  "ux.showQr": "मेरा QR दिखाएँ",
   "ux.confirmed": "पुष्ट बकाया",
   "ux.details": "विवरण",
   "ux.edit": "बदलें",
