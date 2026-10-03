@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [UI/UX agent brief](../agents/ui-ux-redesign-agent.md) · [UI/UX spec](../../UI-UX-DESIGN-SPEC.md) · [Wireframes](../../WIREFRAMES.md) · [Implementation progress](PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Status: phase created; initial source discovery complete; design direction proposed, not yet accepted or implemented.
+Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification written and awaiting review; product implementation has not begun.
 
 ## Mandate and ownership
 
@@ -16,7 +16,7 @@ Dedicated agent: `ui_ux_redesign`. Its persistent instructions are in [UI/UX age
 
 Make the ledger faster to navigate and easier to understand at a busy shop counter, with a cohesive visual identity across every screen. Owners must recognize the customer, review an amount and understand the save outcome. Customers must quickly show their QR, see what they owe each shop and find an entry or dispute. English and Hindi, compact Android phones and large text are first-class design inputs.
 
-The user specified complete UI/UX coverage, not a color-only refresh. Recommended working assumption: a clean modern ledger with clear hierarchy, generous touch targets and restrained decoration. Preference is being requested separately; this assumption is not an accepted final design.
+The user specified complete UI/UX coverage, not a color-only refresh. Selected visual direction: option 1, a clean modern ledger with clear hierarchy, generous touch targets and restrained decoration. The user selected the first displayed generated concept on 3 October 2026. Full-screen interactions and state specifications will be written for review before product implementation.
 
 ## Complete coverage inventory
 
@@ -46,9 +46,9 @@ Backend, migrations, API contracts, release scope and financial calculations are
 
 ## Design exploration
 
-Compare three directions before choosing the final visual system:
+The user selected the first of three displayed owner-home concepts. The selection maps to the original first displayed image, preserved as [selected owner-home concept](../design/ux01-owner-home-option1.png). The other directions remain exploration history:
 
-1. **Clean modern ledger (recommended):** calm neutral surfaces, deep green primary actions, prominent debt-direction amounts, consistent cards/rows and a clear role-specific navigation system. Suitable for speed, compact devices and Hindi text.
+1. **Clean modern ledger (selected):** calm neutral surfaces, deep green primary actions, prominent debt-direction amounts, consistent cards/rows and a clear role-specific navigation system. Suitable for speed, compact devices and Hindi text.
 2. **Traditional khata:** warm paper tones and familiar ledger organization. Familiarity may help, but texture/ruling must not reduce contrast or compete with amounts.
 3. **Bold premium:** stronger color blocks, larger visual accents and more expressive typography. Distinctive, but must prove compact-screen readability and must not suggest an actual payment wallet.
 
@@ -83,7 +83,8 @@ The app-wide theme/navigation change is architectural: establish the design brie
 - [x] Create separate UX01 phase and dedicated agent assignment.
 - [x] Finish initial source inventory and label source-backed findings.
 - [ ] Capture and inspect current-screen visual evidence.
-- [ ] Select and review the visual direction and written design.
+- [x] Select visual direction: user chose displayed option 1.
+- [ ] Review complete written app design specification.
 - [ ] Review implementation plan and execute redesigned UI.
 - [ ] Complete screen/state coverage and regression/visual verification.
 - [ ] Deliver redesigned APK and record phone acceptance.
@@ -119,4 +120,8 @@ The dedicated agent completed read-only inspection of all 16 registered routes p
 
 Owner detail is currently embedded and correction is pushed separately; customer history uses expanded cards and per-entry dispute actions rather than a standalone detail route. Redesign must account for these actual surfaces rather than invent missing functionality.
 
-Recommended navigation proposal: owner Home, Customers and More, with consistently reachable Scan; customer My QR and My shops with clear Settings access. Recommended visual direction remains a clean modern ledger with restrained warm neutrals and deep green primary actions. Alternatives are a traditional khata treatment and a more expressive task-first direction. No direction is claimed accepted until user review.
+Recommended navigation proposal: owner Home, Customers and More, with consistently reachable Scan; customer My QR and My shops with clear Settings access. Selected visual direction is a clean modern ledger with restrained warm neutrals and deep green primary actions. The user chose displayed option 1; alternatives are a traditional khata treatment and a more expressive task-first direction. Selection accepts the visual direction; the complete written app design remains the next review artifact.
+
+## Selected full-app design handoff
+
+The dedicated agent completed the [complete UX01 design specification](../superpowers/specs/2026-10-03-ux01-redesign-design.md) from option 1. Review of this written design is the next gate before implementation planning; the selected color/layout direction does not need reconfirmation.

@@ -36,4 +36,4 @@ Every handoff states: work completed; surfaces/states covered and remaining; exa
 
 ## Current assignment
 
-Initial read-only source discovery and complete coverage inventory finished on 3 October 2026; findings are recorded in UX01. Next assignment is rendered baseline evidence and visual design exploration. Product redesign implementation has not begun. The primary agent maintains UX01 registration and asks for design review with a concrete proposal.
+Initial read-only source discovery and complete coverage inventory finished on 3 October 2026; findings are recorded in UX01. The user selected displayed option 1 on 3 October 2026; its preserved visual target is [selected concept](../design/ux01-owner-home-option1.png). The [full written design](../superpowers/specs/2026-10-03-ux01-redesign-design.md) is complete and self-reviewed; next assignment is implementation planning after written-design review. Current-screen captures remain pending. Product redesign implementation has not begun. The primary agent maintains UX01 registration and asks for design review with a concrete proposal.

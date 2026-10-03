@@ -76,3 +76,4 @@ When a decision changes, update its owning document and downstream contract/test
 |---|---|
 | [UX01 UI/UX redesign](docs/implementation/06-ui-ux-redesign.md) | Separate full-app redesign phase, complete screen/state coverage, design review and verification gates. |
 | [UI/UX agent brief](docs/agents/ui-ux-redesign-agent.md) | Persistent mission, scope, ownership and handoff instructions for the dedicated redesign agent. |
+| [UX01 selected design](docs/superpowers/specs/2026-10-03-ux01-redesign-design.md) | Full-app specification extending the user-selected first visual concept; awaits written-design review before implementation planning. |

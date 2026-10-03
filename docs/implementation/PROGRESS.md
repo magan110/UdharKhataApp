@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [Daily implementation plan](README.md) · [Roadmap](../../PROJECT-PLAN-ROADMAP.md) · [Test plan](../../TEST-PLAN.md).
 <!-- DOC_NAV_END -->
 
-**Current phase:** UX01 — Complete app UI/UX redesign, initial dedicated-agent source discovery complete. D13–D21 private staging APK delivery is complete; physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 3 October 2026.
+**Current phase:** UX01 — Complete app UI/UX redesign, option 1 visual direction selected; full written design complete and awaiting review. D13–D21 private staging APK delivery is complete; physical D21 acceptance and public-use policy/backup gates remain pending. **Last updated:** 3 October 2026.
 
 | Phase | State | Date | Evidence / blocker |
 |---|---|---|---|
@@ -29,7 +29,7 @@
 | D19 | Private-test implementation complete | 2026-10-02 | Non-destructive privacy requests/access removal and synthetic encrypted restore; actual backup infrastructure and reviewed retention/relink policy pending before real use. |
 | D20 | Implemented | 2026-10-02 | Central rate policies, export limits, redacted request events, compatibility guard and operations guidance. |
 | D21 | Private-test candidate delivered; phone acceptance pending | 2026-10-02 | [Candidate evidence](../verification/d21-evidence.md); verified source, staging deployment and stable-key APK provenance recorded. Physical acceptance pending. |
-| UX01 | Started: source discovery complete | 2026-10-03 | [Separate redesign phase](06-ui-ux-redesign.md); dedicated `ui_ux_redesign` agent and persistent brief created. No redesigned product screen implemented yet. |
+| UX01 | Option 1 selected; full design awaiting review | 2026-10-03 | [Separate redesign phase](06-ui-ux-redesign.md); dedicated `ui_ux_redesign` agent and persistent brief created. No redesigned product screen implemented yet. |
 | D22-D24 | Not started | - | Outside this requested private-test candidate. |
 
 ### D04 evidence (2026-10-01)
@@ -493,3 +493,9 @@ Immutable candidate `4763f286afa9129ada71a39a0412b957a621bb44` was published to 
 The user explicitly requested a separate UI/UX-only agent and complete app redesign phase. Created UX01 and persistent agent instructions, assigned `ui_ux_redesign` to source discovery/complete screen-state inventory, and registered the phase in roadmap, implementation index and document map. Recommended clean modern ledger direction is provisional; design alternatives, rendered evidence and reviewed written design precede product implementation. No redesigned APK or physical acceptance is claimed at phase initiation.
 
 Dedicated-agent first handoff: all 16 routes and embedded/modal/state surfaces inventoried; source-backed priorities recorded in UX01. Recommended clean modern ledger direction remains provisional. No screenshots, app redesign implementation or redesigned APK claimed.
+
+### UX01 selected visual direction (3 October 2026)
+
+The user selected `1` after three independent generated concepts were displayed. This maps to the first displayed owner-home image, preserved at [selected concept](../design/ux01-owner-home-option1.png): green/white Clear Counter design. Dedicated agent `ui_ux_redesign` is drafting the complete-app specification from that visual target. Product code, deployment and redesigned APK remain unimplemented; generated concepts are not current-app screenshots.
+
+UX01 full written design handoff: dedicated agent completed the [Clear Counter specification](../superpowers/specs/2026-10-03-ux01-redesign-design.md), covering all routes, embedded/modal/state variants, UI tokens, owner/customer navigation and financial/access boundaries. Agent self-review and primary review found no unresolved design blocker. Documentation/navigation checks pass. Written-design acceptance and implementation planning remain next; no product code or redesigned APK is claimed.
