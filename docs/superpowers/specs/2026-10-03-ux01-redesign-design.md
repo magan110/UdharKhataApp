@@ -4,13 +4,13 @@
 > **Document map:** [Document map](../../../DOCUMENT-MAP.md). **Read with:** [UX01 UI/UX redesign](../../implementation/06-ui-ux-redesign.md) · [UI/UX agent brief](../../agents/ui-ux-redesign-agent.md) · [UI/UX spec](../../../UI-UX-DESIGN-SPEC.md) · [Implementation progress](../../implementation/PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Status: written design approved by the user on 3 October 2026; implementation plan prepared for review. Author: dedicated `ui_ux_redesign` agent. This document is a design artifact; no redesigned product implementation is claimed.
+Date: 3 October 2026. Status: written design approved by the user on 3 October 2026; implementation plan approved; isolated implementation underway. Author: dedicated `ui_ux_redesign` agent. This document is a design artifact; no redesigned product implementation is claimed.
 
 ## 1. Approval, intent and evidence
 
 The user selected option 1, the first displayed owner-home concept: **Clear Counter**, green and white, with Udhaar Khata/Kiran Store header, confirmed amount card, amber Pending strip, prominent Scan customer QR action, compact customer rows, and Home/Customers/More navigation. The authoritative generated reference is preserved as [selected owner-home concept](../../design/ux01-owner-home-option1.png), 853 × 1844 pixels, SHA-256 `ed476f12644db17cdef3605f0faac1332a523f7827aaa9680f2eab8186054bdd`; the dedicated agent opened and inspected the original `/workspace/generated_images/exec-03b26c7e-ac9b-4cfe-921c-99c575527db9.png` before writing this specification. The reference is a proposed visual, not a screenshot of the running app. Its names, amounts, counts and artwork are illustrative fixtures. Options 2 and 3 are not selected.
 
-The user selected the visual direction, then replied “approve” to the completed written-specification review on 3 October 2026. This full-app design is approved. The next gate is review of the concrete implementation plan before product code, preserving the user-requested dedicated UI/UX agent as implementer. Backend/API/schema changes are outside the approved design. UX01 follows delivered D21 and does not renumber or replace D22–D24.
+The user selected the visual direction, then replied “approve” to the completed written-specification review on 3 October 2026. This full-app design is approved. The user also approved the concrete implementation plan; the user-requested dedicated UI/UX agent is implementing it in an isolated checkout. Backend/API/schema changes are outside the approved design. UX01 follows delivered D21 and does not renumber or replace D22–D24.
 
 The goal is an understandable ledger at a busy Indian shop counter: owners recognize the customer, deliberately review and save money, and understand the save outcome; customers show their QR immediately and explain each shop's debt from its entries. English, Hindi, compact Android phones, large text and intermittent connectivity are first-class inputs. [Personas](../../../USER-PERSONAS.md) and [journeys](../../../USER-JOURNEY-USER-FLOW.md) guide tasks but remain hypotheses, not completed user research.
 
