@@ -195,6 +195,13 @@ class _DisputePageState extends ConsumerState<DisputePage> {
                   ),
                 ),
               ),
+            if (!matchingContext && widget.entryId != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  '${AppStrings.of(context).translate('Entry')} ${widget.entryId}',
+                ),
+              ),
             if (snapshot != null) ...[
               if (snapshot.items.isEmpty)
                 Text(AppStrings.of(context).translate('No disputes yet.')),

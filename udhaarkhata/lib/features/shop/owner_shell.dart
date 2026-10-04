@@ -52,52 +52,53 @@ class OwnerShell extends ConsumerWidget {
           ],
         ),
         body: SafeArea(
-          child: shop.when(
-            loading: () => Center(
-              child: CircularProgressIndicator(
-                semanticsLabel: l.translate('Opening shop'),
-              ),
-            ),
-            error: (error, _) => ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                const SyncStatusView(),
-                Text(
-                  l.translate('Could not open your shop'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Text(
-                  errorMessage(
-                    error is AppFailure
-                        ? error.messageKey
-                        : 'api.internalError',
-                    languageCode: l.languageCode,
+          child: selected == 2
+              ? MorePage(
+                  role: AccountRole.owner,
+                  shopId: shop.asData?.value?.id.value,
+                )
+              : shop.when(
+                  loading: () => Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: l.translate('Opening shop'),
+                    ),
                   ),
+                  error: (error, _) => ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      const SyncStatusView(),
+                      Text(
+                        l.translate('Could not open your shop'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        errorMessage(
+                          error is AppFailure
+                              ? error.messageKey
+                              : 'api.internalError',
+                          languageCode: l.languageCode,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => ref.invalidate(currentShopProvider),
+                        child: Text(l.translate('Try again')),
+                      ),
+                      if (error is AppFailure &&
+                          (error.retryable || error.code == 'NETWORK_ERROR'))
+                        const SavedCustomersView(),
+                    ],
+                  ),
+                  data: (value) => value == null
+                      ? const ShopSetup()
+                      : switch (selected) {
+                          1 => OwnerCustomersView(shop: value),
+                          _ => OwnerHomeView(
+                            shop: value,
+                            onViewAll: () => context.go('/owner?tab=customers'),
+                            onSyncDetails: () => context.go('/owner?tab=more'),
+                          ),
+                        },
                 ),
-                TextButton(
-                  onPressed: () => ref.invalidate(currentShopProvider),
-                  child: Text(l.translate('Try again')),
-                ),
-                if (error is AppFailure &&
-                    (error.retryable || error.code == 'NETWORK_ERROR'))
-                  const SavedCustomersView(),
-              ],
-            ),
-            data: (value) => value == null
-                ? const ShopSetup()
-                : switch (selected) {
-                    1 => OwnerCustomersView(shop: value),
-                    2 => MorePage(
-                      role: AccountRole.owner,
-                      shopId: value.id.value,
-                    ),
-                    _ => OwnerHomeView(
-                      shop: value,
-                      onViewAll: () => context.go('/owner?tab=customers'),
-                      onSyncDetails: () => context.go('/owner?tab=more'),
-                    ),
-                  },
-          ),
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: selected,

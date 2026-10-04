@@ -52,6 +52,35 @@ class DelayedDisputes extends RecordingDisputes {
 
 void main() {
   testWidgets(
+    'new direct-linked dispute identifies target without a matching card',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(
+              HistoryAuth(AccountRole.customer),
+            ),
+            disputeRepositoryProvider.overrideWithValue(RecordingDisputes()),
+          ],
+          child: const MaterialApp(
+            home: DisputePage(
+              shopId: 'shop',
+              customer: true,
+              entryId: 'new-entry',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Entry new-entry'), findsOneWidget);
+      expect(find.textContaining('₹'), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, 'Raise dispute'),
+        findsOneWidget,
+      );
+    },
+  );
+  testWidgets(
     'wrong context uses ID and response resolves selected second card',
     (tester) async {
       final repo = RecordingDisputes();

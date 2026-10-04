@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [UX01 selected design](../superpowers/specs/2026-10-03-ux01-redesign-design.md) · [UX01 implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md) · [Implementation progress](../implementation/PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Worktree `/workspace/ux01-redesign`, branch `codex/ux01-redesign`, original baseline `d75788a`. Status: presentation implementation and local checks complete; fresh whole-branch review and signed APK pending. This document does not claim physical Android acceptance, native-surface screenshots, real-user usability, Hindi-speaker review or public-use readiness.
+Date: 3 October 2026. Worktree `/workspace/ux01-redesign`, branch `codex/ux01-redesign`, original baseline `d75788a`. Status: presentation implementation, local checks and independent review/fix pass complete; signed APK and physical acceptance pending. This document does not claim physical Android acceptance, native-surface screenshots, real-user usability, Hindi-speaker review or public-use readiness.
 
 ## Verification boundaries
 
@@ -25,7 +25,7 @@ No backend/API/schema/repository/accounting changes are planned. UI-only integer
 
 ## Capture coverage
 
-[Capture manifest](ux01-captures/manifest.json) records 362 images: 292 redesigned widget renders and 70 immutable-baseline renders. Each row pins image SHA256, logical dimensions, locale/text scale, production source, synthetic fixture, scenario and inspection result. Source-file hashes pin the exact presentation and fixture files. The final immutable source checkpoint is `7c5d55566cf7d1684fecdd94ebf551c5fff04d5d`, recorded in the manifest; every listed source hash matches that commit.
+[Capture manifest](ux01-captures/manifest.json) records 362 images: 292 redesigned widget renders and 70 immutable-baseline renders. Each row pins image SHA256, logical dimensions, locale/text scale, production source, synthetic fixture, scenario and inspection result. Source-file hashes pin the exact presentation and fixture files. The initial immutable capture source is `7c5d55566cf7d1684fecdd94ebf551c5fff04d5d`. The final source hashes and20 review-fix renders are pinned to the final checkpoint below;272 unchanged redesign captures retain their original source reference.
 
 All 41 initial redesign contact sheets and all 12 baseline contact sheets were visually inspected with `view_image`. Initial inspection rejected 16 redesigned rows for untranslated validation, inconsistent fixture arithmetic/retry/cache state, missing Material ancestry or mislabeled long-name/overpayment scenarios. Root corrected those defects; changed/new images were inspected again across 14 followup contact sheets and final individual images. The final corrected-customer Hindi provenance label was localized, regenerated and inspected individually; all initially rejected rows are replaced and inspected. Final large-text validation images show the complete wrapped error text; controls remain reachable by scrolling, as checked by the owning form tests.
 
@@ -73,4 +73,31 @@ Root regression fixes retain their RED→GREEN evidence: statement shop identity
 2. Payment review retains its existing control tree and rejection/uncertain-attempt branches, using shared identity/receipt/theme components instead of forcing the generic review wrapper. The tradeoff is less component reuse; financial action availability and original retry bodies remain unchanged.
 3. Capture-helper style/key/import cleanup is presentation-neutral. Existing renderer evidence remains valid because production widgets and fixture state are unchanged; source hashes are refreshed and focused fixture tests rerun.
 
-Fresh review results and any deferred minor findings will be added here before delivery. Five native camera-runtime variants plus the phone acceptance matrix remain pending.
+Fresh review results and the single fix pass are recorded below. Five native camera-runtime variants plus the phone acceptance matrix remain pending.
+
+## Prepared signed build invocation
+
+Local candidate source will be pinned to the final review-fix commit below. Branch: `codex/ux01-redesign`. The existing `.github/workflows/apk-download.yml` accepts this full immutable SHA and restores the existing stable key; it refuses to generate a replacement key.
+
+After explicit remote authorization, push the reviewed branch and run:
+
+```sh
+gh workflow run apk-download.yml --repo magan110/UdharKhataApp \
+  -f source_ref=FINAL_REVIEWED_SOURCE_SHA \
+  -f api_base_url=https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev \
+  -f google_server_client_id=1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com \
+  -f expected_signing_sha1=3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6
+```
+
+Before phone delivery, inspect the downloaded exact artifact's package `com.udhaarkhata.app`, version `0.3.0+3`, stable signer above, embedded endpoint/audience and SHA256 against `apk-audit.json`; record run/artifact IDs and file size/hash. Update over D21 without uninstalling or clearing app storage. No backend deployment is necessary. This is a prepared command, not a dispatched build or produced APK.
+
+## Independent final review and fix pass (4 October 2026)
+
+Fresh-context reviewer `ux01_final_review` (`gpt-6-astra`) reviewed immutable `d75788a..d776a985030825e713541a91e74d4536767b0c60`, governing design/plan, production diff, selected captures and 14 focused tests (all pass). No Critical finding or additional confirmed accounting, retry, snapshot or selected-response regression was found. Reviewer identified:
+
+- **Important:** Owner More/sign-out was inside the successful non-null shop branch, blocking account recovery during no-shop setup, loading or error. Fixed by rendering account-level More independently, with optional shop actions. Three actual-router tests failed before the fix, then verified Sign out opens the Pending warning and Cancel preserves the signed-in account and makes no write. RED log `/tmp/ux01-signout-red.log`; focused GREEN `/tmp/ux01-review-fixes-green.log`.
+- **Originally Minor, root regraded Important:** A fresh direct-linked dispute without matching context/card could show the report form without its target entry. The approved spec requires an honest entry-ID fallback; root treats a missing submission target as a functional gap. Fixed with localized `Entry <ID>` independent of existing cards, without inventing an amount. New no-matching-card test failed first (`/tmp/ux01-dispute-id-red.log`), then passed in the same nine-test focused GREEN batch.
+
+Single review fix pass completed. There are **no deferred minor findings**. Twenty affected owner-More/dispute renders pass (`/tmp/ux01-review-captures.log`); four changed English/Hindi images were inspected individually, and the other 16 remain identical. Final full regression after these fixes: **266 tests pass**, **87.73% line coverage (4,976/5,672)**, `/tmp/ux01-reviewed-suite.log`. Analysis is clean (`/tmp/ux01-reviewed-analyze.log`); formatting153 files zero changes; release-static298 text files, coverage threshold, documentation49 files/navigation and diff checks pass. No core/backend/repository/lockfile changes; generated desktop tooling noise restored. Reviewer could not establish physical camera/Google/share/TalkBack/Hindi-font/signing acceptance and did not produce an APK.
+
+Additional execution ruling: root regraded the direct-link target-ID issue because reporting needs a visible target even before any dispute exists. The cost is an extra ID label on matching-card screens; this does not alter the ledger or dispute API. The branch remains isolated for reviewed APK preparation; no merge, push or publication has occurred.
