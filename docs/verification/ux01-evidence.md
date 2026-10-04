@@ -77,13 +77,13 @@ Fresh review results and the single fix pass are recorded below. Five native cam
 
 ## Prepared signed build invocation
 
-Local candidate source will be pinned to the final review-fix commit below. Branch: `codex/ux01-redesign`. The existing `.github/workflows/apk-download.yml` accepts this full immutable SHA and restores the existing stable key; it refuses to generate a replacement key.
+Final candidate source: `78f0f93f83aca516dc5ae7c1b17fa7f7ef89b494`. Branch: `codex/ux01-redesign`. The existing `.github/workflows/apk-download.yml` accepts this full immutable SHA and restores the existing stable key; it refuses to generate a replacement key.
 
 After explicit remote authorization, push the reviewed branch and run:
 
 ```sh
 gh workflow run apk-download.yml --repo magan110/UdharKhataApp \
-  -f source_ref=FINAL_REVIEWED_SOURCE_SHA \
+  -f source_ref=78f0f93f83aca516dc5ae7c1b17fa7f7ef89b494 \
   -f api_base_url=https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev \
   -f google_server_client_id=1098240805044-90hnifajs9hvtvcive1d65r3q2cqnu03.apps.googleusercontent.com \
   -f expected_signing_sha1=3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6
@@ -101,3 +101,5 @@ Fresh-context reviewer `ux01_final_review` (`gpt-6-astra`) reviewed immutable `d
 Single review fix pass completed. There are **no deferred minor findings**. Twenty affected owner-More/dispute renders pass (`/tmp/ux01-review-captures.log`); four changed English/Hindi images were inspected individually, and the other 16 remain identical. Final full regression after these fixes: **266 tests pass**, **87.73% line coverage (4,976/5,672)**, `/tmp/ux01-reviewed-suite.log`. Analysis is clean (`/tmp/ux01-reviewed-analyze.log`); formatting153 files zero changes; release-static298 text files, coverage threshold, documentation49 files/navigation and diff checks pass. No core/backend/repository/lockfile changes; generated desktop tooling noise restored. Reviewer could not establish physical camera/Google/share/TalkBack/Hindi-font/signing acceptance and did not produce an APK.
 
 Additional execution ruling: root regraded the direct-link target-ID issue because reporting needs a visible target even before any dispute exists. The cost is an extra ID label on matching-card screens; this does not alter the ledger or dispute API. The branch remains isolated for reviewed APK preparation; no merge, push or publication has occurred.
+
+Final immutable source checkpoint: `78f0f93f83aca516dc5ae7c1b17fa7f7ef89b494`. All68listed source hashes match that commit;all362image hashes match their files. Twenty rerendered rows pin this checkpoint;272unchanged redesign captures retain their actual initial capture source. Build this full SHA after authorization, preserving branch and worktree for phone feedback.
