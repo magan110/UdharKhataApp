@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [UI/UX agent brief](../agents/ui-ux-redesign-agent.md) · [UI/UX spec](../../UI-UX-DESIGN-SPEC.md) · [Wireframes](../../WIREFRAMES.md) · [Implementation progress](PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification approved; implementation plan approved; isolated presentation implementation, local verification and independent review/fixes complete; signed APK and phone acceptance pending.
+Date: 3 October 2026. Status: phase created; initial source discovery complete; user selected option 1; complete full-app specification approved; implementation plan approved; isolated presentation implementation, local verification and independent review/fixes complete; stable-signed0.3.0+3 APK audited/delivered; phone acceptance pending.
 
 ## Mandate and ownership
 
@@ -88,7 +88,8 @@ The app-wide theme/navigation change is architectural: establish the design brie
 - [x] Review completed implementation plan: user approved on 3 October 2026.
 - [x] Execute redesigned UI and record task evidence.
 - [x] Complete local screen/state coverage and regression/visual verification:292 inspected redesigned renders,266 tests,87.73% coverage and independent review/fixes; native phone variants pending.
-- [ ] Deliver redesigned APK and record phone acceptance.
+- [x] Produce and audit redesigned stable-signed APK:0.3.0+3,build37168036144/artifact11290846371; see evidence.
+- [ ] Record physical phone acceptance, native/accessibility and Hindi-speaker checks.
 
 ## Initial dedicated-agent discovery (3 October 2026)
 

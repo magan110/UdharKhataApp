@@ -4,7 +4,7 @@
 > **Document map:** [Document map](../../DOCUMENT-MAP.md). **Read with:** [UX01 selected design](../superpowers/specs/2026-10-03-ux01-redesign-design.md) · [UX01 implementation plan](../superpowers/plans/2026-10-03-ux01-redesign.md) · [Implementation progress](../implementation/PROGRESS.md).
 <!-- DOC_NAV_END -->
 
-Date: 3 October 2026. Worktree `/workspace/ux01-redesign`, branch `codex/ux01-redesign`, original baseline `d75788a`. Status: presentation implementation, local checks and independent review/fix pass complete; signed APK and physical acceptance pending. This document does not claim physical Android acceptance, native-surface screenshots, real-user usability, Hindi-speaker review or public-use readiness.
+Date: 3 October 2026. Worktree `/workspace/ux01-redesign`, branch `codex/ux01-redesign`, original baseline `d75788a`. Status: presentation implementation, local checks and independent review/fix pass complete; stable-signed APK produced/audited and delivered for synthetic phone testing; physical acceptance pending. This document does not claim physical Android acceptance, native-surface screenshots, real-user usability, Hindi-speaker review or public-use readiness.
 
 ## Verification boundaries
 
@@ -37,7 +37,7 @@ Normal renders are 390×844 logical pixels, with selected Hindi 320×844 at 200%
 
 ## Phone acceptance packet
 
-Candidate: Udhaar Khata 0.3.0+3, package `com.udhaarkhata.app`. Install as an update over the D21 build after signer verification; preserve device-only Pending entries. The stable signing key is available only to the existing GitHub Actions build. No redesigned APK has been produced yet.
+Candidate: Udhaar Khata 0.3.0+3, package `com.udhaarkhata.app`. Install as an update over the D21 build after signer verification; preserve device-only Pending entries. The stable signing key is available only to the existing GitHub Actions build. The redesigned stable-signed APK has now been produced and audited; delivery details are below.
 
 | Check | Phone procedure | Acceptance / record |
 |---|---|---|
@@ -63,7 +63,7 @@ All physical, native Google/camera/share, TalkBack and Hindi-speaker checks rema
 - `dart format --output=none --set-exit-if-changed lib test`: 153 files, zero changes. Final copy/workspace/statement/resource checks: **10 pass**, `/tmp/ux01-final-focused.log`.
 - `python scripts/check_docs.py`, `python scripts/update_doc_navigation.py --check`, `git diff --check`: pass. All 362 PNG hashes match their manifest; 129 required variant records are present.
 - Diff against `d75788a` contains no backend, core, repository, accounting, schema or lockfile changes. Generated desktop plugin noise from Flutter tooling was restored.
-- Local `flutter build apk --debug --no-pub` with the existing staging endpoint and Google audience stops with **No Android SDK found**, `/tmp/ux01-local-apk.log`. Existing stable-key CI build invocation will be prepared against the independently reviewed immutable source. No new signer or remote change is authorized by the local implementation plan.
+- Local `flutter build apk --debug --no-pub` with the existing staging endpoint and Google audience stops with **No Android SDK found**, `/tmp/ux01-local-apk.log`. Existing stable-key CI build invocation will be prepared against the independently reviewed immutable source. The user separately approved pushing the reviewed branch and running the existing stable-key workflow on4October2026. No new signer or backend deployment was needed.
 
 Root regression fixes retain their RED→GREEN evidence: statement shop identity/snapshot metadata; owner workspace provisional/synced amounts with complete and partial freshness; translated payment validation/correction reason/conflict; Hindi original-entry provenance; multiline large-text validation. Focused fixture tests verify credit/payment arithmetic and retained attempts. Renderer refinements were regenerated and inspected as described above.
 
@@ -89,7 +89,7 @@ gh workflow run apk-download.yml --repo magan110/UdharKhataApp \
   -f expected_signing_sha1=3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6
 ```
 
-Before phone delivery, inspect the downloaded exact artifact's package `com.udhaarkhata.app`, version `0.3.0+3`, stable signer above, embedded endpoint/audience and SHA256 against `apk-audit.json`; record run/artifact IDs and file size/hash. Update over D21 without uninstalling or clearing app storage. No backend deployment is necessary. This is a prepared command, not a dispatched build or produced APK.
+Before phone delivery, inspect the downloaded exact artifact's package `com.udhaarkhata.app`, version `0.3.0+3`, stable signer above, embedded endpoint/audience and SHA256 against `apk-audit.json`; record run/artifact IDs and file size/hash. Update over D21 without uninstalling or clearing app storage. No backend deployment is necessary. This exact command was dispatched after separate user approval; the successful artifact is recorded below.
 
 ## Independent final review and fix pass (4 October 2026)
 
@@ -103,3 +103,18 @@ Single review fix pass completed. There are **no deferred minor findings**. Twen
 Additional execution ruling: root regraded the direct-link target-ID issue because reporting needs a visible target even before any dispute exists. The cost is an extra ID label on matching-card screens; this does not alter the ledger or dispute API. The branch remains isolated for reviewed APK preparation; no merge, push or publication has occurred.
 
 Final immutable source checkpoint: `78f0f93f83aca516dc5ae7c1b17fa7f7ef89b494`. All68listed source hashes match that commit;all362image hashes match their files. Twenty rerendered rows pin this checkpoint;272unchanged redesign captures retain their actual initial capture source. Build this full SHA after authorization, preserving branch and worktree for phone feedback.
+
+## Stable-signed phone-test delivery (4 October 2026)
+
+The user explicitly replied **Approved** to pushing the reviewed UX01 branch and running the existing signed APK workflow. Branch `codex/ux01-redesign` was pushed without merging main or redeploying the Worker.
+
+- Source built: `78f0f93f83aca516dc5ae7c1b17fa7f7ef89b494`; workflow checkout logs verify this exact commit.
+- Cloud CI [37168026963](https://github.com/magan110/UdharKhataApp/actions/runs/37168026963): docs, Flutter and Worker jobs **success**, including full automated checks.
+- Stable-key APK build [37168036144](https://github.com/magan110/UdharKhataApp/actions/runs/37168036144): **success**, including exact `apksigner verify`/certificate/configuration audit and key cleanup.
+- Artifact **11290846371**, `Udhaar-Khata-debug-APK`: [download ZIP](https://github.com/magan110/UdharKhataApp/actions/runs/37168036144/artifacts/11290846371), retained14days. Contains `app-debug.apk` and `apk-audit.json`.
+- Downloaded ZIP SHA256 `d3d9e3fb72354a3e5e2ef71ab4c0d305a2dd99789efbcfc94d198203f3eaa1ae` matches GitHub artifact digest. The authorized GitHub connector supplied the reusable download reference; no signed URL is retained in this document.
+- APK package `com.udhaarkhata.app`, **version0.3.0+3**, existing registered signer SHA1 `3C:CE:D2:62:9B:40:A7:5F:ED:A4:DB:DA:AB:21:E3:57:96:9F:16:C6`. Local binary-manifest/certificate extraction independently agrees with CI; CI performed cryptographic signature verification, bound locally by the exact APK hash.
+- APK size **202,749,839bytes** (~193.4MiB). SHA256 **`73afcb16511975d05f4605e59ec827ccca7a6b00d299e31e99a282098e77a428`**.
+- Embedded staging endpoint `https://udhaarkhata-api-staging.udhaarkhata-api.workers.dev` and existing Google audience independently found in the exact downloaded APK; all fields match CI `apk-audit.json`.
+
+Local delivery files: `/workspace/artifacts/ux01/app-debug.apk`, ZIP and both audit JSON files. APK binaries remain outside source control. Install as an update over D21; **do not uninstall or clear app storage**. First sign in online, then use the phone acceptance matrix above with synthetic accounts/entries. Physical update/data preservation, native Google/camera/share, TalkBack, Hindi-speaker usability and pilot/public-use/backup gates remain pending until tested; matching signer/build success does not claim those outcomes.
